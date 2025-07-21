@@ -1,0 +1,81 @@
+import { Tabs } from 'expo-router';
+import { useColorScheme } from 'react-native';
+import { Home, User, MessageCircle, Activity, Gift } from 'lucide-react-native';
+
+// Temporary Colors object until proper import is fixed
+const Colors = {
+  light: { tint: '#22C55E' },
+  dark: { tint: '#22C55E' }
+};
+
+export default function TabLayout() {
+  const colorScheme = useColorScheme();
+
+  return (
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarInactiveTintColor: '#64748B',
+        tabBarStyle: {
+          backgroundColor: '#FFFFFF',
+          borderTopWidth: 1,
+          borderTopColor: '#E2E8F0',
+          height: 85,
+          paddingTop: 5,
+          paddingBottom: 30,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontFamily: 'Inter-Medium',
+          marginTop: 4,
+        },
+      }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => <Home size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="activity"
+        options={{
+          title: 'Activity',
+          tabBarIcon: ({ size, color }) => (
+            <Activity size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="messages"
+        options={{
+          title: 'Messages',
+          tabBarIcon: ({ size, color }) => (
+            <MessageCircle size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="rewards"
+        options={{
+          title: 'Rewards',
+          tabBarIcon: ({ size, color }) => (
+            <Gift size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ size, color }) => (
+            <User size={size} color={color} />
+          ),
+        }}
+      />
+
+
+    </Tabs>
+  );
+}
