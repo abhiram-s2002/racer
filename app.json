@@ -1,15 +1,42 @@
 {
   "expo": {
-    "name": "your-project-name",
-    "slug": "your-project-name",
+    "name": "Racer Marketplace",
+    "slug": "racer-marketplace",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "racer",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.racermarketplace.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to take photos for marketplace listings.",
+        "NSLocationWhenInUseUsageDescription": "This app uses location to show nearby listings and help you find items in your area.",
+        "NSPhotoLibraryUsageDescription": "This app accesses your photo library to select images for marketplace listings.",
+        "NSMicrophoneUsageDescription": "This app may use the microphone for voice messages in chat.",
+        "NSFaceIDUsageDescription": "This app uses Face ID for secure authentication."
+      }
+    },
+    "android": {
+      "package": "com.racermarketplace.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#22C55E"
+      },
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE",
+        "VIBRATE"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -27,6 +54,17 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "your-project-id"
+      },
+      "environment": "production"
+    },
+    "owner": "your-expo-username",
+    "privacy": "public",
+    "description": "A local marketplace app for buying and selling items in your community. Connect with nearby sellers, browse listings, and make secure transactions.",
+    "primaryColor": "#22C55E",
+    "platforms": ["ios", "android", "web"]
   }
 }

@@ -205,7 +205,10 @@ export default function RewardsScreen() {
       'early_adopter', 
       'power_user',
       'loyal_user',
-      'social_butterfly'
+      'social_butterfly',
+      'referral_king',
+      'first_list',
+      'listing_master'
     ];
     return implementedAchievements.includes(achievementId);
   };

@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 
-interface User {
-  id: string;
-  username: string;
-  email: string;
-  name: string;
-  avatar_url?: string;
-}
+import { User, AuthState } from '@/utils/types';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -58,6 +52,9 @@ export function useAuth() {
             email: authUser.email || '',
             name: profile?.name || authUser.user_metadata?.name || '',
             avatar_url: profile?.avatar_url || authUser.user_metadata?.avatar_url,
+            isAvailable: profile?.isAvailable ?? true,
+            created_at: profile?.created_at || new Date().toISOString(),
+            updated_at: profile?.updated_at || new Date().toISOString(),
           });
         }
       } catch (err) {

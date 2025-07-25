@@ -114,7 +114,6 @@ export default function LocationSortingModal({
           { text: 'Cancel', style: 'cancel' },
           { text: 'Open Settings', onPress: () => {
             // In a real app, you'd open device settings
-            console.log('Open device settings');
           }},
         ]
       );

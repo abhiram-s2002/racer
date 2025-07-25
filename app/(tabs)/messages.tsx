@@ -16,13 +16,14 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, Phone, ArrowLeft, CheckCircle, Check, Clock } from 'lucide-react-native';
+import { Search, Phone, ArrowLeft, Check, Clock } from 'lucide-react-native';
 import { useChats } from '@/hooks/useChats';
 import { useMessages } from '@/hooks/useMessages';
 import { supabase } from '@/utils/supabaseClient';
-import { Chat, Message } from '@/utils/chatService';
+import { ExtendedChat, Message } from '@/utils/chatService';
 import { useLocalSearchParams } from 'expo-router';
 import { validateMessage, logSecurityEvent } from '@/utils/validation';
+import { advancedRateLimiter } from '@/utils/advancedRateLimiter';
 
 // Skeleton loader for chat list
 function ChatListSkeleton() {
@@ -128,7 +129,7 @@ function MessageStatusIndicator({ status, isOwnMessage }: { status: string; isOw
 
 export default function MessagesScreen() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null); // Changed type to any for now
+  const [selectedChat, setSelectedChat] = useState<ExtendedChat | null>(null); // Changed type to any for now
   const [messageText, setMessageText] = useState('');
   const [username, setUsername] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -154,7 +155,6 @@ export default function MessagesScreen() {
     chats, 
     loading: chatsLoading, 
     markChatAsRead, 
-    markChatAsCompleted,
     unreadCounts, 
     error,
     loadChats 
@@ -163,8 +163,7 @@ export default function MessagesScreen() {
   const { 
     messages, 
     loading: messagesLoading, 
-    sendMessage, 
-    sendSystemMessage 
+    sendMessage 
   } = useMessages(selectedChat?.id || null, username || '');
 
   const params = useLocalSearchParams();
@@ -186,7 +185,8 @@ export default function MessagesScreen() {
   // When params.chatId changes, set pendingChatId
   useEffect(() => {
     if (params.chatId) {
-      setPendingChatId(params.chatId as string);
+      const chatId = params.chatId as string;
+      setPendingChatId(chatId);
     }
   }, [params.chatId]);
 
@@ -197,9 +197,19 @@ export default function MessagesScreen() {
       if (chat) {
         setSelectedChat(chat);
         setPendingChatId(null);
+      } else {
+        // If chat not found, try to refresh the chats list
+        loadChats();
       }
     }
-  }, [pendingChatId, chats]);
+  }, [pendingChatId, chats, loadChats]);
+
+  // Additional effect to handle case where chat was just created
+  useEffect(() => {
+    if (pendingChatId && !chatsLoading && chats.length === 0) {
+      loadChats();
+    }
+  }, [pendingChatId, chatsLoading, chats.length, loadChats]);
 
   // Fetch user profiles for chat participants
   useEffect(() => {
@@ -238,13 +248,9 @@ export default function MessagesScreen() {
   const filteredChats = chats.filter(chat => {
     const otherUser = chat.participant_a === username ? chat.participant_b : chat.participant_a;
     const otherUserName = userProfiles[otherUser]?.name || otherUser;
-    const listingTitle = chat.listing_title || '';
     
     const searchLower = searchQuery.toLowerCase();
-    return (
-      otherUserName.toLowerCase().includes(searchLower) ||
-      listingTitle.toLowerCase().includes(searchLower)
-    );
+    return otherUserName.toLowerCase().includes(searchLower);
   });
 
   // Handle back button for chat view
@@ -300,6 +306,24 @@ export default function MessagesScreen() {
   const handleSendMessage = async () => {
     if (!messageText.trim() || !selectedChat) return;
 
+    // Check rate limiting for messages
+    if (username) {
+      try {
+        const rateLimit = await advancedRateLimiter.checkMessageRateLimit(username);
+        if (!rateLimit.allowed) {
+          const retrySeconds = Math.ceil((rateLimit.retryAfter || 0) / 1000);
+          Alert.alert(
+            'Rate Limit Exceeded', 
+            `You're sending too many messages. Please try again in ${retrySeconds} seconds.`
+          );
+          return;
+        }
+      } catch (error) {
+        console.error('Rate limit check error:', error);
+        // Continue with message if rate limit check fails
+      }
+    }
+
     // Validate message
     const validation = validateMessage(messageText);
     if (!validation.isValid) {
@@ -334,23 +358,7 @@ export default function MessagesScreen() {
     }
   };
 
-  const handleMarkAsCompleted = (chatId: string) => {
-    Alert.alert(
-      'Mark as Completed',
-      'Are you sure you want to mark this transaction as completed? This will close the chat.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Complete',
-          style: 'default',
-          onPress: async () => {
-            await markChatAsCompleted(chatId);
-            await sendSystemMessage('Transaction marked as completed');
-          },
-        },
-      ]
-    );
-  };
+
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -359,7 +367,7 @@ export default function MessagesScreen() {
   };
 
   // Render chat item for marketplace chats
-  const renderChatItem = ({ item }: { item: Chat }) => {
+  const renderChatItem = ({ item }: { item: ExtendedChat }) => {
     // Use the new fields from database function if available, otherwise fallback to old logic
     const otherUser = item.other_participant || (item.participant_a === username ? item.participant_b : item.participant_a);
     const otherUserName = item.other_participant_name || userProfiles[otherUser]?.name || otherUser;
@@ -397,11 +405,7 @@ export default function MessagesScreen() {
             )}
           </View>
           
-          {item.listing_title && (
-            <Text style={styles.listingTitle} numberOfLines={1}>
-              📦 {item.listing_title}
-            </Text>
-          )}
+
         </View>
       </TouchableOpacity>
     );
@@ -503,33 +507,13 @@ export default function MessagesScreen() {
             </View>
           </View>
           <View style={styles.chatActions}>
-            {selectedChat.status === 'active' && (
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={() => handleMarkAsCompleted(selectedChat.id)}
-              >
-                <CheckCircle size={20} color="#10B981" />
-              </TouchableOpacity>
-            )}
             <TouchableOpacity style={styles.actionButton}>
               <Phone size={20} color="#64748B" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Listing Context Banner */}
-        <View style={styles.listingContextBanner}>
-          <View style={styles.listingContextHeader}>
-            <Text style={styles.listingContextTitle}>About this listing</Text>
-            <Text style={styles.listingContextPrice}>${selectedChat.listing_price}</Text>
-          </View>
-          <Text style={styles.listingContextTitle} numberOfLines={2}>
-            {selectedChat.listing_title}
-          </Text>
-          {selectedChat.listing_image && (
-            <Image source={{ uri: selectedChat.listing_image }} style={styles.listingContextImage} />
-          )}
-        </View>
+
 
         {/* Messages */}
         {messagesLoading ? (
@@ -766,12 +750,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: '#FFFFFF',
   },
-  listingTitle: {
-    fontSize: 13,
-    fontFamily: 'Inter-Medium',
-    color: '#64748B',
-    marginTop: 4,
-  },
+
   // Chat Screen Styles
   chatHeaderContainer: {
     flexDirection: 'row',
@@ -828,36 +807,7 @@ const styles = StyleSheet.create({
   actionButton: {
     padding: 8,
   },
-  listingContextBanner: {
-    backgroundColor: '#F0FDF4',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  listingContextHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  listingContextTitle: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
-    color: '#16A34A',
-    flex: 1,
-  },
-  listingContextPrice: {
-    fontSize: 14,
-    fontFamily: 'Inter-Bold',
-    color: '#22C55E',
-  },
-  listingContextImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    marginTop: 8,
-  },
+
   messagesList: {
     flex: 1,
     backgroundColor: '#EFEAE2', // WhatsApp background color

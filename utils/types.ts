@@ -1,0 +1,609 @@
+/**
+ * Comprehensive TypeScript types for the marketplace app
+ * Centralized type definitions for better type safety and developer experience
+ */
+
+// ============================================================================
+// CORE TYPES
+// ============================================================================
+
+/**
+ * User profile information
+ */
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  name: string;
+  avatar_url?: string;
+  phone?: string;
+  bio?: string;
+  location?: string;
+  location_display?: string;
+  latitude?: number;
+  longitude?: number;
+  isAvailable: boolean;
+  stats?: Record<string, any>;
+  notification_settings?: NotificationSettings;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Notification settings for users
+ */
+export interface NotificationSettings {
+  new_messages: boolean;
+  listing_updates: boolean;
+  marketplace_notifications: boolean;
+}
+
+/**
+ * Marketplace listing
+ */
+export interface Listing {
+  id: string;
+  username: string;
+  title: string;
+  description?: string;
+  price: number;
+  price_unit: PriceUnit;
+  category: Category;
+  images: string[];
+  thumbnail_images: string[];
+  preview_images: string[];
+  image_url?: string; // Legacy field for backward compatibility
+  is_active: boolean;
+  latitude?: number;
+  longitude?: number;
+  location?: any; // PostGIS geography type
+  distance_km?: number; // Distance from user to listing
+  expires_at?: string;
+  extension_count?: number;
+  view_count?: number;
+  ping_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Chat conversation between users
+ */
+export interface Chat {
+  id: string;
+  listing_id?: string;
+  participant_a: string;
+  participant_b: string;
+  last_message?: string;
+  last_sender?: string;
+  status: ChatStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Individual chat message
+ */
+export interface Message {
+  id: string;
+  chat_id: string;
+  sender_username: string;
+  text: string;
+  status: MessageStatus;
+  created_at: string;
+}
+
+/**
+ * Ping request from buyer to seller
+ */
+export interface Ping {
+  id: string;
+  listing_id: string;
+  sender_username: string;
+  receiver_username: string;
+  message: string;
+  status: PingStatus;
+  template_id?: string;
+  sent_at: string;
+  responded_at?: string;
+  expires_at: string;
+  response_time_minutes?: number;
+  first_response_at?: string;
+  response_message?: string;
+}
+
+/**
+ * User activity tracking
+ */
+export interface Activity {
+  id: string;
+  username: string;
+  type: ActivityType;
+  listing_id?: string;
+  status: ActivityStatus;
+  created_at: string;
+}
+
+// ============================================================================
+// ENUM TYPES
+// ============================================================================
+
+/**
+ * Pricing units for listings
+ */
+export type PriceUnit = 
+  | 'per_item'
+  | 'per_kg'
+  | 'per_piece'
+  | 'per_pack'
+  | 'per_bundle'
+  | 'per_dozen'
+  | 'per_basket'
+  | 'per_plate'
+  | 'per_serving'
+  | 'per_hour'
+  | 'per_service'
+  | 'per_session'
+  | 'per_day'
+  | 'per_commission'
+  | 'per_project'
+  | 'per_week'
+  | 'per_month';
+
+/**
+ * Marketplace categories
+ */
+export type Category = 
+  | 'groceries'
+  | 'electronics'
+  | 'fashion'
+  | 'home'
+  | 'services'
+  | 'vehicles'
+  | 'books'
+  | 'sports'
+  | 'beauty'
+  | 'toys'
+  | 'health'
+  | 'pets'
+  | 'garden'
+  | 'office'
+  | 'music'
+  | 'art'
+  | 'collectibles'
+  | 'other';
+
+/**
+ * Chat status values
+ */
+export type ChatStatus = 'active' | 'archived' | 'blocked';
+
+/**
+ * Message status values
+ */
+export type MessageStatus = 'sent' | 'delivered' | 'read';
+
+/**
+ * Ping status values
+ */
+export type PingStatus = 'pending' | 'accepted' | 'declined' | 'expired';
+
+/**
+ * Activity type values
+ */
+export type ActivityType = 
+  | 'listing_created'
+  | 'listing_updated'
+  | 'listing_deleted'
+  | 'ping_sent'
+  | 'ping_received'
+  | 'ping_responded'
+  | 'message_sent'
+  | 'message_received';
+
+/**
+ * Activity status values
+ */
+export type ActivityStatus = 'pending' | 'completed' | 'failed' | 'cancelled';
+
+// ============================================================================
+// REWARDS SYSTEM TYPES
+// ============================================================================
+
+/**
+ * User rewards information
+ */
+export interface UserRewards {
+  id: string;
+  username: string;
+  total_omni_earned: number;
+  total_omni_spent: number;
+  current_balance: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * User streak information
+ */
+export interface UserStreak {
+  id: string;
+  username: string;
+  current_streak: number;
+  longest_streak: number;
+  last_checkin_date: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * User referral code
+ */
+export interface UserReferralCode {
+  id: string;
+  username: string;
+  referral_code: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+/**
+ * User achievement
+ */
+export interface UserAchievement {
+  id: string;
+  username: string;
+  achievement_id: string;
+  progress: number;
+  completed: boolean;
+  completed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Daily check-in
+ */
+export interface DailyCheckin {
+  id: string;
+  username: string;
+  checkin_date: string;
+  omni_earned: number;
+  streak_day: number;
+  created_at: string;
+}
+
+/**
+ * Referral record
+ */
+export interface Referral {
+  id: string;
+  referrer_username: string;
+  referred_username: string;
+  referral_code: string;
+  status: ReferralStatus;
+  omni_earned: number;
+  created_at: string;
+}
+
+/**
+ * Reward transaction
+ */
+export interface RewardTransaction {
+  id: string;
+  username: string;
+  transaction_type: TransactionType;
+  amount: number;
+  description: string;
+  reference_id?: string;
+  created_at: string;
+}
+
+/**
+ * Achievement definition
+ */
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  category: AchievementCategory;
+  rarity: AchievementRarity;
+  points: number;
+  requirements: Record<string, any>;
+  is_active: boolean;
+  created_at: string;
+}
+
+/**
+ * User rewards summary
+ */
+export interface UserRewardsSummary {
+  total_earned: number;
+  total_spent: number;
+  current_balance: number;
+  streak_days: number;
+  achievements_completed: number;
+  total_achievements: number;
+  referrals_count: number;
+  checkins_this_month: number;
+}
+
+// ============================================================================
+// REWARDS ENUM TYPES
+// ============================================================================
+
+/**
+ * Referral status values
+ */
+export type ReferralStatus = 'pending' | 'completed' | 'expired';
+
+/**
+ * Transaction type values
+ */
+export type TransactionType = 
+  | 'daily_checkin'
+  | 'achievement_completed'
+  | 'referral_bonus'
+  | 'listing_created'
+  | 'ping_sent'
+  | 'message_sent'
+  | 'reward_spent'
+  | 'bonus_granted';
+
+/**
+ * Achievement category values
+ */
+export type AchievementCategory = 
+  | 'engagement'
+  | 'social'
+  | 'content'
+  | 'milestone'
+  | 'special';
+
+/**
+ * Achievement rarity values
+ */
+export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
+// ============================================================================
+// API RESPONSE TYPES
+// ============================================================================
+
+/**
+ * Standard API response wrapper
+ */
+export interface ApiResponse<T> {
+  data: T | null;
+  error: string | null;
+  success: boolean;
+}
+
+/**
+ * Paginated response wrapper
+ */
+export interface PaginatedResponse<T> {
+  data: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
+}
+
+/**
+ * Image upload response
+ */
+export interface ImageUploadResponse {
+  url: string;
+  thumbnail_url?: string;
+  preview_url?: string;
+  size: number;
+  width: number;
+  height: number;
+  mime_type: string;
+}
+
+/**
+ * Compression result
+ */
+export interface CompressionResult {
+  success: boolean;
+  uri: string;
+  width: number;
+  height: number;
+  size: number;
+  mimeType: string;
+  error?: string;
+  attempts: number;
+  originalSize: number;
+  compressionRatio: number;
+}
+
+// ============================================================================
+// HOOK TYPES
+// ============================================================================
+
+/**
+ * Location information
+ */
+export interface LocationInfo {
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  timestamp: number;
+}
+
+/**
+ * Ping limit information
+ */
+export interface PingLimitInfo {
+  daily_limit: number;
+  daily_used: number;
+  daily_remaining: number;
+  time_limit_minutes: number;
+  last_ping_time?: string;
+  can_ping: boolean;
+  time_remaining_minutes?: number;
+}
+
+/**
+ * Listings hook state
+ */
+export interface ListingsState {
+  listings: Listing[];
+  loading: boolean;
+  page: number;
+  hasMore: boolean;
+  sortByDistance: boolean;
+  maxDistance: number | null;
+  locationAvailable: boolean;
+  error?: string;
+}
+
+/**
+ * Messages hook state
+ */
+export interface MessagesState {
+  messages: Message[];
+  loading: boolean;
+  error: string | null;
+}
+
+/**
+ * Auth hook state
+ */
+export interface AuthState {
+  user: User | null;
+  loading: boolean;
+  error: string | null;
+  isAuthenticated: boolean;
+}
+
+// ============================================================================
+// UTILITY TYPES
+// ============================================================================
+
+/**
+ * Partial user type for updates
+ */
+export type PartialUser = Partial<User>;
+
+/**
+ * Partial listing type for updates
+ */
+export type PartialListing = Partial<Listing>;
+
+/**
+ * Partial message type for updates
+ */
+export type PartialMessage = Partial<Message>;
+
+/**
+ * Partial ping type for updates
+ */
+export type PartialPing = Partial<Ping>;
+
+/**
+ * Form data type for listings
+ */
+export interface ListingFormData {
+  title: string;
+  description: string;
+  price: number;
+  price_unit: PriceUnit;
+  category: Category;
+  images: string[];
+}
+
+/**
+ * Form data type for pings
+ */
+export interface PingFormData {
+  message: string;
+  template_id?: string;
+}
+
+/**
+ * Form data type for messages
+ */
+export interface MessageFormData {
+  text: string;
+}
+
+/**
+ * Search filters
+ */
+export interface SearchFilters {
+  category?: Category;
+  price_min?: number;
+  price_max?: number;
+  location?: LocationInfo;
+  max_distance?: number;
+  sort_by?: 'price' | 'date' | 'distance' | 'relevance';
+  sort_order?: 'asc' | 'desc';
+}
+
+/**
+ * Image processing options
+ */
+export interface ImageProcessingOptions {
+  quality: number;
+  format: 'jpeg' | 'png' | 'webp';
+  maxWidth: number;
+  maxHeight: number;
+  retryCount: number;
+  retryDelay: number;
+}
+
+/**
+ * Cache entry
+ */
+export interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  ttl: number;
+}
+
+/**
+ * Error information
+ */
+export interface AppError {
+  code: string;
+  message: string;
+  details?: any;
+  timestamp: number;
+  userId?: string;
+}
+
+// ============================================================================
+// EVENT TYPES
+// ============================================================================
+
+/**
+ * App events for analytics
+ */
+export interface AppEvent {
+  type: string;
+  userId?: string;
+  data?: Record<string, any>;
+  timestamp: number;
+}
+
+/**
+ * User interaction events
+ */
+export interface UserInteractionEvent extends AppEvent {
+  type: 'listing_view' | 'ping_sent' | 'message_sent' | 'search_performed';
+  listingId?: string;
+  category?: Category;
+  searchQuery?: string;
+}
+
+/**
+ * Performance events
+ */
+export interface PerformanceEvent extends AppEvent {
+  type: 'page_load' | 'api_call' | 'image_load';
+  duration: number;
+  success: boolean;
+  error?: string;
+} 

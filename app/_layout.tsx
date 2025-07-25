@@ -5,6 +5,11 @@ import { getCurrentUser } from '@/utils/auth';
 import AuthScreen from './auth';
 import { Slot, useRouter, usePathname } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
+import { CacheManager } from '@/components/CacheManager';
+import { validatePhoneNumber } from '@/utils/validation';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ErrorHandler } from '@/utils/errorHandler';
+import { networkMonitor } from '@/utils/networkMonitor';
 
 function validateUserProfileFields({ id, username, email, name }: { id: string; username: string; email: string; name: string }) {
   const missing = [];
@@ -16,8 +21,10 @@ function validateUserProfileFields({ id, username, email, name }: { id: string; 
 }
 
 export async function upsertUserProfile(authUser: any) {
+  const errorHandler = ErrorHandler.getInstance();
+  
   if (!authUser) return;
-  const { id, email, user_metadata } = authUser;
+  const { id, email, phone, user_metadata } = authUser;
   const name = user_metadata?.full_name || user_metadata?.name || '';
   const avatar_url = user_metadata?.avatar_url || '';
   const username = user_metadata?.username || '';
@@ -25,46 +32,95 @@ export async function upsertUserProfile(authUser: any) {
   if (missingFields.length > 0) {
     const msg = `Cannot upsert user profile. Missing required fields: ${missingFields.join(', ')}`;
     console.error(msg);
-    Alert.alert('Profile Error', msg);
+    // Don't show alert here as it might be expected during profile setup
     return { error: msg };
   }
-  console.log('Upserting user profile with:', { id, username, email, name, avatar_url });
-  // Try to upsert with username conflict resolution
+  
+  // Handle phone number validation and formatting
+  let phoneValue = null;
+  
+  // Clean and validate phone number
+  if (phone) {
+    const trimmedPhone = phone.trim();
+    if (trimmedPhone !== '') {
+      // Validate phone number format before inserting
+      const phoneValidation = validatePhoneNumber(trimmedPhone);
+      if (!phoneValidation.isValid) {
+        const msg = `Invalid phone number format: ${phoneValidation.error}`;
+        console.error(msg);
+        return { error: msg };
+      }
+      phoneValue = phoneValidation.sanitizedValue || trimmedPhone;
+    }
+    // If phone is empty string or whitespace, phoneValue remains null
+  }
+  // If phone is null/undefined, phoneValue remains null
+  
+  console.log('Upserting user profile with:', { id, username, email, phone: phoneValue, name, avatar_url });
+  
+  // Check network connectivity before database operation
+  if (!networkMonitor.isOnline()) {
+    await errorHandler.handleError(
+      new Error('No internet connection available'),
+      {
+        operation: 'upsert_user_profile',
+        component: 'AuthGate',
+      },
+      false // Don't show alert, handle silently
+    );
+    return { error: 'No internet connection' };
+  }
+  
+  // Try to upsert with id conflict resolution (since id is the primary key)
   try {
     const { error } = await supabase.from('users').upsert([
       {
         id,
         username,
         email,
+        phone: phoneValue,
         name,
         avatar_url,
         created_at: new Date().toISOString(),
       }
-    ], { onConflict: 'username' });
+    ], { onConflict: 'id' });
     
     if (error) {
-      console.error('Supabase upsert error:', error);
-      Alert.alert('Profile Error', error.message || 'Failed to save profile.');
+      await errorHandler.handleError(error, {
+        operation: 'upsert_user_profile',
+        component: 'AuthGate',
+      });
       return { error };
     }
   } catch (upsertError) {
     // If upsert fails, try insert instead
     console.log('Upsert failed, trying insert:', upsertError);
-    const { error } = await supabase.from('users').insert([
-      {
-        id,
-        username,
-        email,
-        name,
-        avatar_url,
-        created_at: new Date().toISOString(),
+    try {
+      const { error } = await supabase.from('users').insert([
+        {
+          id,
+          username,
+          email,
+          phone: phoneValue,
+          name,
+          avatar_url,
+          created_at: new Date().toISOString(),
+        }
+      ]);
+      
+      if (error) {
+        await errorHandler.handleError(error, {
+          operation: 'insert_user_profile',
+          component: 'AuthGate',
+        });
+        return { error };
       }
-    ]);
-    
-    if (error) {
-      console.error('Supabase insert error:', error);
-      Alert.alert('Profile Error', error.message || 'Failed to save profile.');
-      return { error };
+    } catch (insertError) {
+      await errorHandler.handleError(insertError, {
+        operation: 'insert_user_profile',
+        component: 'AuthGate',
+      });
+      return { error: insertError };
     }
   }
   return { success: true };
@@ -75,27 +131,36 @@ export default function AuthGate() {
   const [authenticated, setAuthenticated] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+  const errorHandler = ErrorHandler.getInstance();
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { user } = await getCurrentUser();
-      console.log('AuthGate: current user:', user);
-      setAuthenticated(!!user);
-      setLoading(false);
-      if (user) {
-        const username = user.user_metadata?.username;
-        const name = user.user_metadata?.full_name || user.user_metadata?.name;
-        if (!username || !name) {
-          // Prevent redirect loop
-          if (pathname !== '/ProfileSetup') {
-            router.replace('/ProfileSetup');
+      try {
+        const { user } = await getCurrentUser();
+        console.log('AuthGate: current user:', user);
+        setAuthenticated(!!user);
+        setLoading(false);
+        if (user) {
+          const username = user.user_metadata?.username;
+          const name = user.user_metadata?.full_name || user.user_metadata?.name;
+          if (!username || !name) {
+            // Prevent redirect loop
+            if (pathname !== '/ProfileSetup') {
+              router.replace('/ProfileSetup');
+            }
+            return;
           }
-          return;
+          const result = await upsertUserProfile(user);
+          if (result && result.error) {
+            console.log('User profile upsert failed:', result.error);
+          }
         }
-        const result = await upsertUserProfile(user);
-        if (result && result.error) {
-          console.log('User profile upsert failed:', result.error);
-        }
+      } catch (error) {
+        await errorHandler.handleError(error, {
+          operation: 'check_auth',
+          component: 'AuthGate',
+        });
+        setLoading(false);
       }
     };
     checkAuth();
@@ -105,16 +170,33 @@ export default function AuthGate() {
     // Quick Supabase backend connection check
     (async () => {
       try {
+        // Check network connectivity first
+        if (!networkMonitor.isOnline()) {
+          await errorHandler.handleError(
+            new Error('No internet connection available'),
+            {
+              operation: 'supabase_connection_check',
+              component: 'AuthGate',
+            },
+            false // Don't show alert for network issues during startup
+          );
+          return;
+        }
+
         const { data, error } = await supabase.from('users').select('*').limit(1);
         if (error) {
-          console.error('Supabase connection error:', error);
-          Alert.alert('Supabase Error', 'Failed to connect to Supabase backend. Please check your credentials and network.');
+          await errorHandler.handleError(error, {
+            operation: 'supabase_connection_check',
+            component: 'AuthGate',
+          });
         } else {
           console.log('Supabase connection successful:', data);
         }
-      } catch (err) {
-        console.error('Unexpected Supabase connection error:', err);
-        Alert.alert('Supabase Error', 'Unexpected error while connecting to Supabase.');
+      } catch (error) {
+        await errorHandler.handleError(error, {
+          operation: 'supabase_connection_check',
+          component: 'AuthGate',
+        });
       }
     })();
   }, []);
@@ -131,5 +213,11 @@ export default function AuthGate() {
     return <AuthScreen />;
   }
 
-  return <Slot />;
+  return (
+    <ErrorBoundary componentName="AuthGate">
+      <CacheManager>
+        <Slot />
+      </CacheManager>
+    </ErrorBoundary>
+  );
 }

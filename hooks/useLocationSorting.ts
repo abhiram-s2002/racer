@@ -155,7 +155,7 @@ export function useLocationSortedListings(
           ...listing,
           id: listing.id ?? '',
           isActive: listing.is_active,
-          sellerId: listing.seller_id,
+          sellerId: listing.username,
           createdAt: listing.created_at ? new Date(listing.created_at) : new Date(),
           location: defaultLocation,
           distance: undefined,

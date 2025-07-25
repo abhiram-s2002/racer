@@ -3,11 +3,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import { useLocation } from './useLocation';
 
-// Default page size for pagination
-const PAGE_SIZE = 20;
+// Optimized page size for better performance
+const PAGE_SIZE = 10; // Reduced from 20 for faster loading and better UX
+
+import { Listing, ListingsState } from '@/utils/types';
 
 export function useListings() {
-  const [listings, setListings] = useState<any[]>([]);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -33,16 +35,15 @@ export function useListings() {
     // Check cache first (cache for 30 seconds)
     const cached = cacheRef.current.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < 30000) {
-      console.log(`Using cached listings for page ${pageNumber}`);
       return cached.data;
     }
 
     try {
-      console.log(`Fetching listings page ${pageNumber}, location: ${userLat},${userLon}, distance sort: ${sortByDistance}, max distance: ${maxDistance === null ? '1000km (Any distance)' : maxDistance + 'km'}`);
       
-      // Use database function for geospatial queries if location is available and distance sorting is enabled
-      if (userLat && userLon && sortByDistance) {
-        console.log('Using geospatial query with RPC function...');
+      // Use database function for geospatial queries if location is available (always include distance when possible)
+      if (userLat && userLon) {
+
+        
         const { data, error } = await supabase
           .rpc('get_listings_with_distance', {
             user_lat: userLat,
@@ -74,18 +75,18 @@ export function useListings() {
         }
 
         const result = data || [];
+        
+        // Got listings for page
+        if (result.length > 0) {
+                      // Sample listing IDs processed
+        }
+
         // Cache the result
         cacheRef.current.set(cacheKey, { data: result, timestamp: Date.now() });
         return result;
       } else {
         // Use direct query if no location or distance sorting disabled
-        console.log('Using direct query (no location or distance sorting disabled)...');
-        console.log('Reason:', { 
-          hasLocation: !!(userLat && userLon), 
-          sortByDistance, 
-          userLat, 
-          userLon 
-        });
+
         const { data, error } = await supabase
           .from('listings')
           .select('*')
@@ -99,7 +100,7 @@ export function useListings() {
         }
 
         const result = data || [];
-        console.log(`Direct query returned ${result.length} listings`);
+
         // Cache the result
         cacheRef.current.set(cacheKey, { data: result, timestamp: Date.now() });
         return result;
@@ -112,12 +113,6 @@ export function useListings() {
 
   // Initial load of listings - only when location is stable
   useEffect(() => {
-    console.log('Location state:', { 
-      loading: location.loading, 
-      latitude: location.latitude, 
-      longitude: location.longitude,
-      error: location.error 
-    });
     
     // Skip if location is still loading
     if (location.loading) return;
@@ -129,13 +124,11 @@ export function useListings() {
     lastFetchRef.current = cacheKey;
 
     async function loadInitialListings() {
-      console.log('Loading initial listings...');
       const initialListings = await fetchListings(
         1, 
         location.latitude || undefined, 
         location.longitude || undefined
       );
-      console.log(`Initial listings loaded: ${initialListings.length} items`);
       setListings(initialListings);
       setHasMore(initialListings.length === PAGE_SIZE);
       setLoading(false);
@@ -167,10 +160,8 @@ export function useListings() {
   // Refresh listings (pull to refresh) - clear cache
   const refreshListings = useCallback(async () => {
     try {
-      console.log('Refreshing listings...');
       // Clear ALL cache to ensure fresh data
       cacheRef.current.clear();
-      console.log('Cache cleared completely');
       
       setPage(1);
       setLoading(true);
@@ -180,13 +171,6 @@ export function useListings() {
         location.latitude || undefined, 
         location.longitude || undefined
       );
-      
-      console.log(`Refresh completed. Got ${freshListings.length} listings`);
-      console.log('Sample listing images:', freshListings.slice(0, 2).map((l: any) => ({
-        title: l.title,
-        hasImages: !!(l.images && l.images.length > 0),
-        imageUrl: l.images?.[0]?.substring(0, 80) + '...'
-      })));
       
       setListings(freshListings);
       setHasMore(freshListings.length === PAGE_SIZE);
@@ -198,7 +182,7 @@ export function useListings() {
     } finally {
       setLoading(false);
     }
-  }, [fetchListings, location.latitude, location.longitude, getCacheKey, listings]);
+  }, [fetchListings, location.latitude, location.longitude, getCacheKey]);
 
   // Toggle distance-based sorting
   const toggleDistanceSort = useCallback(() => {

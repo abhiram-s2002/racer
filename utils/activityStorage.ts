@@ -12,7 +12,6 @@ export interface ListingActivity {
   price: string;
   price_unit?: string;
   image: string;
-  image_url?: string;
   isActive: boolean;
   createdAt: Date;
 }
@@ -31,10 +30,9 @@ export interface PingActivity {
   price: string;
   price_unit?: string;
   createdAt: Date;
-  image_url?: string;
 }
 
-export type Activity = ListingActivity | PingActivity & { image_url?: string };
+export type Activity = ListingActivity | PingActivity;
 
 export class ActivityStorage {
   private static STORAGE_KEY = 'activities';

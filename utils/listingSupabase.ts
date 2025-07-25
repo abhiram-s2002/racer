@@ -1,7 +1,7 @@
 /* eslint-env node */
 /* global console */
 import { supabase } from './supabaseClient';
-import { MarketplaceImageService } from './marketplaceImageService';
+import { ImageUrlHelper } from './imageUrlHelper';
 
 export interface Listing {
   id?: string;
@@ -15,7 +15,6 @@ export interface Listing {
   preview_images?: string[];
   is_active: boolean;
   username: string;
-  image_url?: string;
   created_at?: string;
   latitude?: number;
   longitude?: number;
@@ -23,22 +22,8 @@ export interface Listing {
   extension_count?: number;
 }
 
-export interface MarketplaceListing extends Listing {
-  image_metadata?: {
-    id: string;
-    originalUrl: string;
-    thumbnailUrl: string;
-    previewUrl: string;
-    filename: string;
-    size: number;
-    width: number;
-    height: number;
-    uploadedAt: string;
-  }[];
-}
-
 // Fetch all listings (excluding expired ones)
-export async function getListings(page = 1, pageSize = 20): Promise<Listing[]> {
+export async function getListings(page = 1, pageSize = 10): Promise<Listing[]> { // Reduced from 20
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   const { data, error } = await supabase
@@ -48,7 +33,6 @@ export async function getListings(page = 1, pageSize = 20): Promise<Listing[]> {
     .gt('expires_at', new Date().toISOString()) // Only non-expired listings
     .order('created_at', { ascending: false })
     .range(from, to);
-  console.log('getListings:', JSON.stringify(data, null, 2));
   if (error) throw error;
   return data as Listing[];
 }
@@ -60,38 +44,18 @@ export async function addListing(listing: Listing): Promise<Listing> {
     .insert([listing])
     .select()
     .single();
-  console.log('addListing:', { listing, data, error });
   if (error) throw error;
   return data as Listing;
 }
 
-// Add a new listing with marketplace image support
-export async function addListingWithImages(listing: MarketplaceListing): Promise<Listing> {
+// Add a new listing with image support (no metadata)
+export async function addListingWithImages(listing: Listing): Promise<Listing> {
   try {
-    // Extract image URLs from metadata if available
-    const processedListing = {
-      ...listing,
-      images: listing.image_metadata 
-        ? listing.image_metadata.map(img => img.originalUrl)
-        : listing.images || [],
-      thumbnail_images: listing.image_metadata 
-        ? listing.image_metadata.map(img => img.thumbnailUrl)
-        : listing.thumbnail_images || [],
-      preview_images: listing.image_metadata 
-        ? listing.image_metadata.map(img => img.previewUrl)
-        : listing.preview_images || [],
-    };
-
-    // Remove image_metadata from the object before inserting
-    const { image_metadata, ...listingWithoutMetadata } = processedListing;
-
     const { data, error } = await supabase
       .from('listings')
-      .insert([listingWithoutMetadata])
+      .insert([listing])
       .select()
       .single();
-
-    console.log('addListingWithImages:', { listing: listingWithoutMetadata, data, error });
     if (error) throw error;
     return data as Listing;
   } catch (error) {
@@ -108,39 +72,19 @@ export async function updateListing(id: string, updates: Partial<Listing>): Prom
     .eq('id', id)
     .select()
     .single();
-  console.log('updateListing:', { id, updates, data, error });
   if (error) throw error;
   return data as Listing;
 }
 
-// Update a listing with marketplace image support
-export async function updateListingWithImages(id: string, updates: Partial<MarketplaceListing>): Promise<Listing> {
+// Update a listing with image support (no metadata)
+export async function updateListingWithImages(id: string, updates: Partial<Listing>): Promise<Listing> {
   try {
-    // Extract image URLs from metadata if available
-    const processedUpdates = {
-      ...updates,
-      images: updates.image_metadata 
-        ? updates.image_metadata.map(img => img.originalUrl)
-        : updates.images || [],
-      thumbnail_images: updates.image_metadata 
-        ? updates.image_metadata.map(img => img.thumbnailUrl)
-        : updates.thumbnail_images || [],
-      preview_images: updates.image_metadata 
-        ? updates.image_metadata.map(img => img.previewUrl)
-        : updates.preview_images || [],
-    };
-
-    // Remove image_metadata from the object before updating
-    const { image_metadata, ...updatesWithoutMetadata } = processedUpdates;
-
     const { data, error } = await supabase
       .from('listings')
-      .update(updatesWithoutMetadata)
+      .update(updates)
       .eq('id', id)
       .select()
       .single();
-
-    console.log('updateListingWithImages:', { id, updates: updatesWithoutMetadata, data, error });
     if (error) throw error;
     return data as Listing;
   } catch (error) {
@@ -165,17 +109,25 @@ export async function deleteListing(id: string): Promise<void> {
       .delete()
       .eq('id', id);
 
-    console.log('deleteListing:', { id, error });
     if (error) throw error;
 
     // Clean up associated images from storage
     if (listing) {
-      try {
-        await MarketplaceImageService.deleteListingImages(id);
-        console.log('Cleaned up images for listing:', id);
-      } catch (imageError) {
-        console.warn('Failed to clean up images for listing:', id, imageError);
-        // Don't throw error here as listing deletion was successful
+      const allImages = [
+        ...(listing.images || []),
+        ...(listing.thumbnail_images || []),
+        ...(listing.preview_images || [])
+      ];
+      const paths = allImages
+        .map((url: string) => ImageUrlHelper.extractStoragePathFromUrl(url))
+        .filter((p): p is string => !!p);
+      if (paths.length > 0) {
+        const { error: storageError } = await supabase.storage.from('listings').remove(paths);
+        if (storageError) {
+          console.warn('Some images could not be deleted from storage:', storageError);
+        } else {
+          console.log('Deleted images from storage:', paths);
+        }
       }
     }
   } catch (error) {
@@ -216,7 +168,7 @@ export async function getListingsByUsername(username: string): Promise<Listing[]
 }
 
 // Get listings by category
-export async function getListingsByCategory(category: string, page = 1, pageSize = 20): Promise<Listing[]> {
+export async function getListingsByCategory(category: string, page = 1, pageSize = 10): Promise<Listing[]> { // Reduced from 20
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   
@@ -233,7 +185,7 @@ export async function getListingsByCategory(category: string, page = 1, pageSize
 }
 
 // Search listings (excluding expired ones)
-export async function searchListings(query: string, page = 1, pageSize = 20): Promise<Listing[]> {
+export async function searchListings(query: string, page = 1, pageSize = 10): Promise<Listing[]> { // Reduced from 20
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
   
@@ -350,7 +302,7 @@ export async function cleanupExpiredListings(): Promise<{
 }
 
 // Create listing with expiration using the database function
-export async function createListingWithExpiration(listing: MarketplaceListing & {
+export async function createListingWithExpiration(listing: Listing & {
   expirationDays?: number;
 }): Promise<Listing> {
   try {
@@ -359,23 +311,6 @@ export async function createListingWithExpiration(listing: MarketplaceListing & 
       ...listingData
     } = listing;
 
-    // Extract image URLs from metadata if available
-    const processedListing = {
-      ...listingData,
-      images: listing.image_metadata 
-        ? listing.image_metadata.map(img => img.originalUrl)
-        : listing.images || [],
-      thumbnail_images: listing.image_metadata 
-        ? listing.image_metadata.map(img => img.thumbnailUrl)
-        : listing.thumbnail_images || [],
-      preview_images: listing.image_metadata 
-        ? listing.image_metadata.map(img => img.previewUrl)
-        : listing.preview_images || [],
-    };
-
-    // Remove image_metadata from the object before inserting
-    const { image_metadata, ...listingWithoutMetadata } = processedListing;
-
     const { data, error } = await supabase
       .rpc('create_listing_with_expiration', {
         username_param: listing.username,
@@ -383,7 +318,9 @@ export async function createListingWithExpiration(listing: MarketplaceListing & 
         description_param: listing.description || '',
         price_param: parseFloat(listing.price),
         category_param: listing.category,
-        images_param: listingWithoutMetadata.images,
+        images_param: listing.images,
+        thumbnail_images_param: listing.thumbnail_images || [],
+        preview_images_param: listing.preview_images || [],
         latitude_param: listing.latitude || null,
         longitude_param: listing.longitude || null,
         expiration_days: expirationDays

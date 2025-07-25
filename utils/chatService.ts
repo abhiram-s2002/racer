@@ -3,21 +3,18 @@ import { supabase, enhancedSupabase } from './supabaseClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ErrorContext } from './errorHandler';
 
-// Types for unified chat system
-export interface Chat {
-  id: string;
-  listing_id: string;
-  participant_a: string;
-  participant_b: string;
-  created_at: string;
-  updated_at: string;
+import { Chat, Message } from '@/utils/types';
+
+// Re-export the types for use in other modules
+export { Chat, Message };
+
+// Extended Chat interface for UI-specific fields
+export interface ExtendedChat extends Chat {
   // Additional fields for UI
   listing_title?: string;
   listing_price?: number;
   listing_image?: string;
-  last_message?: string;
   last_message_time?: string;
-  status?: 'active' | 'completed' | 'closed';
   is_seller?: boolean;
   // New fields from database function
   other_participant?: string;
@@ -25,13 +22,8 @@ export interface Chat {
   other_participant_avatar?: string;
 }
 
-export interface Message {
-  id: string;
-  chat_id: string;
-  sender_username: string;
-  text: string;
-  status?: 'sent' | 'delivered' | 'read';
-  created_at: string;
+// Extended Message interface for UI-specific fields
+export interface ExtendedMessage extends Message {
   // New fields from database function
   sender_name?: string;
   sender_avatar?: string;
@@ -45,7 +37,7 @@ const STORAGE_KEYS = {
 
 export const ChatService = {
   // Get chats for current user
-  async getChats(username: string): Promise<Chat[]> {
+  async getChats(username: string): Promise<ExtendedChat[]> {
     if (!username) return [];
     
     const context: ErrorContext = {
@@ -78,7 +70,7 @@ export const ChatService = {
   },
   
   // Enhance chat data with listing information
-  async enhanceChatsWithListingData(chats: Chat[]): Promise<Chat[]> {
+  async enhanceChatsWithListingData(chats: Chat[]): Promise<ExtendedChat[]> {
     try {
       const listingIds = chats.map(chat => chat.listing_id).filter(Boolean);
       if (listingIds.length === 0) return chats;
@@ -108,7 +100,7 @@ export const ChatService = {
   },
   
   // Get messages for a chat
-  async getMessages(chatId: string): Promise<Message[]> {
+  async getMessages(chatId: string): Promise<ExtendedMessage[]> {
     if (!chatId) return [];
     
     try {
@@ -129,7 +121,7 @@ export const ChatService = {
   },
   
   // Fetch messages from server and update cache
-  async fetchAndCacheMessages(chatId: string): Promise<Message[]> {
+  async fetchAndCacheMessages(chatId: string): Promise<ExtendedMessage[]> {
     const { data, error } = await supabase
       .from('messages')
       .select('*')
@@ -147,7 +139,7 @@ export const ChatService = {
   },
   
   // Get cached messages
-  async getLocalMessages(chatId: string): Promise<Message[]> {
+  async getLocalMessages(chatId: string): Promise<ExtendedMessage[]> {
     try {
       const stored = await AsyncStorage.getItem(`${STORAGE_KEYS.RECENT_MESSAGES}_${chatId}`);
       return stored ? JSON.parse(stored) : [];
@@ -158,7 +150,7 @@ export const ChatService = {
   },
   
   // Save messages to local cache
-  async saveLocalMessages(chatId: string, messages: Message[]): Promise<void> {
+  async saveLocalMessages(chatId: string, messages: ExtendedMessage[]): Promise<void> {
     try {
       // Keep only last 50 messages locally
       const recentMessages = messages.slice(-50);
@@ -172,7 +164,7 @@ export const ChatService = {
   },
   
   // Get cached chats
-  async getLocalChats(username: string): Promise<Chat[]> {
+  async getLocalChats(username: string): Promise<ExtendedChat[]> {
     try {
       const stored = await AsyncStorage.getItem(`${STORAGE_KEYS.RECENT_CHATS}_${username}`);
       return stored ? JSON.parse(stored) : [];
@@ -183,7 +175,7 @@ export const ChatService = {
   },
   
   // Save chats to local cache
-  async saveLocalChats(username: string, chats: Chat[]): Promise<void> {
+  async saveLocalChats(username: string, chats: ExtendedChat[]): Promise<void> {
     try {
       await AsyncStorage.setItem(
         `${STORAGE_KEYS.RECENT_CHATS}_${username}`, 
@@ -195,7 +187,7 @@ export const ChatService = {
   },
   
   // Send a message
-  async sendMessage(chatId: string, senderUsername: string, text: string): Promise<Message> {
+  async sendMessage(chatId: string, senderUsername: string, text: string): Promise<ExtendedMessage> {
     if (!chatId || !senderUsername || !text.trim()) {
       throw new Error('Invalid message parameters');
     }
@@ -329,7 +321,7 @@ export const ChatService = {
   },
   
   // Send system message
-  async sendSystemMessage(chatId: string, text: string): Promise<Message> {
+  async sendSystemMessage(chatId: string, text: string): Promise<ExtendedMessage> {
     if (!chatId || !text.trim()) {
       throw new Error('Invalid system message parameters');
     }

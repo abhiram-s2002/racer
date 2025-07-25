@@ -1,9 +1,11 @@
 /* global console */
 import { useState, useEffect, useCallback } from 'react';
-import { ChatService, Message } from '@/utils/chatService';
+import { ChatService } from '@/utils/chatService';
+import { MessagesState } from '@/utils/types';
+import { ExtendedMessage } from '@/utils/chatService';
 
 export function useMessages(chatId: string | null, username: string) {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ExtendedMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

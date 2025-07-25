@@ -398,36 +398,68 @@ $$ LANGUAGE plpgsql;
 -- Function to complete referral when user completes first transaction
 CREATE OR REPLACE FUNCTION complete_referral_on_first_listing()
 RETURNS trigger AS $$
+DECLARE
+    referrer_username_var text;
+    referral_id_var uuid;
+    current_referral_count integer;
 BEGIN
     -- Check if this is the user's first listing
     IF (SELECT COUNT(*) FROM listings WHERE username = NEW.username) = 1 THEN
-        -- Update referral status to completed
-        UPDATE referrals SET
-            status = 'completed',
-            completed_at = timezone('utc', now())
+        -- Get referral details
+        SELECT referrer_username, id INTO referrer_username_var, referral_id_var
+        FROM referrals 
         WHERE referred_username = NEW.username AND status = 'pending';
         
-        -- Award OMNI to both referrer and referred user
-        INSERT INTO reward_transactions (username, transaction_type, amount, description, reference_id, reference_type)
-        SELECT 
-            referrer_username,
-            'referral',
-            100,
-            'Referral bonus for ' || NEW.username,
-            id,
-            'referral'
-        FROM referrals 
-        WHERE referred_username = NEW.username AND status = 'completed';
-        
-        INSERT INTO reward_transactions (username, transaction_type, amount, description, reference_id, reference_type)
-        VALUES (
-            NEW.username,
-            'referral',
-            100,
-            'Welcome bonus for being referred',
-            (SELECT id FROM referrals WHERE referred_username = NEW.username AND status = 'completed'),
-            'referral'
-        );
+        -- Only proceed if there's a pending referral
+        IF referrer_username_var IS NOT NULL THEN
+            -- Update referral status to completed
+            UPDATE referrals SET
+                status = 'completed',
+                completed_at = timezone('utc', now())
+            WHERE referred_username = NEW.username AND status = 'pending';
+            
+            -- Award OMNI to both referrer and referred user
+            INSERT INTO reward_transactions (username, transaction_type, amount, description, reference_id, reference_type)
+            VALUES (
+                referrer_username_var,
+                'referral',
+                100,
+                'Referral bonus for ' || NEW.username,
+                referral_id_var,
+                'referral'
+            );
+            
+            INSERT INTO reward_transactions (username, transaction_type, amount, description, reference_id, reference_type)
+            VALUES (
+                NEW.username,
+                'referral',
+                100,
+                'Welcome bonus for being referred',
+                referral_id_var,
+                'referral'
+            );
+            
+            -- Update Referral King achievement progress for the referrer
+            -- Count total completed referrals for this user
+            SELECT COUNT(*) INTO current_referral_count
+            FROM referrals 
+            WHERE referrer_username = referrer_username_var AND status = 'completed';
+            
+            -- Update or create user achievement record
+            INSERT INTO user_achievements (username, achievement_id, progress, max_progress, completed)
+            VALUES (
+                referrer_username_var,
+                'referral_king',
+                current_referral_count,
+                5,
+                current_referral_count >= 5
+            )
+            ON CONFLICT (username, achievement_id) 
+            DO UPDATE SET
+                progress = current_referral_count,
+                completed = current_referral_count >= 5,
+                updated_at = timezone('utc', now());
+        END IF;
     END IF;
     
     RETURN NEW;

@@ -11,34 +11,7 @@ import {
 } from 'react-native';
 import { MessageCircle, CheckCircle, XCircle } from 'lucide-react-native';
 
-// Helper function to format price with unit
-const formatPriceWithUnit = (price: string, priceUnit?: string) => {
-  if (!priceUnit || priceUnit === 'per_item') {
-    return `₹${price}`;
-  }
-  
-  const unitLabels = {
-    per_kg: 'per kg',
-    per_piece: 'per piece',
-    per_pack: 'per pack',
-    per_bundle: 'per bundle',
-    per_dozen: 'per dozen',
-    per_basket: 'per basket',
-    per_plate: 'per plate',
-    per_serving: 'per serving',
-    per_hour: 'per hour',
-    per_service: 'per service',
-    per_session: 'per session',
-    per_day: 'per day',
-    per_commission: 'per commission',
-    per_project: 'per project',
-    per_week: 'per week',
-    per_month: 'per month',
-  };
-  
-  const unitLabel = unitLabels[priceUnit as keyof typeof unitLabels] || priceUnit;
-  return `₹${price} ${unitLabel}`;
-};
+import { formatPriceWithUnit } from '@/utils/formatters';
 import { updatePingStatusNew } from '@/utils/activitySupabase';
 import { useRouter } from 'expo-router';
 import { ChatService } from '@/utils/chatService';
@@ -143,6 +116,23 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
       if (response === 'accepted') {
         const newChatId = await ChatService.createChatFromPing(item.id);
         setChatId(newChatId);
+        
+        // Send acceptance message to the chat
+        try {
+          const { error: messageError } = await supabase.rpc('send_chat_message', {
+            chat_id_param: newChatId,
+            sender_username_param: username,
+            message_text: 'Ping accepted! You can now chat about this listing.'
+          });
+          
+          if (messageError) {
+            console.error('Error sending acceptance message:', messageError);
+          } else {
+            console.log('Acceptance message sent successfully');
+          }
+        } catch (messageError) {
+          console.error('Error sending acceptance message:', messageError);
+        }
         
         // Show success message
         RNAlert.alert(

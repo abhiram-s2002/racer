@@ -10,6 +10,8 @@ import {
   Dimensions,
   Alert,
   Linking,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, MapPin, Phone, MessageCircle } from 'lucide-react-native';
@@ -18,35 +20,9 @@ import { getListings, Listing as SupabaseListing } from '@/utils/listingSupabase
 import { useIsFocused } from '@react-navigation/native';
 import { supabase } from '@/utils/supabaseClient';
 import { LocationUtils } from '@/utils/locationUtils';
+import MapView, { Marker } from 'react-native-maps';
 
-// Helper function to format price with unit
-const formatPriceWithUnit = (price: string, priceUnit?: string) => {
-  if (!priceUnit || priceUnit === 'per_item') {
-    return `₹${price}`;
-  }
-  
-  const unitLabels = {
-    per_kg: 'per kg',
-    per_piece: 'per piece',
-    per_pack: 'per pack',
-    per_bundle: 'per bundle',
-    per_dozen: 'per dozen',
-    per_basket: 'per basket',
-    per_plate: 'per plate',
-    per_serving: 'per serving',
-    per_hour: 'per hour',
-    per_service: 'per service',
-    per_session: 'per session',
-    per_day: 'per day',
-    per_commission: 'per commission',
-    per_project: 'per project',
-    per_week: 'per week',
-    per_month: 'per month',
-  };
-  
-  const unitLabel = unitLabels[priceUnit as keyof typeof unitLabels] || priceUnit;
-  return { price: `₹${price}`, unit: unitLabel };
-};
+import { formatPriceWithUnit } from '@/utils/formatters';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 36) / 2;
@@ -59,6 +35,7 @@ export default function SellerProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [showActiveOnly, setShowActiveOnly] = useState(false);
   const [sellerInfo, setSellerInfo] = useState<any>(null);
+  const [showMap, setShowMap] = useState(false);
   const isFocused = useIsFocused();
 
   // Load seller listings when screen is focused
@@ -85,12 +62,20 @@ export default function SellerProfileScreen() {
 
   const loadSellerInfo = async () => {
     if (sellerId) {
-      // Fetch seller info from Supabase users table by username
-      const { data: user } = await supabase
+      // Fetching seller info
+      const { data: user, error } = await supabase
         .from('users')
-        .select('username, name, avatar_url, phone, location_display, bio')
+        .select('username, name, avatar_url, phone, location_display, bio') // REMOVED latitude, longitude
         .eq('username', sellerId)
-        .single();
+        .maybeSingle();
+      if (error) {
+        console.error('Supabase error loading seller info:', error);
+      }
+      if (!user) {
+        console.warn('No user found for sellerId:', sellerId);
+      } else {
+        // Loaded seller info
+      }
       setSellerInfo(user);
     }
   };
@@ -126,11 +111,26 @@ export default function SellerProfileScreen() {
   const activeListings = sellerListings.filter(listing => listing.is_active);
   const inactiveListings = sellerListings.filter(listing => !listing.is_active);
 
+  // Always use the latest listing's coordinates for the map and directions
+  const getLatestListingCoordinates = () => {
+    if (sellerListings.length === 0) return { latitude: null, longitude: null };
+    // Sort listings by created_at descending (assuming created_at exists)
+    const sortedListings = [...sellerListings].sort((a, b) => {
+      const dateA = new Date(a.created_at || '');
+      const dateB = new Date(b.created_at || '');
+      return dateB.getTime() - dateA.getTime();
+    });
+    const latest = sortedListings[0];
+    return { latitude: latest.latitude, longitude: latest.longitude };
+  };
+
+  const { latitude: sellerLat, longitude: sellerLng } = getLatestListingCoordinates();
+
   const renderListingItem = ({ item }: { item: SupabaseListing }) => {
     return (
       <View style={styles.listingCard}>
         <Image 
-          source={{ uri: (item.images && item.images[0]) || item.image_url || 'https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=400' }} 
+          source={{ uri: (item.images && item.images[0]) || 'https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=400' }} 
           style={styles.listingImage} 
           resizeMode="cover" 
         />
@@ -147,18 +147,9 @@ export default function SellerProfileScreen() {
         <View style={styles.listingContent}>
           <Text style={styles.listingTitle}>{item.title}</Text>
           <View style={styles.priceContainer}>
-            {(() => {
-              const priceData = formatPriceWithUnit(item.price, item.price_unit);
-              if (typeof priceData === 'string') {
-                return <Text style={styles.listingPrice}>{priceData}</Text>;
-              }
-              return (
-                <>
-                  <Text style={styles.listingPrice}>{priceData.price}</Text>
-                  <Text style={styles.priceUnit}>{priceData.unit}</Text>
-                </>
-              );
-            })()}
+            <Text style={styles.listingPrice}>
+              {formatPriceWithUnit(item.price, item.price_unit)}
+            </Text>
           </View>
           <Text style={styles.listingCategory}>{item.category}</Text>
 
@@ -203,18 +194,27 @@ export default function SellerProfileScreen() {
       </View>
 
       {/* Seller Info */}
+      {!sellerInfo ? (
+        <View style={{ padding: 32, alignItems: 'center', justifyContent: 'center' }}>
+          <ActivityIndicator size="large" color="#22C55E" style={{ marginBottom: 16 }} />
+          <Text style={{ color: '#64748B', fontSize: 16 }}>Loading seller info...</Text>
+          <Text style={{ color: 'red', textAlign: 'center', marginTop: 16 }}>
+            Seller not found or missing in database. Check sellerId and user data.
+          </Text>
+        </View>
+      ) : (
       <View style={styles.sellerInfoSection}>
         <View style={styles.sellerHeader}>
           <Image 
-            source={{ uri: sellerInfo?.avatar_url || (sellerAvatar as string) }} 
+              source={{ uri: sellerInfo.avatar_url || (sellerAvatar as string) }} 
             style={styles.sellerAvatar} 
           />
           <View style={styles.sellerDetails}>
-            <Text style={styles.sellerName}>{sellerInfo?.name || sellerName}</Text>
+              <Text style={styles.sellerName}>{sellerInfo.name || sellerName}</Text>
             <View style={styles.locationRow}>
               <MapPin size={16} color="#64748B" />
               <Text style={styles.distance}>
-                {sellerInfo?.location_display ? 
+                  {sellerInfo.location_display ? 
                   LocationUtils.formatLocationDisplay(sellerInfo.location_display) : 
                   'No location set'
                 }
@@ -233,7 +233,65 @@ export default function SellerProfileScreen() {
             <MessageCircle size={20} color="#22C55E" />
             <Text style={styles.contactButtonText}>Message</Text>
           </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.contactButton}
+              onPress={() => setShowMap((prev) => !prev)}
+              disabled={!(sellerLat && sellerLng)}
+            >
+              <MapPin size={20} color="#22C55E" />
+              <Text style={styles.contactButtonText}>Location</Text>
+            </TouchableOpacity>
         </View>
+
+          {/* Embedded Map and Directions Button (shown when showMap is true) */}
+          {showMap && sellerLat && sellerLng && (
+            <View style={{ marginBottom: 16 }}>
+              <MapView
+                style={{ width: '100%', height: 180, borderRadius: 12 }}
+                initialRegion={{
+                  latitude: sellerLat,
+                  longitude: sellerLng,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                }}
+                pointerEvents="none"
+              >
+                <Marker
+                  coordinate={{
+                    latitude: sellerLat,
+                    longitude: sellerLng,
+                  }}
+                  title={sellerInfo.name || sellerName}
+                  description={sellerInfo.location_display}
+                />
+              </MapView>
+              <TouchableOpacity
+                style={{
+                  marginTop: 10,
+                  backgroundColor: '#22C55E',
+                  borderRadius: 8,
+                  paddingVertical: 12,
+                  alignItems: 'center',
+                  flexDirection: 'row',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+                onPress={() => {
+                  const lat = sellerLat;
+                  const lng = sellerLng;
+                  const label = encodeURIComponent(sellerInfo.name || sellerName || 'Seller Location');
+                  const url =
+                    Platform.OS === 'ios'
+                      ? `http://maps.apple.com/?daddr=${lat},${lng}&q=${label}`
+                      : `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&travelmode=driving`;
+                  Linking.openURL(url);
+                }}
+              >
+                <MapPin size={18} color="#fff" />
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>Get Directions</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
         {/* Stats */}
         <View style={styles.statsRow}>
@@ -251,6 +309,7 @@ export default function SellerProfileScreen() {
           </View>
         </View>
       </View>
+      )}
 
       {/* Filter Toggle */}
       <View style={styles.filterSection}>

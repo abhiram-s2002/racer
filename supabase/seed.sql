@@ -29,7 +29,7 @@ INSERT INTO achievements (id, title, description, icon, category, max_progress, 
 ('early_adopter', 'Early Adopter', 'Join the platform in the first month', 'Star', 'milestone', 1, 200, 'legendary', true),
 
 -- Sales achievements (Easy - First Steps)
-('first_sale', 'First Sale', 'Complete your first sale on the marketplace', 'ShoppingBag', 'sales', 1, 100, 'common', true),
+('first_list', 'First List', 'Create your first listing on the marketplace', 'ShoppingBag', 'sales', 1, 100, 'common', true),
 
 -- Social achievements (Easy - Basic Engagement)
 ('social_butterfly', 'Social Butterfly', 'Send 20 messages', 'MessageCircle', 'social', 20, 200, 'common', true),
@@ -49,7 +49,7 @@ INSERT INTO achievements (id, title, description, icon, category, max_progress, 
 ('streak_master', 'Streak Master', 'Maintain a 7-day check-in streak', 'Flame', 'special', 7, 200, 'rare', true),
 
 -- Sales achievements (Medium - Growing Business)
-('sales_master', 'Sales Master', 'Complete 10 sales', 'ShoppingBag', 'sales', 10, 500, 'rare', true),
+('listing_master', 'Listing Master', 'Create 10 listings', 'ShoppingBag', 'sales', 10, 500, 'rare', true),
 
 -- ============================================================================
 -- HARD ACHIEVEMENTS (Epic/Legendary, High Progress Required)

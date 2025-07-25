@@ -178,7 +178,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     width: '90%',
     maxWidth: 400,
-    maxHeight: '80%',
+    maxHeight: '75%',
+    height: '65%',
     elevation: 8,
   },
   header: {
@@ -229,6 +230,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingVertical: 12,
+    minHeight: 300,
   },
   templateCard: {
     backgroundColor: '#F8FAFC',

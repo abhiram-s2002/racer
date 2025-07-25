@@ -11,6 +11,12 @@ export interface Activity {
   title?: string;
   price?: string;
   image?: string;
+  // New image properties for organized structure
+  images?: string[];
+  thumbnail_images?: string[];
+  preview_images?: string[];
+  image_folder_path?: string;
+  image_metadata?: any;
   is_active?: boolean;
   username: string;
   user_name?: string;
@@ -18,6 +24,13 @@ export interface Activity {
   status?: PingStatus;
   message?: string;
   created_at: string;
+  // Sender and receiver information for pings
+  sender_username?: string;
+  sender_name?: string;
+  sender_avatar?: string;
+  receiver_username?: string;
+  receiver_name?: string;
+  receiver_avatar?: string;
 }
 
 // New interface for the dedicated pings table
@@ -31,11 +44,27 @@ export interface Ping {
   created_at: string;
   responded_at?: string;
   response_message?: string;
-  listing?: {
+  listings?: {
     title: string;
     price: number;
     images: string[];
+    thumbnail_images?: string[];
+    preview_images?: string[];
+    image_folder_path?: string;
+    image_metadata?: any;
     username: string;
+    latitude?: number;
+    longitude?: number;
+  };
+  sender?: {
+    username: string;
+    name: string;
+    avatar_url?: string;
+  };
+  receiver?: {
+    username: string;
+    name: string;
+    avatar_url?: string;
   };
 }
 
@@ -99,8 +128,6 @@ export async function deleteActivity(id: string): Promise<void> {
 
 // Create a new ping using the time-based system
 export async function createPing(ping: Omit<Ping, 'id' | 'created_at'>): Promise<Ping> {
-  console.log('Creating ping with time-based validation:', ping);
-
   // Use the new time-based ping creation function
   const { data, error } = await supabase
     .rpc('create_ping_with_limits', {
@@ -137,8 +164,6 @@ export async function createPing(ping: Omit<Ping, 'id' | 'created_at'>): Promise
     }
   }
 
-  console.log('Ping created successfully:', result);
-
   // Return the created ping data
   return {
     id: result.ping_id,
@@ -156,14 +181,39 @@ export async function getSentPings(username: string): Promise<Ping[]> {
   const { data, error } = await supabase
     .from('pings')
     .select(`
-      *,
-      listings!inner(title, price, images, username)
+      id,
+      listing_id,
+      sender_username,
+      receiver_username,
+      message,
+      status,
+      created_at,
+      responded_at,
+      response_message,
+      listings (
+        title, 
+        price, 
+        images, 
+        thumbnail_images, 
+        preview_images, 
+        image_folder_path, 
+        image_metadata, 
+        username,
+        latitude,
+        longitude
+      ),
+      sender:sender_username(username, name, avatar_url),
+      receiver:receiver_username(username, name, avatar_url)
     `)
     .eq('sender_username', username)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data as Ping[];
+  if (error) {
+    console.error('Error fetching sent pings:', error);
+    throw error;
+  }
+  
+  return data as unknown as Ping[];
 }
 
 // Get pings received by a user
@@ -171,14 +221,39 @@ export async function getReceivedPings(username: string): Promise<Ping[]> {
   const { data, error } = await supabase
     .from('pings')
     .select(`
-      *,
-      listings!inner(title, price, images, username)
+      id,
+      listing_id,
+      sender_username,
+      receiver_username,
+      message,
+      status,
+      created_at,
+      responded_at,
+      response_message,
+      listings (
+        title, 
+        price, 
+        images, 
+        thumbnail_images, 
+        preview_images, 
+        image_folder_path, 
+        image_metadata, 
+        username,
+        latitude,
+        longitude
+      ),
+      sender:sender_username(username, name, avatar_url),
+      receiver:receiver_username(username, name, avatar_url)
     `)
     .eq('receiver_username', username)
     .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data as Ping[];
+  if (error) {
+    console.error('Error fetching received pings:', error);
+    throw error;
+  }
+  
+  return data as unknown as Ping[];
 }
 
 // Update ping status in the new pings table

@@ -23,6 +23,8 @@ import { supabase } from '@/utils/supabaseClient';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import { Button } from 'react-native';
+import { validatePhoneNumber, formatPhoneNumberForDisplay } from '@/utils/validation';
+
 
 
 // Add a helper to generate a random seed
@@ -80,6 +82,7 @@ export default function ProfileScreen() {
   const mapRef = useRef<MapView>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [savingNotifications, setSavingNotifications] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
 
   // Handle back button
   useEffect(() => {
@@ -95,9 +98,13 @@ export default function ProfileScreen() {
     return () => backHandler.remove();
   }, []);
 
+  // Fetch user profile when component mounts
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
   // Fetch user profile from Supabase
   async function fetchUserProfile() {
-    console.log('Fetching latest profile data from Supabase...');
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       // Fetch profile from 'users' table
@@ -141,14 +148,30 @@ export default function ProfileScreen() {
 
   // When setting location (GPS or map), reverse geocode and store display name
   const setLocationFromCoords = async (coords: { latitude: number, longitude: number }) => {
-    let [place] = await Location.reverseGeocodeAsync(coords);
-    let address = place
-      ? [place.name, place.street, place.city, place.region, place.country].filter(Boolean).join(', ')
-      : `${coords.latitude}, ${coords.longitude}`;
-    setEditProfile(prev => ({
+    try {
+      // Getting location for coordinates
+      let [place] = await Location.reverseGeocodeAsync(coords);
+              // Reverse geocoded place
+      
+      let address = place
+        ? [place.name, place.street, place.city, place.region, place.country].filter(Boolean).join(', ')
+        : `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`;
+      
+              // Generated address
+      
+      setEditProfile(prev => ({
         ...prev,
-      locationDisplay: address,
-    }));
+        locationDisplay: address,
+      }));
+    } catch (error) {
+      console.error('Error in setLocationFromCoords:', error);
+      // Fallback to coordinates if reverse geocoding fails
+      const fallbackAddress = `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`;
+      setEditProfile(prev => ({
+        ...prev,
+        locationDisplay: fallbackAddress,
+      }));
+    }
   };
 
   // Remove automatic GPS location detection - now manual only
@@ -173,14 +196,10 @@ export default function ProfileScreen() {
           .eq('id', user.id);
 
         if (error) {
-          console.error('Error saving availability:', error);
           Alert.alert('Error', 'Failed to save availability status');
-        } else {
-          console.log('Availability saved successfully');
         }
       }
     } catch (error) {
-      console.error('Error saving availability:', error);
       Alert.alert('Error', 'Failed to save availability status');
     }
   };
@@ -202,14 +221,10 @@ export default function ProfileScreen() {
           .eq('id', user.id);
 
         if (error) {
-          console.error('Error saving notification settings:', error);
           Alert.alert('Error', 'Failed to save notification settings');
-        } else {
-          console.log('Notification settings saved successfully');
         }
       }
     } catch (error) {
-      console.error('Error saving notification settings:', error);
       Alert.alert('Error', 'Failed to save notification settings');
     } finally {
       setSavingNotifications(false);
@@ -217,35 +232,50 @@ export default function ProfileScreen() {
   };
 
   const handleEditProfile = () => {
-    setEditProfile(profileData);
+    // When opening edit mode, show the raw phone number (not formatted) for editing
+    setEditProfile({
+      ...profileData,
+      phone: profileData.phone || '' // Keep raw digits for editing
+    });
     setEditModalVisible(true);
   };
 
   const handleSaveProfile = async () => {
-    console.log('Save button pressed. Attempting to save profile...');
     // Update profile in Supabase
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-              const upsertData = {
-          id: user.id,
-          username: profileData.username, // Always send the existing username
-          name: editProfile.name,
-          email: user.email,
-          phone: editProfile.phone,
-          location_display: editProfile.locationDisplay, // Use location_display for now
-          bio: editProfile.bio,
-          avatar_url: `https://api.dicebear.com/7.x/pixel-art/png?seed=${avatarSeed}`,
-          isAvailable: editProfile.isAvailable,
-          stats: editProfile.stats,
-        };
+      // Validate phone number before saving
+      let phoneValue = null;
+      if (editProfile.phone && editProfile.phone.trim() !== '') {
+        const phoneValidation = validatePhoneNumber(editProfile.phone.trim());
+        if (!phoneValidation.isValid) {
+          Alert.alert('Invalid Phone Number', phoneValidation.error || 'Please enter a valid phone number');
+          return;
+        }
+        phoneValue = phoneValidation.sanitizedValue || editProfile.phone.trim();
+      }
+
+      const upsertData = {
+        id: user.id,
+        username: profileData.username, // Always send the existing username
+        name: editProfile.name,
+        email: user.email,
+        phone: phoneValue, // Use validated phone number
+        location_display: editProfile.locationDisplay, // Use location_display for now
+        bio: editProfile.bio,
+        avatar_url: `https://api.dicebear.com/7.x/pixel-art/png?seed=${avatarSeed}`,
+        isAvailable: editProfile.isAvailable,
+        stats: editProfile.stats,
+      };
       if (!upsertData.username) {
         Alert.alert('Profile Error', 'Username is missing. Please contact support.');
         return;
       }
-      console.log('Upserting profile with data:', upsertData);
       const { error } = await supabase.from('users').upsert([upsertData]);
       if (error) {
         console.error('Supabase upsert profile error:', error);
+        Alert.alert('Error', 'Failed to save profile. Please try again.');
+        return;
       }
       // Re-fetch updated profile
       await fetchUserProfile();
@@ -292,7 +322,11 @@ export default function ProfileScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Edit Profile</Text>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 20 }}
+              keyboardShouldPersistTaps="handled"
+            >
               <Text style={styles.inputLabel}>Name</Text>
               <TextInput
                 style={styles.input}
@@ -348,6 +382,8 @@ export default function ProfileScreen() {
                 value={editProfile.phone}
                 onChangeText={text => setEditProfile(prev => ({ ...prev, phone: text }))}
                 keyboardType="phone-pad"
+                placeholder="+91 7306519350"
+                placeholderTextColor="#94A3B8"
               />
               <Text style={styles.inputLabel}>Location</Text>
               <TextInput
@@ -365,22 +401,66 @@ export default function ProfileScreen() {
                   <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>Select on Map</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
-                  style={{ flex: 1, backgroundColor: '#64748B', borderRadius: 8, padding: 12 }} 
+                  style={{ 
+                    flex: 1, 
+                    backgroundColor: gpsLoading ? '#94A3B8' : '#64748B', 
+                    borderRadius: 8, 
+                    padding: 12 
+                  }} 
+                  disabled={gpsLoading}
                   onPress={async () => {
+                    setGpsLoading(true);
                     try {
+                      // Requesting location permission
                       let { status } = await Location.requestForegroundPermissionsAsync();
+                                              // Location permission status received
+                      
                       if (status !== 'granted') {
-                        Alert.alert('Permission denied', 'Location permission is required to auto-fill your location.');
+                        Alert.alert(
+                          'Permission Denied', 
+                          'Location permission is required to auto-fill your location. Please enable location access in your device settings.',
+                          [
+                            { text: 'Cancel', style: 'cancel' },
+                            { text: 'Open Settings', onPress: () => {
+                              // In a real app, you'd open device settings
+                              // User wants to open settings
+                            }}
+                          ]
+                        );
                         return;
                       }
-                      let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
+                      
+                                              // Getting current position
+                      let location = await Location.getCurrentPositionAsync({ 
+                        accuracy: Location.Accuracy.Balanced,
+                        timeInterval: 10000,
+                        distanceInterval: 10,
+                      });
+                                              // Got location coordinates
+                      
                       await setLocationFromCoords(location.coords);
-                    } catch {
-                      Alert.alert('Error', 'Failed to get your current location.');
+                                              // Location set successfully
+                    } catch (error) {
+                      console.error('GPS error:', error);
+                      Alert.alert(
+                        'Location Error', 
+                        'Failed to get your current location. Please check your GPS settings or try again.',
+                        [
+                          { text: 'OK', style: 'default' },
+                          { text: 'Try Again', onPress: () => {
+                            // Retry the GPS functionality
+                            // User wants to retry GPS
+                          }}
+                        ]
+                      );
+                    } finally {
+                      setGpsLoading(false);
                     }
                   }}
                 >
-                  <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>Use GPS</Text>
+                  <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>
+                    {gpsLoading ? 'Getting Location...' : 'Use GPS'}
+                  </Text>
                 </TouchableOpacity>
               </View>
               <Text style={styles.inputLabel}>Bio</Text>
@@ -448,14 +528,32 @@ export default function ProfileScreen() {
               justifyContent: 'center',
             }}
             onPress={async () => {
-              let location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
-              setSelectedCoords(location.coords);
-              mapRef.current?.animateToRegion({
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
-                latitudeDelta: 0.01,
-                longitudeDelta: 0.01,
-              });
+              try {
+                // Getting current location for map
+                let { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== 'granted') {
+                  Alert.alert('Permission Denied', 'Location permission is required to show your current location on the map.');
+                  return;
+                }
+                
+                let location = await Location.getCurrentPositionAsync({ 
+                  accuracy: Location.Accuracy.Balanced,
+                  timeInterval: 10000,
+                  distanceInterval: 10,
+                });
+                                  // Got location for map
+                
+                setSelectedCoords(location.coords);
+                mapRef.current?.animateToRegion({
+                  latitude: location.coords.latitude,
+                  longitude: location.coords.longitude,
+                  latitudeDelta: 0.01,
+                  longitudeDelta: 0.01,
+                });
+              } catch (error) {
+                console.error('Error getting location for map:', error);
+                Alert.alert('Location Error', 'Failed to get your current location for the map.');
+              }
             }}
           >
             <MapPin size={22} color="#fff" />
@@ -559,7 +657,7 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.contactItem}>
             <Phone size={20} color="#64748B" />
-            <Text style={styles.contactText}>{profileData.phone}</Text>
+                            <Text style={styles.contactText}>{formatPhoneNumberForDisplay(profileData.phone)}</Text>
           </View>
         </View>
 
@@ -646,7 +744,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity 
             style={styles.quickActionItem}
-            onPress={() => Alert.alert('App Settings', 'App settings will be available in a future update.')}
+            onPress={() => router.push('/settings')}
           >
             <Settings size={20} color="#64748B" />
             <Text style={styles.quickActionText}>App Settings</Text>
@@ -676,17 +774,6 @@ export default function ProfileScreen() {
           
           <TouchableOpacity 
             style={styles.settingItem}
-            onPress={() => router.push('/terms')}
-          >
-            <View style={styles.settingLeft}>
-              <Text style={styles.settingLabel}>Terms of Service</Text>
-              <Text style={styles.settingDescription}>Read our terms and conditions</Text>
-            </View>
-            <ArrowRight size={20} color="#94A3B8" />
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.settingItem}
             onPress={() => router.push('/privacy')}
           >
             <View style={styles.settingLeft}>
@@ -702,6 +789,7 @@ export default function ProfileScreen() {
           <LogOut size={20} color="#EF4444" />
           <Text style={styles.logoutButtonText}>Logout</Text>
         </TouchableOpacity>
+
       </ScrollView>
 
 
@@ -992,6 +1080,7 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '90%',
+    maxHeight: '80%', // Limit modal height to 80% of screen
     backgroundColor: '#FFF',
     borderRadius: 16,
     padding: 20,
@@ -1029,6 +1118,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     marginTop: 20,
     gap: 12,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
   },
   cancelButton: {
     paddingVertical: 10,

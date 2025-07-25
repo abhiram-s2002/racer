@@ -263,7 +263,16 @@ export class MessageStorage {
             .single();
           
           if (profile?.username) {
-            await updateUserAchievement(profile.username, 'social_butterfly', 1);
+            // Fetch current progress
+            const { data: userAchievement } = await supabase
+              .from('user_achievements')
+              .select('progress')
+              .eq('username', profile.username)
+              .eq('achievement_id', 'social_butterfly')
+              .single();
+
+            const currentProgress = userAchievement?.progress || 0;
+            await updateUserAchievement(profile.username, 'social_butterfly', currentProgress + 1);
           }
         }
       } catch (error) {

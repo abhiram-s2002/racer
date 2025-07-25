@@ -9,71 +9,59 @@ import {
   Alert,
   BackHandler,
   Platform,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Package, MessageCircle, Send, Eye, EyeOff, CreditCard as Edit3, Trash2, Check, X, Plus } from 'lucide-react-native';
+import { Package, MessageCircle, Send, Eye, EyeOff, Trash2, Check, X, Plus, MapPin } from 'lucide-react-native';
 import AddListingModal from '@/components/AddListingModal';
 import CategorySelectionModal from '@/components/CategorySelectionModal';
-import { Activity, getActivities, getSentPings, getReceivedPings, deleteActivity } from '@/utils/activitySupabase';
+import { Activity, deleteActivity } from '@/utils/activitySupabase';
+import { deleteListing as deleteListingWithImages } from '../../utils/listingSupabase';
 import { useIsFocused } from '@react-navigation/native';
+import { useCachedActivities } from '@/hooks/useCachedActivities';
 
 import { useRouter } from 'expo-router';
 // Removed react-native-expo-image-cache import - using standard Image component
 import { supabase } from '@/utils/supabaseClient';
 
-// Helper function to format price with unit
-const formatPriceWithUnit = (price: string, priceUnit?: string) => {
-  if (!priceUnit || priceUnit === 'per_item') {
-    return `₹${price}`;
-  }
-  
-  const unitLabels = {
-    per_kg: 'per kg',
-    per_piece: 'per piece',
-    per_pack: 'per pack',
-    per_bundle: 'per bundle',
-    per_dozen: 'per dozen',
-    per_basket: 'per basket',
-    per_plate: 'per plate',
-    per_serving: 'per serving',
-    per_hour: 'per hour',
-    per_service: 'per service',
-    per_session: 'per session',
-    per_day: 'per day',
-    per_commission: 'per commission',
-    per_project: 'per project',
-    per_week: 'per week',
-    per_month: 'per month',
-  };
-  
-  const unitLabel = unitLabels[priceUnit as keyof typeof unitLabels] || priceUnit;
-  return `₹${price} ${unitLabel}`;
-};
+import { formatPriceWithUnit } from '@/utils/formatters';
+import { Category, Listing } from '@/utils/types';
 
-import { getPingInsights } from '@/utils/pingAnalytics';
-import PingInsightsCard from '@/components/PingInsightsCard';
+import NewRobustImage from '@/components/NewRobustImage';
 
 // eslint-disable-next-line no-undef
 declare const console: Console;
 
+// Add this function at the top level of the file
+const openInGoogleMaps = (latitude: number, longitude: number) => {
+  const url = Platform.select({
+    ios: `maps://app?saddr=&daddr=${latitude},${longitude}`,
+    android: `google.navigation:q=${latitude},${longitude}`
+  });
+
+  Linking.canOpenURL(url!).then((supported) => {
+    if (supported) {
+      Linking.openURL(url!);
+    } else {
+      // If the platform-specific URL doesn't work, try the web URL
+      Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`);
+    }
+  });
+};
+
 export default function ActivityScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [activities, setActivities] = useState<Activity[]>([]);
   const [activeTab, setActiveTab] = useState<'listings' | 'received' | 'sent'>('listings');
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedCategoryForListing, setSelectedCategoryForListing] = useState<string>('');
+  const [selectedCategoryForListing, setSelectedCategoryForListing] = useState<Category | undefined>(undefined);
   const [refreshing, setRefreshing] = useState(false);
   const isFocused = useIsFocused();
   const [username, setUsername] = useState<string | null>(null);
-  const [userProfiles, setUserProfiles] = useState<Record<string, any>>({});
-  const [myListings, setMyListings] = useState<any[]>([]);
   
   // New state for enhanced organization
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>('all');
-  const [pingInsights, setPingInsights] = useState<any>(null);
-  const [showInsights, setShowInsights] = useState(false);
 
   useEffect(() => {
     async function fetchUser() {
@@ -83,97 +71,22 @@ export default function ActivityScreen() {
     fetchUser();
   }, []);
 
+  // Use the new caching hook
+  const {
+    activities,
+    sentPings,
+    receivedPings,
+    myListings,
+    userProfiles,
+    loading,
+    refresh,
+    updateActivity,
+    removeActivity,
+    addActivity,
+  } = useCachedActivities(username);
+
   // Assume you have a way to get the current user's ID
-  const currentUsername = username || ''; // Replace with actual user ID from auth/context
-
-  // Load activities and pings from database
-  useEffect(() => {
-    const loadActivities = async () => {
-      if (!currentUsername) return;
-      
-      try {
-        // Get non-ping activities (listings, etc.)
-        const stored = await getActivities(currentUsername);
-        
-        // Get pings from the pings table
-        const sentPings = await getSentPings(currentUsername);
-        const receivedPings = await getReceivedPings(currentUsername);
-        
-        // Convert pings to activity format for UI compatibility
-        const pingActivities: Activity[] = [
-          ...sentPings.map(ping => ({
-            id: ping.id,
-            type: 'sent_ping' as const,
-            listing_id: ping.listing_id,
-            title: ping.listing?.title || '',
-            price: ping.listing?.price?.toString() || '',
-            image: ping.listing?.images?.[0] || '',
-            username: ping.receiver_username,
-            user_name: '', // Will be loaded from user profiles
-            user_avatar: '',
-            status: ping.status,
-            message: ping.message,
-            created_at: ping.created_at,
-            is_active: true
-          })),
-          ...receivedPings.map(ping => ({
-            id: ping.id,
-            type: 'received_ping' as const,
-            listing_id: ping.listing_id,
-            title: ping.listing?.title || '',
-            price: ping.listing?.price?.toString() || '',
-            image: ping.listing?.images?.[0] || '',
-            username: ping.sender_username,
-            user_name: '', // Will be loaded from user profiles
-            user_avatar: '',
-            status: ping.status,
-            message: ping.message,
-            created_at: ping.created_at,
-            is_active: true
-          }))
-        ];
-        
-        // Combine activities and pings, sorted by creation date
-        const allActivities = [...stored, ...pingActivities].sort((a, b) => 
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        );
-        
-        setActivities(allActivities);
-      } catch (error) {
-        console.error('Error loading activities:', error);
-        setActivities([]);
-      }
-    };
-    
-    if (isFocused && currentUsername) {
-      loadActivities();
-    }
-  }, [isFocused, showAddModal, showCategoryModal, currentUsername]);
-
-  // Load user profiles for all activities
-  useEffect(() => {
-    async function loadUserProfiles() {
-      const usernames = Array.from(new Set(activities.map(a => a.username).filter(Boolean)));
-      if (usernames.length === 0) {
-        setUserProfiles({});
-        return;
-      }
-      const { data: users, error } = await supabase
-        .from('users')
-        .select('username, name, avatar_url, email, phone, location, description')
-        .in('username', usernames);
-      if (error || !users) {
-        setUserProfiles({});
-        return;
-      }
-      const map: Record<string, any> = {};
-      for (const user of users) {
-        map[user.username] = user;
-      }
-      setUserProfiles(map);
-    }
-    if (activities.length > 0) loadUserProfiles();
-  }, [activities]);
+  const currentUsername = username || '';
 
   // Handle back button
   useEffect(() => {
@@ -197,7 +110,7 @@ export default function ActivityScreen() {
   }, [showAddModal, showCategoryModal]);
 
   const handleCategorySelect = (categoryId: string) => {
-    setSelectedCategoryForListing(categoryId);
+    setSelectedCategoryForListing(categoryId as Category);
     setShowAddModal(true);
   };
 
@@ -209,30 +122,26 @@ export default function ActivityScreen() {
     return activity.type === 'received_ping' || activity.type === 'sent_ping';
   }
 
-  const filteredActivities = activities.filter(activity => {
-    // Tab filtering
-    let passesTabFilter = false;
+  const filteredActivities = (() => {
     if (activeTab === 'listings') {
-      passesTabFilter = activity.type === 'listing';
+      return myListings;
     } else if (activeTab === 'received') {
-      passesTabFilter = activity.type === 'received_ping' && isPingActivity(activity) && activity.username === currentUsername;
+      return receivedPings.filter(activity => {
+        if (statusFilter !== 'all' && activity.status !== statusFilter) {
+          return false;
+        }
+        return true;
+      });
     } else if (activeTab === 'sent') {
-      passesTabFilter = activity.type === 'sent_ping' && isPingActivity(activity);
+      return sentPings.filter(activity => {
+        if (statusFilter !== 'all' && activity.status !== statusFilter) {
+          return false;
+        }
+        return true;
+      });
     }
-    
-    if (!passesTabFilter) return false;
-    
-    // Status filtering (only apply to ping activities, not listings)
-    if (statusFilter !== 'all' && isPingActivity(activity) && activity.status !== statusFilter) {
-      console.log(`Filtering out activity ${activity.id} with status ${activity.status} (filter: ${statusFilter})`);
-      return false;
-    }
-    
-    return true;
-  });
-
-  // Debug logging
-  console.log(`Filtering: tab=${activeTab}, status=${statusFilter}, total=${activities.length}, filtered=${filteredActivities.length}`);
+    return [];
+  })();
 
   // Toggle listing status (active/inactive) and update persistent storage
   const toggleListingStatus = async (id: string) => {
@@ -248,25 +157,9 @@ export default function ActivityScreen() {
       // Update in Supabase
       await supabase.from('listings').update({ is_active: newStatus }).eq('id', id);
       
-      // Update local myListings state
-      setMyListings(prev => 
-        prev.map(listing => 
-          listing.id === id 
-            ? { ...listing, is_active: newStatus } 
-            : listing
-        )
-      );
+      // Update cached data
+      updateActivity(id, { is_active: newStatus });
       
-      // Also update activities if needed
-    setActivities(prev => 
-      prev.map(activity => 
-        isListingActivity(activity) && activity.id === id
-            ? { ...activity, is_active: newStatus }
-          : activity
-      )
-    );
-      
-      console.log(`Listing ${id} status toggled to ${newStatus ? 'active' : 'inactive'}`);
     } catch (error) {
       console.error('Error toggling listing status:', error);
       Alert.alert('Error', 'Failed to update listing status. Please try again.');
@@ -274,12 +167,6 @@ export default function ActivityScreen() {
   };
 
   // Edit listing handler (opens AddListingModal in edit mode)
-  const [editListing, setEditListing] = useState<Activity | null>(null);
-  const handleEditListing = (item: Activity) => {
-    setEditListing(item);
-    setShowAddModal(true);
-  };
-
   const deleteListing = (id: string) => {
     if (!currentUsername) return;
     Alert.alert(
@@ -292,31 +179,14 @@ export default function ActivityScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // 1. Delete from Supabase listings table
-              const { error: listingError } = await supabase
-                .from('listings')
-                .delete()
-                .eq('id', id);
-              
-              if (listingError) {
-                console.error('Error deleting listing:', listingError);
-                Alert.alert('Error', 'Failed to delete listing from database. Please try again.');
-                return;
-              }
+              // 1. Delete from Supabase listings table and storage
+              await deleteListingWithImages(id);
 
-              
-
-              // 3. Delete related activities from local storage
+              // 2. Delete related activities from local storage
               await deleteActivity(id);
 
-
-
-              // 5. Update local state
-              const stored = await getActivities(currentUsername);
-              setActivities(stored);
-
-              // 6. Refresh the listings list
-              await fetchMyListings();
+              // 3. Remove from cached data
+              removeActivity(id);
 
               Alert.alert('Success', 'Listing deleted successfully!');
             } catch (error) {
@@ -362,53 +232,37 @@ export default function ActivityScreen() {
         return;
       }
       
-      // Refresh activities to show updated status
-      const stored = await getActivities(currentUsername);
+      // If ping is accepted, create chat and send acceptance message
+      if (response === 'accepted') {
+        try {
+          // Create chat from ping (this will also add the ping message to chat)
+          const { data: chatId, error: chatError } = await supabase.rpc('create_chat_from_ping', {
+            ping_id: pingId
+          });
+          
+          if (chatError) {
+            console.error('Error creating chat from ping:', chatError);
+          } else {
+            // Chat created successfully
+            
+            // Send acceptance message to the chat
+            const { error: messageError } = await supabase.rpc('send_chat_message', {
+              chat_id_param: chatId,
+              sender_username_param: currentUsername,
+              message_text: 'Ping accepted! You can now chat about this listing.'
+            });
+            
+            if (messageError) {
+              console.error('Error sending acceptance message:', messageError);
+            }
+          }
+        } catch (chatError) {
+          console.error('Error in chat creation process:', chatError);
+        }
+      }
       
-      // Get updated pings from the pings table
-      const sentPings = await getSentPings(currentUsername);
-      const receivedPings = await getReceivedPings(currentUsername);
-      
-      // Convert pings to activity format for UI compatibility
-      const pingActivities: Activity[] = [
-        ...sentPings.map(ping => ({
-          id: ping.id,
-          type: 'sent_ping' as const,
-          listing_id: ping.listing_id,
-          title: ping.listing?.title || '',
-          price: ping.listing?.price?.toString() || '',
-          image: ping.listing?.images?.[0] || '',
-          username: ping.receiver_username,
-          user_name: '',
-          user_avatar: '',
-          status: ping.status,
-          message: ping.message,
-          created_at: ping.created_at,
-          is_active: true
-        })),
-        ...receivedPings.map(ping => ({
-          id: ping.id,
-          type: 'received_ping' as const,
-          listing_id: ping.listing_id,
-          title: ping.listing?.title || '',
-          price: ping.listing?.price?.toString() || '',
-          image: ping.listing?.images?.[0] || '',
-          username: ping.sender_username,
-          user_name: '',
-          user_avatar: '',
-          status: ping.status,
-          message: ping.message,
-          created_at: ping.created_at,
-          is_active: true
-        }))
-      ];
-      
-      // Combine activities and pings, sorted by creation date
-      const allActivities = [...stored, ...pingActivities].sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      
-      setActivities(allActivities);
+      // Update cached data with new status
+      updateActivity(pingId, { status: response });
     } catch (error) {
       console.error('Error updating ping status:', error);
       Alert.alert('Error', 'Failed to update ping status. Please try again.');
@@ -440,53 +294,8 @@ export default function ActivityScreen() {
                 return;
               }
 
-              // Refresh activities to remove the deleted ping
-              const stored = await getActivities(currentUsername);
-              
-              // Get updated pings from the pings table
-              const sentPings = await getSentPings(currentUsername);
-              const receivedPings = await getReceivedPings(currentUsername);
-              
-              // Convert pings to activity format for UI compatibility
-              const pingActivities: Activity[] = [
-                ...sentPings.map(ping => ({
-                  id: ping.id,
-                  type: 'sent_ping' as const,
-                  listing_id: ping.listing_id,
-                  title: ping.listing?.title || '',
-                  price: ping.listing?.price?.toString() || '',
-                  image: ping.listing?.images?.[0] || '',
-                  username: ping.receiver_username,
-                  user_name: '',
-                  user_avatar: '',
-                  status: ping.status,
-                  message: ping.message,
-                  created_at: ping.created_at,
-                  is_active: true
-                })),
-                ...receivedPings.map(ping => ({
-                  id: ping.id,
-                  type: 'received_ping' as const,
-                  listing_id: ping.listing_id,
-                  title: ping.listing?.title || '',
-                  price: ping.listing?.price?.toString() || '',
-                  image: ping.listing?.images?.[0] || '',
-                  username: ping.sender_username,
-                  user_name: '',
-                  user_avatar: '',
-                  status: ping.status,
-                  message: ping.message,
-                  created_at: ping.created_at,
-                  is_active: true
-                }))
-              ];
-              
-              // Combine activities and pings, sorted by creation date
-              const allActivities = [...stored, ...pingActivities].sort((a, b) => 
-                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-              );
-              
-              setActivities(allActivities);
+              // Remove from cached data
+              removeActivity(pingId);
               
               Alert.alert('Success', 'Ping deleted successfully!');
             } catch (error) {
@@ -503,53 +312,7 @@ export default function ActivityScreen() {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
-      // Get non-ping activities (listings, etc.)
-      const stored = await getActivities(currentUsername);
-      
-      // Get pings from the pings table
-      const sentPings = await getSentPings(currentUsername);
-      const receivedPings = await getReceivedPings(currentUsername);
-      
-      // Convert pings to activity format for UI compatibility
-      const pingActivities: Activity[] = [
-        ...sentPings.map(ping => ({
-          id: ping.id,
-          type: 'sent_ping' as const,
-          listing_id: ping.listing_id,
-          title: ping.listing?.title || '',
-          price: ping.listing?.price?.toString() || '',
-          image: ping.listing?.images?.[0] || '',
-          username: ping.receiver_username,
-          user_name: '',
-          user_avatar: '',
-          status: ping.status,
-          message: ping.message,
-          created_at: ping.created_at,
-          is_active: true
-        })),
-        ...receivedPings.map(ping => ({
-          id: ping.id,
-          type: 'received_ping' as const,
-          listing_id: ping.listing_id,
-          title: ping.listing?.title || '',
-          price: ping.listing?.price?.toString() || '',
-          image: ping.listing?.images?.[0] || '',
-          username: ping.sender_username,
-          user_name: '',
-          user_avatar: '',
-          status: ping.status,
-          message: ping.message,
-          created_at: ping.created_at,
-          is_active: true
-        }))
-      ];
-      
-      // Combine activities and pings, sorted by creation date
-      const allActivities = [...stored, ...pingActivities].sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      
-      setActivities(allActivities);
+      await refresh();
     } catch (error) {
       console.error('Error refreshing activities:', error);
     } finally {
@@ -560,20 +323,21 @@ export default function ActivityScreen() {
   const renderListingItem = ({ item }: { item: Activity }) => {
     // Check for different possible image field names
     const anyItem = item as any; // Type assertion to bypass strict typing
-    const imageUrl = item.image || anyItem.images?.[0] || anyItem.thumbnail || '';
-    console.log('Rendering listing with image:', imageUrl);
     
     const { is_active, title, price, id } = item;
     return (
     <View style={styles.activityCard}>
       <View style={styles.listingHeader}>
-          {imageUrl ? (
-                            <Image source={{ uri: imageUrl }} style={styles.listingImage} />
-          ) : (
-            <View style={[styles.listingImage, { backgroundColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center' }]}>
-              <Text style={{ color: '#94A3B8', fontSize: 10, textAlign: 'center' }}>No Image</Text>
-            </View>
-          )}
+          <NewRobustImage 
+            images={item.images || (item.image ? [item.image] : undefined)}
+            thumbnailImages={item.thumbnail_images}
+            previewImages={item.preview_images}
+            imageFolderPath={item.image_folder_path}
+            style={styles.listingImage}
+            placeholderText="No Image"
+            size="thumbnail"
+            title={item.title}
+          />
         <View style={styles.listingDetails}>
             <Text style={styles.listingTitle}>{title}</Text>
             <Text style={styles.listingPrice}>{formatPriceWithUnit(price || '0', (item as any).price_unit)}</Text>
@@ -599,10 +363,6 @@ export default function ActivityScreen() {
           )}
             <Text style={styles.actionText}>{is_active ? 'Deactivate' : 'Activate'}</Text>
         </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={() => handleEditListing(item)}>
-          <Edit3 size={16} color="#64748B" />
-          <Text style={styles.actionText}>Edit</Text>
-        </TouchableOpacity>
         <TouchableOpacity 
           style={styles.actionButton}
             onPress={() => deleteListing(id)}
@@ -616,40 +376,101 @@ export default function ActivityScreen() {
   };
 
   const renderPingItem = ({ item }: { item: Activity }) => {
-    const userProfile = userProfiles[item.username];
-    
     const handleChatPress = async () => {
       try {
-        // Use the get_or_create_chat function to ensure we get existing chat or create new one
-        const { data: chatId, error } = await supabase.rpc('get_or_create_chat', {
-          listing_id_param: item.listing_id,
-          user1_param: item.username,
-          user2_param: username || ''
-        });
+        // For accepted pings, get the existing chat or create a new one
+        let chatId;
         
-        if (error) {
-          console.error('Error getting or creating chat:', error);
-          Alert.alert('Error', 'Unable to access chat. Please try again.');
+        if (item.status === 'accepted') {
+          // Try to get existing chat first
+          const { data: existingChatId, error: getError } = await supabase.rpc('get_chat_for_ping', {
+            ping_id: item.id
+          });
+          
+          if (getError) {
+            console.error('Error getting existing chat:', getError);
+          }
+          
+          if (getError || !existingChatId) {
+            // If no existing chat or error, create one
+            const { data: newChatId, error: createError } = await supabase.rpc('create_chat_from_ping', {
+              ping_id: item.id
+            });
+            
+            if (createError) {
+              console.error('Error creating chat:', createError);
+              Alert.alert('Error', 'Unable to access chat. Please try again.');
+              return;
+            }
+            
+            chatId = newChatId;
+          } else {
+            chatId = existingChatId;
+          }
+        } else {
+          // For non-accepted pings, create a new chat
+          const { data: newChatId, error: createError } = await supabase.rpc('create_chat_from_ping', {
+            ping_id: item.id
+          });
+          
+          if (createError) {
+            console.error('Error creating chat:', createError);
+            Alert.alert('Error', 'Unable to access chat. Please try again.');
+            return;
+          }
+          
+          chatId = newChatId;
+        }
+        
+        if (!chatId) {
+          // No chat ID returned
+          Alert.alert('Error', 'Failed to create or find chat.');
           return;
         }
         
-        console.log('Using chat ID:', chatId);
-        
         // Navigate to messages tab with the specific chat ID
-        router.push({ pathname: '/(tabs)/messages', params: { chatId } });
+        router.push({
+          pathname: '/(tabs)/messages',
+          params: { chatId: chatId.toString() }
+        });
+        
       } catch (error) {
         console.error('Error handling chat navigation:', error);
         Alert.alert('Error', 'Unable to access chat. Please try again.');
       }
     };
     
+    // Get the appropriate user profile based on ping type
+    const getDisplayUser = () => {
+      if (item.type === 'sent_ping') {
+        // For sent pings, show the receiver (who we sent to)
+        return {
+          name: item.receiver_name || item.receiver_username || 'Unknown User',
+          username: item.receiver_username || 'unknown',
+          avatar: item.receiver_avatar || ''
+        };
+      } else {
+        // For received pings, show the sender (who sent to us)
+        return {
+          name: item.sender_name || item.sender_username || 'Unknown User',
+          username: item.sender_username || 'unknown',
+          avatar: item.sender_avatar || ''
+        };
+      }
+    };
+
+    const displayUser = getDisplayUser();
+    
     return (
     <View style={styles.activityCard}>
       <View style={styles.pingHeader}>
         <View style={styles.pingUser}>
-          <Image source={{ uri: userProfile?.avatar_url || item.user_avatar || '' }} style={styles.userAvatar} resizeMode="cover" />
+          <Image source={{ uri: displayUser.avatar || '' }} style={styles.userAvatar} resizeMode="cover" />
           <View style={styles.pingDetails}>
-            <Text style={styles.pingUserName}>{userProfile?.name || item.user_name}</Text>
+            <Text style={styles.pingUserName}>{displayUser.name}</Text>
+            <Text style={styles.pingUserLabel}>
+              {item.type === 'sent_ping' ? 'Sent to' : 'From'} @{displayUser.username}
+            </Text>
           </View>
         </View>
         {/* Status badge absolutely positioned inside card */}
@@ -668,18 +489,45 @@ export default function ActivityScreen() {
         </View>
       </View>
       <View style={styles.pingProduct}>
-        <Image source={{ uri: item.image || '' }} style={styles.productImage} resizeMode="cover" />
+        <NewRobustImage 
+          images={item.images || (item.image ? [item.image] : undefined)}
+          thumbnailImages={item.thumbnail_images}
+          previewImages={item.preview_images}
+          imageFolderPath={item.image_folder_path}
+          style={styles.productImage}
+          placeholderText="No Image"
+          size="preview"
+          title={item.title}
+        />
         <View style={styles.productDetails}>
           <Text style={styles.productTitle}>{item.title}</Text>
-                          {item.price && <Text style={styles.productPrice}>{formatPriceWithUnit(item.price, (item as any).price_unit)}</Text>}
+          {item.price && <Text style={styles.productPrice}>{formatPriceWithUnit(item.price, (item as any).price_unit)}</Text>}
         </View>
-        {/* Chat icon button for all pings */}
-        <TouchableOpacity
-          style={styles.chatIconButton}
-          onPress={handleChatPress}
-        >
-          <MessageCircle size={22} color="#22C55E" />
-        </TouchableOpacity>
+        {/* Add location button and chat button for accepted pings */}
+        {item.status === 'accepted' && (
+          <View style={styles.actionButtons}>
+            <TouchableOpacity
+              style={styles.locationButton}
+              onPress={() => {
+                // Get the listing data from the ping
+                const activityWithListing = item as any;
+                if (activityWithListing.listings?.latitude && activityWithListing.listings?.longitude) {
+                  openInGoogleMaps(activityWithListing.listings.latitude, activityWithListing.listings.longitude);
+                } else {
+                  Alert.alert('Location Unavailable', 'The location for this listing is not available.');
+                }
+              }}
+            >
+              <MapPin size={22} color="#22C55E" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.chatIconButton}
+              onPress={handleChatPress}
+            >
+              <MessageCircle size={22} color="#22C55E" />
+            </TouchableOpacity>
+          </View>
+        )}
         {/* Show delete button for sent pings */}
         {item.type === 'sent_ping' && (
           <TouchableOpacity
@@ -715,89 +563,15 @@ export default function ActivityScreen() {
   );
   };
 
-  // Fetch all listings for the current user
-  const fetchMyListings = async () => {
-    console.log('Fetching listings for username:', username);
-    if (!username) return;
-    
-    try {
-    const { data: listings, error } = await supabase
-      .from('listings')
-      .select('*')
-      .eq('username', username)
-      .order('updated_at', { ascending: false })
-      .order('created_at', { ascending: false });
-        
-      if (error) {
-        console.error('Error fetching listings:', error);
-        return;
-      }
-      
-      // Log the first listing to debug image field
-      if (listings && listings.length > 0) {
-        console.log('First listing structure:', JSON.stringify(listings[0]));
-        
-        // Check which image field exists in the data
-        const firstListing = listings[0];
-        const imageField = 
-          firstListing.image ? 'image' : 
-          firstListing.images ? 'images' : 
-          firstListing.thumbnail ? 'thumbnail' : null;
-        
-        console.log('Image field detected:', imageField);
-      }
-      
-      // Update the listings with correct image field if needed
-      const processedListings = listings?.map(listing => {
-        // Ensure each listing has an image field for rendering
-        if (!listing.image && (listing.images && listing.images.length > 0)) {
-          return {
-            ...listing,
-            image: listing.images[0]
-          };
-        }
-        return listing;
-      }) || [];
-      
-      console.log('Processed listings:', processedListings.length);
-      setMyListings(processedListings);
-    } catch (err) {
-      console.error('Exception fetching listings:', err);
-      setMyListings([]);
-    }
-  };
 
-  useEffect(() => {
-    if (activeTab === 'listings' && username) {
-      fetchMyListings();
-    }
-  }, [activeTab, username, showAddModal]);
 
-  // Load ping insights when username changes
-  useEffect(() => {
-    async function loadPingInsights() {
-      if (!username) return;
-      const insights = await getPingInsights(username);
-      setPingInsights(insights);
-    }
-    loadPingInsights();
-  }, [username]);
+
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Activity</Text>
         <Text style={styles.subtitle}>Manage your listings and pings</Text>
-        {pingInsights && (
-          <TouchableOpacity 
-            style={styles.insightsToggle}
-            onPress={() => setShowInsights(!showInsights)}
-          >
-            <Text style={styles.insightsToggleText}>
-              {showInsights ? 'Hide' : 'Show'} Analytics
-            </Text>
-          </TouchableOpacity>
-        )}
       </View>
 
       <View style={styles.tabContainer}>
@@ -885,51 +659,36 @@ export default function ActivityScreen() {
           </TouchableOpacity>
         </View>
       )}
-      {activeTab === 'listings' ? (
-        <FlatList
-          data={myListings}
-          renderItem={renderListingItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.activityList}
-          showsVerticalScrollIndicator={false}
-          onRefresh={handleRefresh}
-          refreshing={refreshing}
-          ListHeaderComponent={
-            showInsights && pingInsights ? (
-              <PingInsightsCard insights={pingInsights} />
-            ) : null
-          }
-        />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading activities...</Text>
+        </View>
       ) : (
         <FlatList
           data={filteredActivities}
           renderItem={({ item }) => {
-            if (isPingActivity(item)) {
-              return renderPingItem({ item });
-            } else if (isListingActivity(item)) {
+            if (activeTab === 'listings') {
               return renderListingItem({ item });
+            } else {
+              return renderPingItem({ item });
             }
-            return null;
           }}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.activityList}
           showsVerticalScrollIndicator={false}
           onRefresh={handleRefresh}
           refreshing={refreshing}
-          ListHeaderComponent={
-            showInsights && pingInsights ? (
-              <PingInsightsCard insights={pingInsights} />
-            ) : null
-          }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                {statusFilter !== 'all' 
-                  ? `No ${statusFilter} pings found` 
-                  : 'No activities found'
+                {activeTab === 'listings' 
+                  ? 'No listings found'
+                  : statusFilter !== 'all' 
+                    ? `No ${statusFilter} pings found` 
+                    : 'No activities found'
                 }
               </Text>
-              {statusFilter !== 'all' && (
+              {activeTab !== 'listings' && statusFilter !== 'all' && (
                 <TouchableOpacity 
                   style={styles.clearFiltersButton}
                   onPress={() => setStatusFilter('all')}
@@ -944,9 +703,8 @@ export default function ActivityScreen() {
       {/* Add Listing Modal */}
       <AddListingModal 
         visible={showAddModal} 
-        onClose={() => { setShowAddModal(false); setEditListing(null); }}
+        onClose={() => { setShowAddModal(false); }}
         preSelectedCategory={selectedCategoryForListing}
-        editListing={editListing}
         sellerUsername={username || ''}
       />
       {/* Category Selection Modal */}
@@ -1201,6 +959,11 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     marginBottom: 2,
   },
+  pingUserLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+  },
   pingTime: {
     fontSize: 12,
     fontFamily: 'Inter-Regular',
@@ -1333,21 +1096,6 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     padding: 6,
   },
-  insightsToggle: {
-    position: 'absolute',
-    right: 20,
-    top: '50%',
-    transform: [{ translateY: -12 }],
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#22C55E',
-    borderRadius: 16,
-  },
-  insightsToggleText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
-    color: '#FFFFFF',
-  },
   clearFiltersButton: {
     marginTop: 8,
     paddingHorizontal: 16,
@@ -1355,5 +1103,26 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
     borderRadius: 8,
     alignSelf: 'center',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 8,
+  },
+  locationButton: {
+    padding: 6,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
+    textAlign: 'center',
   },
 });

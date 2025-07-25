@@ -183,20 +183,28 @@ export const validatePhoneNumber = (phone: string): ValidationResult => {
   // Remove all non-digit characters
   const digitsOnly = phone.replace(/\D/g, '');
   
-  if (digitsOnly.length < 10) {
-    return { isValid: false, error: 'Phone number must have at least 10 digits' };
+  // For Indian numbers with +91, we need exactly 12 digits (91 + 10 mobile digits)
+  if (digitsOnly.length !== 12) {
+    return { isValid: false, error: 'Phone number must be exactly 12 digits (including country code)' };
   }
   
-  if (digitsOnly.length > 15) {
-    return { isValid: false, error: 'Phone number is too long' };
+  // Check if it starts with 91 (India country code)
+  if (!digitsOnly.startsWith('91')) {
+    return { isValid: false, error: 'Phone number must start with 91 (India country code)' };
   }
   
-  // Format the phone number
-  const formatted = formatPhoneNumber(digitsOnly);
+  // Check if the mobile number part (after 91) is valid
+  const mobileNumber = digitsOnly.substring(2);
+  if (!/^[6-9]\d{9}$/.test(mobileNumber)) {
+    return { isValid: false, error: 'Invalid mobile number format' };
+  }
+  
+  // Return the raw digits for database storage (no formatting)
+  // Formatting should be done at display level, not storage level
   
   return { 
     isValid: true, 
-    sanitizedValue: formatted,
+    sanitizedValue: digitsOnly, // Store raw digits: "917306519350"
     error: undefined 
   };
 };
@@ -335,16 +343,64 @@ export const validateDuration = (expirationDays: number): ValidationResult => {
 };
 
 /**
+ * Validate image selection (required)
+ */
+export const validateImage = (imageUri: string | null): ValidationResult => {
+  if (!imageUri) {
+    return { isValid: false, error: 'Please select an image for your listing' };
+  }
+
+  // Basic URI validation
+  if (typeof imageUri !== 'string' || imageUri.trim() === '') {
+    return { isValid: false, error: 'Invalid image selected' };
+  }
+
+  return { 
+    isValid: true, 
+    sanitizedValue: imageUri,
+    error: undefined 
+  };
+};
+
+/**
  * Format phone number for display
  */
+/**
+ * Format phone number for display (UI only)
+ * This function formats phone numbers for user-friendly display
+ */
+export const formatPhoneNumberForDisplay = (phone: string): string => {
+  if (!phone) return '';
+  
+  // Remove all non-digit characters first
+  const digitsOnly = phone.replace(/\D/g, '');
+  
+  // Handle Indian phone numbers (+91 format)
+  if (digitsOnly.length === 12 && digitsOnly.startsWith('91')) {
+    const mobileNumber = digitsOnly.substring(2);
+    return `+91 ${mobileNumber.slice(0, 5)} ${mobileNumber.slice(5)}`;
+  }
+  
+  // Handle US phone numbers
+  if (digitsOnly.length === 10) {
+    return `(${digitsOnly.slice(0, 3)}) ${digitsOnly.slice(3, 6)}-${digitsOnly.slice(6)}`;
+  }
+  
+  if (digitsOnly.length === 11 && digitsOnly[0] === '1') {
+    return `+1 (${digitsOnly.slice(1, 4)}) ${digitsOnly.slice(4, 7)}-${digitsOnly.slice(7)}`;
+  }
+  
+  // For other formats, return as is
+  return phone;
+};
+
+/**
+ * Internal function for phone formatting (deprecated - use formatPhoneNumberForDisplay instead)
+ */
 const formatPhoneNumber = (digits: string): string => {
-  if (digits.length === 10) {
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
-  if (digits.length === 11 && digits[0] === '1') {
-    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
-  }
-  return digits;
+  // This function is kept for backward compatibility but should not be used
+  // Use formatPhoneNumberForDisplay instead
+  return formatPhoneNumberForDisplay(digits);
 };
 
 /**
@@ -427,4 +483,195 @@ export const validateForm = (formData: Record<string, any>, validators: Record<s
   }
   
   return { isValid, errors, sanitizedData };
+}; 
+
+/**
+ * Validate password strength and requirements
+ */
+export const validatePassword = (password: string): ValidationResult => {
+  if (!password) {
+    return { isValid: false, error: 'Password is required' };
+  }
+
+  if (password.length < 8) {
+    return { isValid: false, error: 'Password must be at least 8 characters long' };
+  }
+
+  if (password.length > 128) {
+    return { isValid: false, error: 'Password must be less than 128 characters' };
+  }
+
+  // Check for required character types
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+  const missingRequirements = [];
+  if (!hasUpperCase) missingRequirements.push('uppercase letter');
+  if (!hasLowerCase) missingRequirements.push('lowercase letter');
+  if (!hasNumbers) missingRequirements.push('number');
+  if (!hasSpecialChar) missingRequirements.push('special character');
+
+  if (missingRequirements.length > 0) {
+    return { 
+      isValid: false, 
+      error: `Password must contain at least one ${missingRequirements.join(', ')}` 
+    };
+  }
+
+  // Check for common weak passwords
+  const commonPasswords = [
+    'password', '123456', '123456789', 'qwerty', 'abc123', 
+    'password123', 'admin', 'letmein', 'welcome', 'monkey'
+  ];
+  
+  if (commonPasswords.includes(password.toLowerCase())) {
+    return { isValid: false, error: 'Password is too common. Please choose a stronger password' };
+  }
+
+  // Check for sequential characters
+  const sequentialPatterns = ['123', 'abc', 'qwe', 'asd', 'zxc'];
+  const lowerPassword = password.toLowerCase();
+  for (const pattern of sequentialPatterns) {
+    if (lowerPassword.includes(pattern)) {
+      return { isValid: false, error: 'Password contains sequential characters' };
+    }
+  }
+
+  return { 
+    isValid: true, 
+    sanitizedValue: password,
+    error: undefined 
+  };
+};
+
+/**
+ * Get password strength score (0-4)
+ */
+export const getPasswordStrength = (password: string): { score: number; label: string; color: string } => {
+  if (!password) return { score: 0, label: 'Enter password', color: '#94A3B8' };
+
+  let score = 0;
+  
+  // Length bonus
+  if (password.length >= 8) score += 1;
+  if (password.length >= 12) score += 1;
+  
+  // Character variety bonus
+  if (/[A-Z]/.test(password)) score += 1;
+  if (/[a-z]/.test(password)) score += 1;
+  if (/\d/.test(password)) score += 1;
+  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score += 1;
+  
+  // Penalty for common patterns
+  const commonPatterns = ['password', '123456', 'qwerty', 'abc123'];
+  if (commonPatterns.some(pattern => password.toLowerCase().includes(pattern))) {
+    score = Math.max(0, score - 2);
+  }
+
+  const strengthMap = [
+    { label: 'Very Weak', color: '#EF4444' },
+    { label: 'Weak', color: '#F97316' },
+    { label: 'Fair', color: '#EAB308' },
+    { label: 'Good', color: '#22C55E' },
+    { label: 'Strong', color: '#16A34A' }
+  ];
+
+  return {
+    score: Math.min(4, score),
+    ...strengthMap[Math.min(4, score)]
+  };
+};
+
+/**
+ * Validate email format and security
+ */
+export const validateEmail = (email: string): ValidationResult => {
+  if (!email) {
+    return { isValid: false, error: 'Email is required' };
+  }
+
+  // Basic email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { isValid: false, error: 'Please enter a valid email address' };
+  }
+
+  // Length validation (RFC 5321)
+  if (email.length > 254) {
+    return { isValid: false, error: 'Email address is too long' };
+  }
+
+  // Check for suspicious patterns
+  const suspiciousPatterns = [
+    /script/i,
+    /javascript/i,
+    /on\w+=/i,
+    /<[^>]*>/i
+  ];
+
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(email)) {
+      return { isValid: false, error: 'Email contains invalid characters' };
+    }
+  }
+
+  // Check for disposable email domains (basic check)
+  const disposableDomains = [
+    'tempmail.org', '10minutemail.com', 'guerrillamail.com',
+    'mailinator.com', 'yopmail.com', 'temp-mail.org'
+  ];
+  
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (domain && disposableDomains.includes(domain)) {
+    return { isValid: false, error: 'Please use a valid email address' };
+  }
+
+  return { 
+    isValid: true, 
+    sanitizedValue: email.toLowerCase().trim(),
+    error: undefined 
+  };
+};
+
+/**
+ * Validate username requirements
+ */
+export const validateUsername = (username: string): ValidationResult => {
+  if (!username) {
+    return { isValid: false, error: 'Username is required' };
+  }
+
+  if (username.length < 3) {
+    return { isValid: false, error: 'Username must be at least 3 characters' };
+  }
+
+  if (username.length > 30) {
+    return { isValid: false, error: 'Username must be less than 30 characters' };
+  }
+
+  // Only allow lowercase letters, numbers, underscores, and hyphens
+  const usernameRegex = /^[a-z0-9_-]+$/;
+  if (!usernameRegex.test(username)) {
+    return { isValid: false, error: 'Username can only contain lowercase letters, numbers, underscores, and hyphens' };
+  }
+
+  // Check for reserved usernames
+  const reservedUsernames = [
+    'admin', 'administrator', 'root', 'system', 'support', 'help',
+    'info', 'contact', 'mail', 'email', 'user', 'test', 'demo',
+    'api', 'www', 'ftp', 'smtp', 'pop', 'imap', 'webmaster',
+    'noreply', 'no-reply', 'postmaster', 'hostmaster', 'abuse'
+  ];
+  
+  if (reservedUsernames.includes(username)) {
+    return { isValid: false, error: 'This username is reserved' };
+  }
+
+  return { 
+    isValid: true, 
+    sanitizedValue: username.trim(),
+    error: undefined 
+  };
 }; 

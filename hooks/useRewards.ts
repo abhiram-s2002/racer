@@ -9,7 +9,7 @@ import {
   getReferralsByUser,
   getRewardTransactions,
   createDailyCheckin,
-  updateUserAchievementProgress,
+  updateUserAchievementProgressSafe,
   createRewardTransaction,
   getCompleteRewardsDataSafe,
   initializeUserRewards,
@@ -45,7 +45,11 @@ export function useRewards(username: string) {
 
   // Load all rewards data
   const loadRewardsData = useCallback(async () => {
-    if (!username) return;
+    if (!username || username.trim() === '') {
+      console.log('Skipping rewards data load - username is empty');
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
@@ -86,7 +90,10 @@ export function useRewards(username: string) {
 
   // Refresh rewards data
   const refreshRewards = useCallback(async () => {
-    if (!username) return;
+    if (!username || username.trim() === '') {
+      console.log('Skipping rewards refresh - username is empty');
+      return;
+    }
 
     try {
       setRefreshing(true);
@@ -153,7 +160,7 @@ export function useRewards(username: string) {
     if (!username) return false;
 
     try {
-      const updatedAchievement = await updateUserAchievementProgress(username, achievementId, newProgress);
+      const updatedAchievement = await updateUserAchievementProgressSafe(username, achievementId, newProgress);
       if (updatedAchievement) {
         // Reload achievements to get updated data
         const achievements = await getUserAchievementsSafe(username);
@@ -194,16 +201,14 @@ export function useRewards(username: string) {
     }
   }, [username]);
 
-  // Check and award Power User achievement (earn 1000 OMNI tokens)
+  // Check and award Power User achievement (7 consecutive days)
   const checkPowerUserAchievement = useCallback(async () => {
-    if (!username || !userRewards) return false;
+    if (!username || !userStreak) return false;
 
     try {
-      const totalEarned = userRewards.total_omni_earned || 0;
       const powerUserAchievement = userAchievements.find(a => a.achievement_id === 'power_user');
-      
-      if (powerUserAchievement && !powerUserAchievement.completed && totalEarned >= 1000) {
-        const success = await updateAchievement('power_user', 1000);
+      if (powerUserAchievement && !powerUserAchievement.completed && userStreak.current_streak >= 7) {
+        const success = await updateAchievement('power_user', 7);
         if (success) {
           console.log('Power User achievement awarded!');
           return true;
@@ -214,7 +219,7 @@ export function useRewards(username: string) {
       console.error('Error checking Power User achievement:', err);
       return false;
     }
-  }, [username, userRewards, userAchievements, updateAchievement]);
+  }, [username, userStreak, userAchievements, updateAchievement]);
 
   // Check and award Loyal User achievement (30 consecutive days)
   const checkLoyalUserAchievement = useCallback(async () => {

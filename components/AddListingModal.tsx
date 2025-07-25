@@ -39,37 +39,63 @@ import {
   validateCategory,
   validatePricingUnit,
   validateDuration,
+  validateImage,
   validateForm,
   logSecurityEvent 
 } from '@/utils/validation';
 import { addListingWithImages as addListingSupabase, updateListingWithImages as updateListingSupabase, createListingWithExpiration } from '@/utils/listingSupabase';
-import { MarketplaceImageService, MarketplaceImage } from '@/utils/marketplaceImageService';
-import MarketplaceImagePicker from './MarketplaceImagePicker';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { advancedRateLimiter } from '@/utils/advancedRateLimiter';
+
+import { Listing, Category, PriceUnit, ListingFormData } from '@/utils/types';
+
+// Helper function to get pricing units based on category
+const getPricingUnits = (category: string): PriceUnit[] => {
+  const pricingUnits: Record<string, PriceUnit[]> = {
+    groceries: ['per_kg', 'per_piece', 'per_pack', 'per_bundle'],
+    fruits: ['per_kg', 'per_dozen', 'per_piece', 'per_basket'],
+    food: ['per_plate', 'per_serving', 'per_piece', 'per_kg'],
+    services: ['per_hour', 'per_service', 'per_session', 'per_day'],
+    art: ['per_piece', 'per_commission', 'per_hour', 'per_project'],
+    rental: ['per_day', 'per_week', 'per_month', 'per_hour'],
+  };
+  return pricingUnits[category] || ['per_item', 'per_piece', 'per_service'];
+};
 
 interface AddListingModalProps {
   visible: boolean;
   onClose: () => void;
-  preSelectedCategory?: string;
-  editListing?: any | null; // Changed from ListingActivity to any
+  preSelectedCategory?: Category;
+  editListing?: Listing | null;
   sellerUsername: string;
 }
 
 export default function AddListingModal({ visible, onClose, preSelectedCategory, editListing, sellerUsername }: AddListingModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    category: string;
+    price: string;
+    priceUnit: PriceUnit;
+    description: string;
+    images: string[];
+    isActive: boolean;
+    expirationDays: number;
+  }>({
     title: '',
     category: preSelectedCategory || '',
     price: '',
-    priceUnit: 'per_item',
+    priceUnit: preSelectedCategory ? getPricingUnits(preSelectedCategory)[0] || 'per_item' : 'per_item',
     description: '',
-    images: [] as string[],
+    images: [],
     isActive: true,
     expirationDays: 30,
   });
 
   const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showImagePicker, setShowImagePicker] = useState(false);
-  const [uploadedImages, setUploadedImages] = useState<MarketplaceImage[]>([]);
+  const [pickedImageUri, setPickedImageUri] = useState<string | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   
   // Location hook for capturing listing location
   const location = useLocation();
@@ -86,33 +112,22 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
           description: editListing.description || '',
           images: Array.isArray(editListing.images) ? editListing.images : (editListing.images ? [editListing.images] : []),
           isActive: editListing.is_active !== undefined ? editListing.is_active : true,
-          expirationDays: editListing.expiration_days || 30,
+          expirationDays: 30, // Default expiration days
         });
         
         // Handle existing images for editing (convert to MarketplaceImage format)
         if (editListing.images && editListing.images.length > 0) {
           const existingImage = editListing.images[0]; // Only take first image
-          const mockMarketplaceImage: MarketplaceImage = {
-            id: `existing_${Date.now()}`,
-            originalUrl: existingImage,
-            thumbnailUrl: existingImage,
-            previewUrl: existingImage,
-            filename: `existing_${Date.now()}.jpg`,
-            size: 100000,
-            width: 400,
-            height: 400,
-            uploadedAt: new Date().toISOString()
-          };
-          setUploadedImages([mockMarketplaceImage]);
+          setUploadedImageUrl(existingImage);
         } else {
-          setUploadedImages([]);
+          setUploadedImageUrl(null);
         }
       } else if (preSelectedCategory) {
         setFormData(prev => ({
           ...prev,
           category: preSelectedCategory
         }));
-        setUploadedImages([]);
+        setUploadedImageUrl(null);
       }
     }
     prefill();
@@ -122,23 +137,44 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
     if (visible) {
       setFormData(prev => ({
         ...prev,
-        category: editListing?.category || (preSelectedCategory && preSelectedCategory !== 'all' ? preSelectedCategory : ''),
+        category: editListing?.category || (preSelectedCategory || ''),
       }));
     }
   }, [visible, preSelectedCategory, editListing]);
 
+  // Auto-select appropriate price unit when category changes
+  useEffect(() => {
+    if (formData.category) {
+      const availableUnits = getPricingUnits(formData.category);
+      const currentUnit = formData.priceUnit;
+      
+      // If current price unit is not valid for the new category, auto-select the first available
+      if (!availableUnits.includes(currentUnit)) {
+        setFormData(prev => ({
+          ...prev,
+          priceUnit: availableUnits[0] || 'per_item'
+        }));
+      }
+    }
+  }, [formData.category]);
+
   const resetForm = () => {
+    const defaultCategory = preSelectedCategory || '';
+    const defaultPriceUnit = defaultCategory ? getPricingUnits(defaultCategory)[0] || 'per_item' : 'per_item';
+    
     setFormData({
       title: '',
-      category: '',
+      category: defaultCategory,
       price: '',
-      priceUnit: 'per_item',
+      priceUnit: defaultPriceUnit,
       description: '',
       images: [],
       isActive: true,
       expirationDays: 30,
     });
     setIsRecording(false);
+    setPickedImageUri(null);
+    setUploadedImageUrl(null);
   };
 
   const handleClose = () => {
@@ -169,24 +205,109 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
     return user?.avatar_url || 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=400';
   };
 
-  const handleImagesSelected = (images: MarketplaceImage[]) => {
-    // Only take the first image since we only allow one
-    setUploadedImages(images.slice(0, 1));
-    setShowImagePicker(false);
+  // Image picker handler
+  const handlePickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
+    if (!result.canceled && result.assets && result.assets[0]) {
+      setPickedImageUri(result.assets[0].uri);
+      setUploadedImageUrl(null);
+    }
   };
 
-  // Get pricing units based on category
-  const getPricingUnits = (category: string) => {
-    const pricingUnits = {
-      groceries: ['per_kg', 'per_piece', 'per_pack', 'per_bundle'],
-      fruits: ['per_kg', 'per_dozen', 'per_piece', 'per_basket'],
-      food: ['per_plate', 'per_serving', 'per_piece', 'per_kg'],
-      services: ['per_hour', 'per_service', 'per_session', 'per_day'],
-      art: ['per_piece', 'per_commission', 'per_hour', 'per_project'],
-      rental: ['per_day', 'per_week', 'per_month', 'per_hour'],
+  // Image upload handler (fetch + FormData) for three versions with folder organization
+  const uploadImageToSupabase = async () => {
+    if (!pickedImageUri) {
+      throw new Error('No image selected for upload');
+    }
+
+    // Check rate limiting for image uploads
+    if (sellerUsername) {
+      const rateLimit = await advancedRateLimiter.checkUploadRateLimit(sellerUsername);
+      if (!rateLimit.allowed) {
+        const retrySeconds = Math.ceil((rateLimit.retryAfter || 0) / 1000);
+        throw new Error(`Upload limit exceeded. Please try again in ${retrySeconds} seconds.`);
+      }
+    }
+    // Get current user's access token
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = session?.access_token;
+    if (!accessToken) {
+      Alert.alert('Not logged in', 'You must be logged in to upload images.');
+      return { images: [], thumbnail_images: [], preview_images: [] };
+    }
+    
+    // Create a unique listing ID for folder organization
+    const listingId = `${Date.now()}`;
+    // Encode username to handle spaces and special characters
+    const encodedUsername = encodeURIComponent(sellerUsername);
+    const folderPath = `${encodedUsername}/${listingId}`;
+    
+    // Compress to three sizes
+    const original = await ImageManipulator.manipulateAsync(
+      pickedImageUri,
+      [{ resize: { width: 1200 } }],
+      { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
+    );
+    const thumbnail = await ImageManipulator.manipulateAsync(
+      pickedImageUri,
+      [{ resize: { width: 400 } }],
+      { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+    );
+    const preview = await ImageManipulator.manipulateAsync(
+      pickedImageUri,
+      [{ resize: { width: 200 } }],
+      { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+    );
+    
+    // Helper to upload a file to organized folder structure
+    const uploadToSupabase = async (fileUri: string, suffix: string) => {
+      const filename = `${folderPath}/${suffix}.jpg`;
+      const response = await fetch(
+        `https://vroanjodovwsyydxrmma.supabase.co/storage/v1/object/listings/${filename}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: (() => {
+            const formData = new FormData();
+            formData.append('file', {
+              uri: fileUri,
+              name: `${suffix}.jpg`,
+              type: 'image/jpeg',
+            } as any);
+            return formData;
+          })(),
+        }
+      );
+      if (!response.ok) {
+        const errorText = await response.text();
+        Alert.alert('Upload Error', errorText);
+        return null;
+      }
+      return `https://vroanjodovwsyydxrmma.supabase.co/storage/v1/object/public/listings/${filename}`;
     };
-    return pricingUnits[category as keyof typeof pricingUnits] || ['per_item', 'per_piece', 'per_service'];
+    
+    // Upload all three images to organized folder
+    const [originalUrl, thumbnailUrl, previewUrl] = await Promise.all([
+      uploadToSupabase(original.uri, 'original'),
+      uploadToSupabase(thumbnail.uri, 'thumbnail'),
+      uploadToSupabase(preview.uri, 'preview'),
+    ]);
+    
+    setUploadedImageUrl(originalUrl);
+    return {
+      images: originalUrl ? [originalUrl] : [],
+      thumbnail_images: thumbnailUrl ? [thumbnailUrl] : [],
+      preview_images: previewUrl ? [previewUrl] : [],
+    };
   };
+
+
 
   const getPricingUnitLabel = (unit: string) => {
     const labels = {
@@ -223,6 +344,13 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
     };
     
     const { isValid, errors, sanitizedData } = validateForm(formData, validators);
+    
+    // Additional validation for image (not part of formData)
+    const imageValidation = validateImage(pickedImageUri);
+    if (!imageValidation.isValid) {
+      Alert.alert('Image Required', imageValidation.error || 'Please select an image for your listing');
+      return;
+    }
     
     if (!isValid) {
       // Log security event for validation failures
@@ -263,18 +391,33 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
     const success = await withErrorHandling(async () => {
       setIsSubmitting(true);
       
-      // Use sanitized data with marketplace image support and expiration
-      const defaultImage = await getDefaultListingImage();
+      // Image validation is already done above, so pickedImageUri should exist
+      let imageUrls;
+      try {
+        imageUrls = await uploadImageToSupabase();
+        if (!imageUrls.images.length) {
+          Alert.alert('Upload Failed', 'Failed to upload image. Please try again.');
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (error) {
+        console.error('Image upload error:', error);
+        Alert.alert('Upload Failed', 'Failed to upload image. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Use sanitized data with uploaded image URLs
       const newListing = {
         title: sanitizedData.title,
         description: sanitizedData.description,
         price: sanitizedData.price, // Keep as string to match interface
         category: sanitizedData.category,
         price_unit: formData.priceUnit,
-        images: uploadedImages.length > 0 ? [uploadedImages[0].originalUrl] : [defaultImage],
-        thumbnail_images: uploadedImages.length > 0 ? [uploadedImages[0].thumbnailUrl] : undefined,
-        preview_images: uploadedImages.length > 0 ? [uploadedImages[0].previewUrl] : undefined,
-        image_metadata: uploadedImages.length > 0 ? [uploadedImages[0]] : undefined,
+        images: imageUrls.images,
+        thumbnail_images: imageUrls.thumbnail_images,
+        preview_images: imageUrls.preview_images,
+        image_folder_path: `${encodeURIComponent(sellerUsername)}/${Date.now()}`, // Add encoded folder path
         is_active: formData.isActive,
         username: sellerUsername,
         // Include location data if available
@@ -310,7 +453,8 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
         isActive: true,
         expirationDays: 30,
       });
-      setUploadedImages([]);
+      setPickedImageUri(null);
+      setUploadedImageUrl(null);
       
       return true;
     }, context, true, sellerUsername);
@@ -387,7 +531,7 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
                     }}
                   >
                     <View style={[styles.categoryIcon, isSelected && styles.categoryIconSelected]}>
-                      {IconComponent && <IconComponent size={16} color={isSelected ? '#FFFFFF' : '#22C55E'} />}
+                      {IconComponent && <IconComponent size={16} color={isSelected ? '#22C55E' : '#22C55E'} />}
                     </View>
                     <Text style={[styles.categoryOptionText, isSelected && styles.categoryOptionTextSelected]}>
                       {category.name}
@@ -416,7 +560,9 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
             {/* Pricing Unit Selector */}
             {formData.category && (
               <View style={styles.pricingUnitContainer}>
-                <Text style={styles.pricingUnitLabel}>Pricing Unit *</Text>
+                <Text style={styles.pricingUnitLabel}>
+                  Pricing Unit <Text style={styles.requiredText}>*</Text>
+                </Text>
                 <ScrollView 
                   horizontal 
                   showsHorizontalScrollIndicator={false}
@@ -440,6 +586,9 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
                     );
                   })}
                 </ScrollView>
+                {!formData.priceUnit && (
+                  <Text style={styles.errorText}>Please select a pricing unit</Text>
+                )}
               </View>
             )}
           </View>
@@ -512,44 +661,38 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
 
           {/* Image Upload Section */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Image</Text>
+            <Text style={styles.sectionTitle}>
+              Image <Text style={styles.requiredText}>*</Text>
+            </Text>
             <Text style={styles.sectionSubtitle}>
               Add one high-quality image for your listing.
             </Text>
-            
-            {uploadedImages.length > 0 ? (
+            {pickedImageUri ? (
               <View style={styles.singleImageContainer}>
-                <Image 
-                  source={{ uri: uploadedImages[0].thumbnailUrl }} 
-                  style={styles.singleImagePreview}
-                />
-                <TouchableOpacity 
-                  style={styles.removeImageButton}
-                  onPress={() => setUploadedImages([])}
-                >
+                <Image source={{ uri: pickedImageUri }} style={styles.singleImagePreview} />
+                <TouchableOpacity style={styles.removeImageButton} onPress={() => setPickedImageUri(null)}>
                   <X size={16} color="#FFFFFF" />
                 </TouchableOpacity>
               </View>
             ) : (
               <TouchableOpacity 
-                style={styles.addImagesButton}
-                onPress={() => setShowImagePicker(true)}
+                style={styles.addImagesButton} 
+                onPress={handlePickImage}
               >
                 <ImageIcon size={24} color="#6B7280" />
-                <Text style={styles.addImagesButtonText}>Add Image</Text>
+                <Text style={styles.addImagesButtonText}>
+                  Add Image (Required)
+                </Text>
               </TouchableOpacity>
             )}
-            
-            {uploadedImages.length > 0 && (
-              <TouchableOpacity 
-                style={styles.manageImagesButton}
-                onPress={() => setShowImagePicker(true)}
-              >
+            {pickedImageUri && (
+              <TouchableOpacity style={styles.manageImagesButton} onPress={handlePickImage}>
                 <Text style={styles.manageImagesButtonText}>Change Image</Text>
               </TouchableOpacity>
             )}
-            
-
+            {!pickedImageUri && (
+              <Text style={styles.errorText}>Please select an image for your listing</Text>
+            )}
           </View>
 
           {/* Description */}
@@ -611,15 +754,6 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
           </TouchableOpacity>
         </ScrollView>
       </View>
-
-      {/* Image Picker Modal */}
-      <MarketplaceImagePicker
-        visible={showImagePicker}
-        onClose={() => setShowImagePicker(false)}
-        onImagesSelected={handleImagesSelected}
-        maxImages={1}
-        listingId={editListing?.id || undefined} // Pass editListing.id if editing
-      />
     </Modal>
   );
 }
@@ -726,6 +860,8 @@ const styles = StyleSheet.create({
   },
   categoryIconSelected: {
     backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#22C55E',
   },
   categoryOptionText: {
     fontSize: 10,
@@ -948,6 +1084,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#64748B',
   },
+
   manageImagesButton: {
     alignSelf: 'center',
     marginTop: 12,
@@ -1129,5 +1266,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Regular',
     color: '#64748B',
+  },
+  requiredText: {
+    color: '#1E293B',
+    fontWeight: 'bold',
+  },
+  errorText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+    marginTop: 4,
+    marginLeft: 4,
   },
 });

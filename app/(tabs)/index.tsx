@@ -22,53 +22,37 @@ import { Plus } from 'lucide-react-native';
 import { mockCategories } from '@/utils/mockData';
 import AddListingModal from '@/components/AddListingModal';
 import PingTemplateSelector from '@/components/PingTemplateSelector';
+import FeedbackModal from '@/components/FeedbackModal';
 
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import CategorySelectionModal from '@/components/CategorySelectionModal';
 import DistanceFilterModal from '@/components/DistanceFilterModal';
 import { useListings } from '@/hooks/useListings';
 import { usePingLimits } from '@/hooks/usePingLimits';
+import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 import { supabase } from '@/utils/supabaseClient';
+import { advancedRateLimiter } from '../../utils/advancedRateLimiter';
 import { createPing, checkExistingPing } from '@/utils/activitySupabase';
 import { checkPingTimeLimit } from '@/utils/activitySupabase';
 import { formatDistance } from '@/utils/distance';
 import { LocationUtils } from '@/utils/locationUtils';
+import OfflineQueueIndicator from '@/components/OfflineQueueIndicator';
+import { ImageUrlHelper } from '@/utils/imageUrlHelper';
+import NewRobustImage from '@/components/NewRobustImage';
 
-// Helper function to format price with unit
-const formatPriceWithUnit = (price: string, priceUnit?: string) => {
-  if (!priceUnit || priceUnit === 'per_item') {
-    return `₹${price}`;
-  }
-  
-  const unitLabels = {
-    per_kg: 'per kg',
-    per_piece: 'per piece',
-    per_pack: 'per pack',
-    per_bundle: 'per bundle',
-    per_dozen: 'per dozen',
-    per_basket: 'per basket',
-    per_plate: 'per plate',
-    per_serving: 'per serving',
-    per_hour: 'per hour',
-    per_service: 'per service',
-    per_session: 'per session',
-    per_day: 'per day',
-    per_commission: 'per commission',
-    per_project: 'per project',
-    per_week: 'per week',
-    per_month: 'per month',
-  };
-  
-  const unitLabel = unitLabels[priceUnit as keyof typeof unitLabels] || priceUnit;
-  return { price: `₹${price}`, unit: unitLabel };
-};
+import { formatPriceWithUnit } from '@/utils/formatters';
+import { Category } from '@/utils/types';
+import { ErrorHandler } from '@/utils/errorHandler';
+import { networkMonitor } from '@/utils/networkMonitor';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 36) / 2; // Account for padding and gap
 
-export default function HomeScreen() {
+function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const errorHandler = ErrorHandler.getInstance();
 
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -78,14 +62,12 @@ export default function HomeScreen() {
   const [pingMessage, setPingMessage] = useState('Hi, I am interested in your listing!');
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [selectedCategoryForListing, setSelectedCategoryForListing] = useState<string>('');
+  const [selectedCategoryForListing, setSelectedCategoryForListing] = useState<Category | undefined>(undefined);
   const [showDistanceFilterModal, setShowDistanceFilterModal] = useState(false);
   const [sellerInfoMap, setSellerInfoMap] = useState<Record<string, any>>({});
   const [username, setUsername] = useState<string | null>(null);
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [feedbackRating, setFeedbackRating] = useState<number | null>(null);
-  const [feedbackText, setFeedbackText] = useState('');
   const [userActivityCount, setUserActivityCount] = useState(0);
   const [hasShownFeedbackPrompt, setHasShownFeedbackPrompt] = useState(false);
   const [existingPings, setExistingPings] = useState<Record<string, boolean>>({});
@@ -111,6 +93,9 @@ export default function HomeScreen() {
 
   // Ping limits for the selected listing
   const { limitInfo, loading: limitLoading, getPingLimitMessage, getPingLimitColor, checkPingLimit, recordPing } = usePingLimits(username);
+
+  // Offline queue for handling network issues
+  const { addPingAction, isOnline } = useOfflineQueue();
 
   // Load seller info for all listings
   useEffect(() => {
@@ -150,7 +135,7 @@ export default function HomeScreen() {
     if (listings.length > 0) {
       loadSellerInfo();
     }
-  }, [listings, sellerInfoMap]);
+  }, [listings]);
 
   useEffect(() => {
     async function fetchUser() {
@@ -247,19 +232,8 @@ export default function HomeScreen() {
 
   // Convert listing format for display with proper types
   const displayListings = filteredListings.map((listing: any) => {
-    const imageUrl = (listing.images && listing.images.length > 0) ? listing.images[0] : 'https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=400';
-    
-    // Debug logging for image URLs
-    console.log(`Listing "${listing.title}":`, {
-      hasImages: !!(listing.images && listing.images.length > 0),
-      imageCount: listing.images?.length || 0,
-      imageUrl: imageUrl.substring(0, 80) + '...',
-      isFallback: imageUrl.includes('pexels.com')
-    });
-    
     return {
       ...listing,
-      image: imageUrl,
     };
   });
 
@@ -267,21 +241,39 @@ export default function HomeScreen() {
 
   // Handler for the message (ping) button
   const handlePingSeller = async (listing: any) => {
-    console.log('Ping button pressed!', { listing, username });
-    
-    if (!username) {
-      Alert.alert('Error', 'Please log in to send pings');
-      return;
-    }
-
     try {
+      // Check network connectivity first
+      if (!networkMonitor.isOnline()) {
+        await errorHandler.handleError(
+          new Error('No internet connection available'),
+          {
+            operation: 'ping_seller',
+            component: 'HomeScreen',
+          }
+        );
+        return;
+      }
+
+      if (!username) {
+        await errorHandler.handleError(
+          new Error('Please log in to send pings'),
+          {
+            operation: 'ping_authentication',
+            component: 'HomeScreen',
+          }
+        );
+        return;
+      }
+
       // Check if user already has a pending ping to this listing
       const hasExistingPing = await checkExistingPing(listing.id, username);
       if (hasExistingPing) {
-        Alert.alert(
-          'Ping Already Sent', 
-          'You already have a pending ping for this listing. Please wait for the seller to respond.',
-          [{ text: 'OK' }]
+        await errorHandler.handleError(
+          new Error('You already have a pending ping for this listing. Please wait for the seller to respond.'),
+          {
+            operation: 'ping_already_sent',
+            component: 'HomeScreen',
+          }
         );
         return;
       }
@@ -290,15 +282,15 @@ export default function HomeScreen() {
       const limitResult = await checkPingLimit(listing.id, true);
       
       // Always open modal, let the modal handle the limit display
-      console.log('Setting up ping modal...');
       setSelectedListingForPing(listing);
       setPingMessage('Hi, I am interested in your listing!');
       setPingModalVisible(true);
-      console.log('Ping modal should be visible now');
       
     } catch (error) {
-      console.error('Error in handlePingSeller:', error);
-      Alert.alert('Error', 'Failed to open ping modal. Please try again.');
+      await errorHandler.handleError(error, {
+        operation: 'ping_seller_general',
+        component: 'HomeScreen',
+      });
     }
   };
 
@@ -314,24 +306,56 @@ export default function HomeScreen() {
 
   // Confirm sending the ping
   const confirmSendPing = async () => {
-          if (!selectedListingForPing || !username) {
-      Alert.alert('Error', 'Unable to send ping. Please try again.');
-      return;
-    }
-
-    const listing = selectedListingForPing;
-    const currentUser = { username: username, name: 'You', avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400' };
-    const seller = { username: listing.username, name: listing.sellerName, avatar: listing.sellerAvatar };
-
     try {
+      if (!selectedListingForPing || !username) {
+        await errorHandler.handleError(
+          new Error('Unable to send ping. Please try again.'),
+          {
+            operation: 'ping_validation',
+            component: 'HomeScreen',
+          }
+        );
+        return;
+      }
+
+      const listing = selectedListingForPing;
+      const currentUser = { username: username, name: 'You', avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400' };
+      const seller = { username: listing.username, name: listing.sellerName, avatar: listing.sellerAvatar };
+
+      // Check rate limiting first
+      const rateLimit = await advancedRateLimiter.checkPingRateLimit(username);
+      if (!rateLimit.allowed) {
+        const retrySeconds = Math.ceil((rateLimit.retryAfter || 0) / 1000);
+        await errorHandler.handleError(
+          new Error(`You're sending too many pings. Please try again in ${retrySeconds} seconds.`),
+          {
+            operation: 'ping_rate_limit',
+            component: 'HomeScreen',
+          }
+        );
+        return;
+      }
+
       // Validate ping message
       if (!pingMessage.trim()) {
-        Alert.alert('Empty Message', 'Please enter a message before sending the ping.');
+        await errorHandler.handleError(
+          new Error('Please enter a message before sending the ping.'),
+          {
+            operation: 'ping_message_validation',
+            component: 'HomeScreen',
+          }
+        );
         return;
       }
 
       if (pingMessage.length > 500) {
-        Alert.alert('Message Too Long', 'Ping message must be 500 characters or less.');
+        await errorHandler.handleError(
+          new Error('Ping message must be 500 characters or less.'),
+          {
+            operation: 'ping_message_length',
+            component: 'HomeScreen',
+          }
+        );
         return;
       }
 
@@ -340,14 +364,49 @@ export default function HomeScreen() {
       // Allow users to ping themselves (removed restriction)
       // Note: Users can now ping their own listings if needed
 
-      // Use the clean ping system - only create in pings table
-      const pingResult = await createPing({
+      // Try to create ping online first
+      if (isOnline) {
+        try {
+          const pingResult = await createPing({
+            listing_id: listing.id,
+            sender_username: currentUser.username,
+            receiver_username: seller.username,
+            message: pingMessage.trim(),
+            status: 'pending'
+          });
+
+          // Record ping in local limits and refresh
+          await recordPing(listing.id);
+
+          // Update existing pings state
+          setExistingPings(prev => ({
+            ...prev,
+            [listing.id]: true
+          }));
+
+          // Show success message
+          Alert.alert(
+            'Ping Sent!', 
+            `Your ping has been sent to ${seller.name || 'the seller'}. You'll be able to chat once they accept your ping.`,
+            [{ text: 'OK' }]
+          );
+          
+          trackUserActivity(); // Track meaningful activity
+          return;
+        } catch (error) {
+          console.error('Online ping failed, adding to offline queue:', error);
+          // Fall through to offline queue
+        }
+      }
+
+      // Add to offline queue if online attempt failed or offline
+      await addPingAction({
         listing_id: listing.id,
         sender_username: currentUser.username,
         receiver_username: seller.username,
         message: pingMessage.trim(),
         status: 'pending'
-      });
+      }, 'high');
 
       // Record ping in local limits and refresh
       await recordPing(listing.id);
@@ -358,23 +417,29 @@ export default function HomeScreen() {
         [listing.id]: true
       }));
 
-      // Show success message
-      Alert.alert(
-        'Ping Sent!', 
-        `Your ping has been sent to ${seller.name || 'the seller'}. You'll be able to chat once they accept your ping.`,
-        [{ text: 'OK' }]
-      );
+      if (isOnline) {
+        Alert.alert(
+          'Ping Queued', 
+          `Your ping has been queued and will be sent when the connection is stable.`
+        );
+      } else {
+        Alert.alert(
+          'Ping Saved', 
+          `Your ping has been saved and will be sent when you're back online.`
+        );
+      }
       
       trackUserActivity(); // Track meaningful activity
 
     } catch (error) {
-      console.error('Ping creation error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to send ping. Please try again.';
-      Alert.alert('Ping Failed', errorMessage);
+      await errorHandler.handleError(error, {
+        operation: 'ping_creation',
+        component: 'HomeScreen',
+      });
     } finally {
-    setPingModalVisible(false);
-    setSelectedListingForPing(null);
-    setPingMessage('Hi, I am interested in your listing!');
+      setPingModalVisible(false);
+      setSelectedListingForPing(null);
+      setPingMessage('Hi, I am interested in your listing!');
     }
   };
 
@@ -450,21 +515,27 @@ export default function HomeScreen() {
   };
 
   const renderListing = ({ item }: { item: any }) => {
-    const seller = sellerInfoMap[item.username] || {};
+    const seller = sellerInfoMap[item.username] || { name: 'Unknown Seller', avatar_url: '' };
     
     return (
       <View style={styles.listingCard}>
         <TouchableOpacity onPress={() => handleNavigateToSellerProfile(item)}>
-        <Image 
-          source={{ 
-            uri: (item.images && item.images.length > 0) ? item.images[0] : (item.image_url || item.image),
-            // Add cache busting for debugging
-            cache: 'reload'
-          }} 
-          style={styles.listingImage} 
-          resizeMode="cover"
-          onError={(error) => console.log(`Image load error for "${item.title}":`, error.nativeEvent)}
-          onLoad={() => console.log(`Image loaded successfully for "${item.title}"`)}
+        <NewRobustImage
+          images={item.images}
+          thumbnailImages={item.thumbnail_images}
+          previewImages={item.preview_images}
+          imageFolderPath={item.image_folder_path}
+          size="thumbnail"
+          style={styles.listingImage}
+          placeholderText="No Image"
+          title={item.title}
+          debug={false}
+          onError={(error, imageSet, metadata) => {
+            // Error handling without debug logging
+          }}
+          onLoad={(imageSet, metadata) => {
+            // Load handling without debug logging
+          }}
         />
         </TouchableOpacity>
 
@@ -472,18 +543,15 @@ export default function HomeScreen() {
           <TouchableOpacity onPress={() => handleNavigateToSellerProfile(item)}>
           <Text style={styles.listingTitle}>{item.title}</Text>
           <View style={styles.priceContainer}>
-            {(() => {
-              const priceData = formatPriceWithUnit(item.price, item.price_unit);
-              if (typeof priceData === 'string') {
-                return <Text style={styles.listingPrice}>{priceData}</Text>;
-              }
-              return (
-                <>
-                  <Text style={styles.listingPrice}>{priceData.price}</Text>
-                  <Text style={styles.priceUnit}>{priceData.unit}</Text>
-                </>
-              );
-            })()}
+            <Text style={styles.listingPrice}>₹{item.price}</Text>
+            <View style={styles.priceUnitBadge}>
+              <Text style={styles.priceUnitText}>
+                {item.price_unit ? 
+                  (item.price_unit === 'per_item' ? 'per item' : item.price_unit.replace('per_', 'per ')) 
+                  : 'per item'
+                }
+              </Text>
+            </View>
           </View>
           
 
@@ -498,8 +566,8 @@ export default function HomeScreen() {
               <Text style={styles.sellerName}>{seller.name}</Text>
               <View style={styles.locationRow}>
                 <MapPin size={12} color="#64748B" />
-                {sortByDistanceState && item.distance && item.distance !== 'Unknown' ? (
-                  <Text style={styles.distance}>{formatDistance(item.distance)}</Text>
+                {item.distance_km !== undefined && item.distance_km !== null ? (
+                  <Text style={styles.distance}>{formatDistance(item.distance_km)}</Text>
                 ) : seller.location_display ? (
                   <Text style={styles.distance}>{LocationUtils.formatLocationDisplay(seller.location_display)}</Text>
                 ) : (
@@ -514,13 +582,7 @@ export default function HomeScreen() {
             </View>
           </TouchableOpacity>
 
-          <View style={styles.statusContainer}>
-            <View style={[styles.statusBadge, item.is_active && styles.activeBadge]}>
-              <Text style={[styles.statusText, item.is_active && styles.activeText]}>
-                {item.is_active ? 'Active' : 'Inactive'}
-              </Text>
-            </View>
-          </View>
+
 
           <View style={styles.actionButtons}>
             <TouchableOpacity 
@@ -567,8 +629,6 @@ export default function HomeScreen() {
 
   // Handler for the feedback button
   const handleFeedback = () => {
-    setFeedbackRating(null);
-    setFeedbackText('');
     setShowFeedbackModal(true);
   };
 
@@ -593,8 +653,6 @@ export default function HomeScreen() {
             text: 'Rate App',
             onPress: () => {
               setHasShownFeedbackPrompt(true);
-              setFeedbackRating(null);
-              setFeedbackText('');
               setShowFeedbackModal(true);
             }
           }
@@ -603,7 +661,7 @@ export default function HomeScreen() {
     }
   };
 
-  const handleSubmitFeedback = async (rating: number) => {
+  const handleSubmitFeedback = async (rating: number, feedback: string) => {
     if (!username) {
       Alert.alert('Error', 'Please log in to submit feedback');
       return;
@@ -615,7 +673,7 @@ export default function HomeScreen() {
         .insert({
           username: username,
           rating: rating,
-          feedback: feedbackText.trim() || 'No additional feedback provided'
+          feedback: feedback
         });
 
       if (error) {
@@ -626,8 +684,6 @@ export default function HomeScreen() {
 
       Alert.alert('Thank You!', `You rated us ${rating} stars. Your feedback helps us improve!`);
       setShowFeedbackModal(false);
-      setFeedbackRating(null);
-      setFeedbackText('');
     } catch (error) {
       console.error('Error submitting feedback:', error);
       Alert.alert('Error', 'Failed to submit feedback. Please try again.');
@@ -636,7 +692,7 @@ export default function HomeScreen() {
 
   // Handler for category selection
   const handleCategorySelect = (categoryId: string) => {
-    setSelectedCategoryForListing(categoryId);
+    setSelectedCategoryForListing(categoryId as Category);
     setShowCategoryModal(false);
     setShowAddModal(true);
   };
@@ -644,17 +700,26 @@ export default function HomeScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-    await refreshListings();
+      // Check network connectivity first
+      if (!networkMonitor.isOnline()) {
+        await errorHandler.handleError(
+          new Error('No internet connection available'),
+          {
+            operation: 'refresh_listings',
+            component: 'HomeScreen',
+          }
+        );
+        return;
+      }
+
+      await refreshListings();
     } catch (error) {
-      console.error('Refresh failed:', error);
-      // Show user-friendly error message
-      Alert.alert(
-        'Refresh Failed', 
-        'Unable to refresh listings. Please check your connection and try again.',
-        [{ text: 'OK' }]
-      );
+      await errorHandler.handleError(error, {
+        operation: 'refresh_listings',
+        component: 'HomeScreen',
+      });
     } finally {
-    setRefreshing(false);
+      setRefreshing(false);
     }
   };
 
@@ -663,6 +728,9 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Offline Queue Indicator */}
+      <OfflineQueueIndicator />
+      
       {/* Add Listing Modal */}
       <AddListingModal 
         visible={showAddModal} 
@@ -915,7 +983,7 @@ export default function HomeScreen() {
           <FlatList
             data={displayListings}
             renderItem={renderListing}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item, index) => `${item.id}-${index}`}
             numColumns={2}
             contentContainerStyle={styles.listingsContainer}
             columnWrapperStyle={styles.columnWrapper}
@@ -957,80 +1025,11 @@ export default function HomeScreen() {
       </TouchableOpacity>
 
       {/* Enhanced Feedback Modal */}
-      <Modal
+      <FeedbackModal
         visible={showFeedbackModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowFeedbackModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.feedbackModal}>
-            <Text style={styles.feedbackModalTitle}>Rate Our App</Text>
-            <Text style={styles.feedbackModalText}>
-              We'd love to hear your feedback! How would you rate your experience?
-            </Text>
-            
-            {/* Star Rating */}
-            <View style={styles.ratingContainer}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <TouchableOpacity
-                  key={star}
-                  style={styles.starButton}
-                  onPress={() => setFeedbackRating(star)}
-                >
-                  <Text style={[
-                    styles.starText,
-                    feedbackRating && star <= feedbackRating ? { color: '#FFD700' } : { color: '#E2E8F0' }
-                  ]}>
-                    {feedbackRating && star <= feedbackRating ? '★' : '☆'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            
-            {/* Feedback Text Input */}
-            <Text style={styles.feedbackLabel}>How can we improve? (Optional):</Text>
-            <TextInput
-              style={styles.feedbackInput}
-              value={feedbackText}
-              onChangeText={setFeedbackText}
-              placeholder="Tell us how we can make the app better for you..."
-              placeholderTextColor="#94A3B8"
-              multiline
-              maxLength={200}
-              numberOfLines={3}
-            />
-            <Text style={styles.characterCount}>
-              {feedbackText.length}/200 characters
-            </Text>
-            
-            {/* Action Buttons */}
-            <View style={styles.feedbackActions}>
-              <TouchableOpacity 
-                style={styles.cancelButton}
-                onPress={() => {
-                  setShowFeedbackModal(false);
-                  setFeedbackRating(null);
-                  setFeedbackText('');
-                }}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[
-                  styles.submitButton,
-                  !feedbackRating && { backgroundColor: '#94A3B8' }
-                ]}
-                onPress={() => feedbackRating && handleSubmitFeedback(feedbackRating)}
-                disabled={!feedbackRating}
-              >
-                <Text style={styles.submitButtonText}>Submit</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onClose={() => setShowFeedbackModal(false)}
+        onSubmit={handleSubmitFeedback}
+      />
     </View>
   );
 }
@@ -1168,26 +1167,47 @@ const styles = StyleSheet.create({
     minHeight: 28,
   },
   listingPrice: {
-    fontSize: 14,
+    fontSize: 16,
     fontFamily: 'Inter-Bold',
     color: '#22C55E',
     marginBottom: 6,
   },
   priceContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     marginBottom: 6,
+    gap: 8,
   },
   priceUnit: {
     fontSize: 10,
     fontFamily: 'Inter-Medium',
-    color: '#64748B',
-    marginLeft: 4,
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: 6,
+    color: '#16A34A',
+    marginLeft: 12,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#16A34A',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    overflow: 'hidden',
   },
+  priceUnitBadge: {
+    backgroundColor: 'transparent',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    alignSelf: 'flex-end',
+    borderWidth: 1,
+    borderColor: 'rgba(100, 116, 139, 0.3)',
+    marginBottom: 2,
+  },
+  priceUnitText: {
+    fontSize: 9,
+    fontFamily: 'Inter-Regular',
+    color: 'rgba(100, 116, 139, 0.8)',
+    textAlign: 'center',
+  },
+
   sellerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1317,95 +1337,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#FFFFFF',
   },
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-  },
-  feedbackModal: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 28,
-    width: 320,
-    alignItems: 'stretch',
-    elevation: 8,
-  },
-  feedbackModalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
-    color: '#1E293B',
-  },
-  feedbackModalText: {
-    fontSize: 13,
-    color: '#64748B',
-    marginBottom: 18,
-    textAlign: 'center',
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 16,
-  },
-  starButton: {
-    padding: 10,
-  },
-  starText: {
-    fontSize: 24,
-  },
-  cancelButton: {
-    backgroundColor: '#F1F5F9',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#64748B',
-    fontWeight: 'bold',
-    fontSize: 15,
-  },
-  feedbackLabel: {
-    fontSize: 14,
-    color: '#1E293B',
-    marginBottom: 8,
-    fontWeight: '600',
-  },
-  feedbackInput: {
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 14,
-    color: '#1E293B',
-    backgroundColor: '#F8FAFC',
-    minHeight: 80,
-    textAlignVertical: 'top',
-  },
-  characterCount: {
-    fontSize: 12,
-    color: '#64748B',
-    textAlign: 'right',
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  feedbackActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  submitButton: {
-    flex: 1,
-    backgroundColor: '#22C55E',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 15,
-  },
+
   sortingBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1449,5 +1381,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#64748B',
   },
-
 });
+
+export default withErrorBoundary(HomeScreen, 'HomeScreen');

@@ -8,7 +8,7 @@
  * @returns Formatted distance string (e.g., "5km", "50m", "2.5km")
  */
 export function formatDistance(distanceKm: number): string {
-  if (!distanceKm || distanceKm === Number.MAX_VALUE || distanceKm < 0) {
+  if (distanceKm === undefined || distanceKm === null || distanceKm === Number.MAX_VALUE || distanceKm < 0) {
     return 'Unknown';
   }
   

@@ -66,7 +66,6 @@ export interface Achievement {
   title: string;
   description: string;
   icon: string;
-  category: 'sales' | 'social' | 'engagement' | 'milestone' | 'special';
   max_progress: number;
   omni_reward: number;
   rarity: 'common' | 'rare' | 'epic' | 'legendary';
@@ -81,9 +80,7 @@ export interface UserAchievement {
   progress: number;
   max_progress: number;
   completed: boolean;
-  completed_date: string | null;
   omni_earned: number;
-  last_updated_at: string;
   created_at: string;
   updated_at: string;
 }
@@ -391,7 +388,7 @@ export async function getAllAchievements(): Promise<Achievement[]> {
       .from('achievements')
       .select('*')
       .eq('is_active', true)
-      .order('category', { ascending: true });
+      .order('created_at', { ascending: true });
 
     if (error) {
       console.error('Error fetching achievements:', error);
@@ -416,14 +413,13 @@ export async function getUserAchievements(username: string): Promise<UserAchieve
           title,
           description,
           icon,
-          category,
           max_progress,
           omni_reward,
           rarity
         )
       `)
       .eq('username', username)
-      .order('last_updated_at', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching user achievements:', error);
@@ -492,6 +488,9 @@ export async function createUserAchievement(username: string, achievementId: str
 
 export async function updateUserAchievementProgress(username: string, achievementId: string, newProgress: number): Promise<UserAchievement | null> {
   try {
+    // First, ensure the user has all achievements initialized
+    await initializeUserAchievements(username);
+    
     // Get current achievement progress
     const { data: currentAchievement, error: fetchError } = await supabase
       .from('user_achievements')
@@ -506,8 +505,8 @@ export async function updateUserAchievementProgress(username: string, achievemen
     }
 
     if (!currentAchievement) {
-      // Create new achievement record
-      return await createUserAchievement(username, achievementId);
+      console.error('Achievement record not found after initialization:', achievementId);
+      return null;
     }
 
     // Get achievement details for max progress
@@ -530,9 +529,7 @@ export async function updateUserAchievementProgress(username: string, achievemen
       .update({
         progress: updatedProgress,
         completed: updatedProgress >= achievement.max_progress,
-        completed_date: newlyCompleted ? new Date().toISOString().split('T')[0] : currentAchievement.completed_date,
         omni_earned: newlyCompleted ? achievement.omni_reward : currentAchievement.omni_earned,
-        last_updated_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .eq('username', username)
@@ -548,6 +545,53 @@ export async function updateUserAchievementProgress(username: string, achievemen
     return data;
   } catch (error) {
     console.error('Error in updateUserAchievementProgress:', error);
+    return null;
+  }
+}
+
+// Safe version that handles missing achievements gracefully
+export async function updateUserAchievementProgressSafe(username: string, achievementId: string, newProgress: number): Promise<UserAchievement | null> {
+  try {
+    // Get achievement details for max progress first
+    const { data: achievement, error: achievementError } = await supabase
+      .from('achievements')
+      .select('max_progress, omni_reward')
+      .eq('id', achievementId)
+      .single();
+
+    if (achievementError) {
+      console.error('Error fetching achievement details:', achievementError);
+      return null;
+    }
+
+    const updatedProgress = Math.min(newProgress, achievement.max_progress);
+
+    // Use UPSERT to handle both insert and update cases
+    const { data, error } = await supabase
+      .from('user_achievements')
+      .upsert({
+        username,
+        achievement_id: achievementId,
+        progress: updatedProgress,
+        max_progress: achievement.max_progress,
+        completed: updatedProgress >= achievement.max_progress,
+        omni_earned: updatedProgress >= achievement.max_progress ? achievement.omni_reward : 0,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'username,achievement_id',
+        ignoreDuplicates: false
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error upserting user achievement:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in updateUserAchievementProgressSafe:', error);
     return null;
   }
 }
@@ -653,6 +697,12 @@ export async function getCompleteRewardsData(username: string) {
 
 export async function initializeUserRewards(username: string) {
   try {
+    // Validate username is not empty
+    if (!username || username.trim() === '') {
+      console.error('Cannot initialize rewards - username is empty');
+      return null;
+    }
+
     console.log('Initializing rewards for user:', username);
     
     // Check if user exists in users table first
@@ -680,17 +730,17 @@ export async function initializeUserRewards(username: string) {
     const streak = userStreak.status === 'fulfilled' ? userStreak.value : null;
     const referralCode = userReferralCode.status === 'fulfilled' ? userReferralCode.value : null;
 
-    // Create welcome bonus transaction
-    if (rewards) {
-      await createRewardTransaction(
-        username,
-        'bonus',
-        50,
-        'Welcome bonus for new user',
-        undefined,
-        'welcome'
-      );
-    }
+    // Don't create welcome bonus transaction - new users start with 0 OMNI
+    // if (rewards) {
+    //   await createRewardTransaction(
+    //     username,
+    //     'bonus',
+    //     50,
+    //     'Welcome bonus for new user',
+    //     undefined,
+    //     'welcome'
+    //   );
+    // }
 
     return {
       userRewards: rewards,
@@ -878,6 +928,12 @@ export async function getUserReferralCodeSafe(username: string): Promise<UserRef
 
 export async function getCompleteRewardsDataSafe(username: string) {
   try {
+    // Validate username is not empty
+    if (!username || username.trim() === '') {
+      console.error('Cannot get complete rewards data - username is empty');
+      return null;
+    }
+
     // Use safe functions that auto-initialize missing records
     const [userRewards, userStreak, userReferralCode, userAchievements, dailyCheckins, referrals, transactions] = await Promise.allSettled([
       getUserRewardsSafe(username),
@@ -943,7 +999,7 @@ export async function batchUpdateAchievements(updates: Array<{username: string, 
   try {
     // Batch update achievements for better performance
     const promises = updates.map(update => 
-      updateUserAchievementProgress(update.username, update.achievementId, update.progress)
+      updateUserAchievementProgressSafe(update.username, update.achievementId, update.progress)
     );
     
     const results = await Promise.all(promises);
@@ -1000,22 +1056,23 @@ export async function awardWelcomeAchievements(username: string) {
     const existingIds = new Set(existingAchievements?.map(a => a.achievement_id) || []);
     const completedIds = new Set(existingAchievements?.filter(a => a.completed).map(a => a.achievement_id) || []);
 
-    // Award Welcome Bonus if not completed
+    // Award Welcome Bonus if not completed (but don't give extra OMNI since it's already given as direct bonus)
     if (!completedIds.has('welcome_bonus')) {
-      await updateUserAchievementProgress(username, 'welcome_bonus', 1);
-      await createRewardTransaction(username, 'achievement', 50, 'Welcome Bonus achievement completed', undefined, 'achievement');
-      console.log('Welcome Bonus awarded to:', username);
+      await updateUserAchievementProgressSafe(username, 'welcome_bonus', 1);
+      // Don't create reward transaction since welcome bonus is already given in initializeUserRewards
+      console.log('Welcome Bonus achievement marked as completed for:', username);
     }
 
+    // Early Adopter achievement - only mark as completed, don't award OMNI automatically
     // Check if user joined in the first month (assuming app launched in July 2025)
     const userJoinDate = new Date();
     const isEarlyAdopter = userJoinDate.getTime() <= new Date('2025-07-31').getTime();
 
-    // Award Early Adopter if applicable and not completed
+    // Mark Early Adopter as completed if applicable, but don't give OMNI automatically
     if (isEarlyAdopter && !completedIds.has('early_adopter')) {
-      await updateUserAchievementProgress(username, 'early_adopter', 1);
-      await createRewardTransaction(username, 'achievement', 200, 'Early Adopter achievement completed', undefined, 'achievement');
-      console.log('Early Adopter awarded to:', username);
+      await updateUserAchievementProgressSafe(username, 'early_adopter', 1);
+      // Don't create reward transaction - let users earn this through gameplay
+      console.log('Early Adopter achievement marked as completed for:', username);
     }
 
     return true;
