@@ -38,9 +38,7 @@ function MapViewScreen() {
   const [visibleListings, setVisibleListings] = useState<any[]>([]);
   const [selectedListing, setSelectedListing] = useState<any>(null);
   const [mapError, setMapError] = useState<string | null>(null);
-  const [isLocationActive, setIsLocationActive] = useState(false);
-  const [locationStep, setLocationStep] = useState<'none' | 'centered' | 'zoomed'>('none');
-  const [isManualLocationUpdate, setIsManualLocationUpdate] = useState(false);
+
   
   // Use the existing listings hook
   const { 
@@ -61,7 +59,6 @@ function MapViewScreen() {
         return listing.category === selectedCategory;
       });
       
-      // Show all filtered listings since we're using hook pagination
       setVisibleListings(filtered);
     } else {
       setVisibleListings([]);
@@ -125,56 +122,7 @@ function MapViewScreen() {
     }
   };
 
-  const handleLocationPress = () => {
-    if (!userLocation) {
-      return;
-    }
 
-    if (locationStep === 'none') {
-      // First click: Center the map on user location
-      const newRegion = {
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
-        latitudeDelta: LATITUDE_DELTA,
-        longitudeDelta: LONGITUDE_DELTA,
-      };
-      setIsManualLocationUpdate(true);
-      setRegion(newRegion);
-      setLocationStep('centered');
-      setIsLocationActive(true);
-      
-      // Reset the flag after a short delay to allow region update to complete
-      setTimeout(() => setIsManualLocationUpdate(false), 100);
-    } else if (locationStep === 'centered') {
-      // Second click: Zoom in to user location
-      const newRegion = {
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
-        latitudeDelta: 0.005, // Zoom in closer
-        longitudeDelta: 0.005,
-      };
-      setIsManualLocationUpdate(true);
-      setRegion(newRegion);
-      setLocationStep('zoomed');
-      
-      // Reset the flag after a short delay to allow region update to complete
-      setTimeout(() => setIsManualLocationUpdate(false), 100);
-    } else if (locationStep === 'zoomed') {
-      // Third click: Reset to default zoom
-      const newRegion = {
-        latitude: userLocation.latitude,
-        longitude: userLocation.longitude,
-        latitudeDelta: LATITUDE_DELTA,
-        longitudeDelta: LONGITUDE_DELTA,
-      };
-      setIsManualLocationUpdate(true);
-      setRegion(newRegion);
-      setLocationStep('centered');
-      
-      // Reset the flag after a short delay to allow region update to complete
-      setTimeout(() => setIsManualLocationUpdate(false), 100);
-    }
-  };
 
   const handleLocationUpdate = (latitude: number, longitude: number) => {
     setUserLocation({ latitude, longitude });
@@ -189,9 +137,6 @@ function MapViewScreen() {
     
     // Also update location in the listings hook for distance calculations
     updateLocation();
-    
-    // Set location as available
-    setIsLocationActive(true);
   };
 
   return (
@@ -200,8 +145,6 @@ function MapViewScreen() {
       <MapHeader
         onLocationFilter={() => setShowLocationFilterModal(true)}
         onListView={() => setShowListView(true)}
-        onLocationPress={handleLocationPress}
-        isLocationActive={isLocationActive}
       />
 
       {/* Load More Section - Always Visible */}
@@ -244,20 +187,7 @@ function MapViewScreen() {
           visibleListings={visibleListings}
           userLocation={userLocation}
           region={region}
-          onRegionChange={(newRegion) => {
-            // Don't update region if we just manually set it via location button
-            if (isManualLocationUpdate) {
-              return;
-            }
-            
-            // Only update region if it's significantly different to prevent constant re-renders
-            const latDiff = Math.abs(newRegion.latitude - region.latitude);
-            const lngDiff = Math.abs(newRegion.longitude - region.longitude);
-            
-            if (latDiff > 0.001 || lngDiff > 0.001) {
-              setRegion(newRegion);
-            }
-          }}
+
           onMarkerPress={handleMarkerPress}
           onLocationUpdate={handleLocationUpdate}
         />

@@ -6,11 +6,9 @@ import { useRouter } from 'expo-router';
 interface MapHeaderProps {
   onLocationFilter: () => void;
   onListView: () => void;
-  onLocationPress: () => void;
-  isLocationActive: boolean;
 }
 
-export default function MapHeader({ onLocationFilter, onListView, onLocationPress, isLocationActive }: MapHeaderProps) {
+export default function MapHeader({ onLocationFilter, onListView }: MapHeaderProps) {
   const router = useRouter();
 
   return (
@@ -24,21 +22,7 @@ export default function MapHeader({ onLocationFilter, onListView, onLocationPres
       
                         <Text style={styles.title}>Map View</Text>
 
-                  {/* Location Status and Button */}
-                  <View style={styles.locationSection}>
-                    <TouchableOpacity 
-                      style={styles.locationButton}
-                      onPress={onLocationPress}
-                      activeOpacity={0.7}
-                    >
-                      <View style={styles.locationStatus}>
-                        <View style={[styles.locationDot, isLocationActive && styles.locationDotActive]} />
-                        <Text style={[styles.locationText, isLocationActive && styles.locationTextActive]}>
-                          {isLocationActive ? 'Location Active' : 'Tap to Center'}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  </View>
+
 
                   {/* Filter and List View Buttons */}
                   <View style={styles.rightSection}>
@@ -79,42 +63,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
   },
-  locationSection: {
-    marginLeft: 16,
-  },
-  locationButton: {
-    padding: 8,
-    minHeight: 32,
-    minWidth: 80,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  locationStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  locationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#64748B',
-    marginRight: 6,
-  },
-  locationDotActive: {
-    backgroundColor: '#22C55E',
-  },
-  locationText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
-    color: '#64748B',
-  },
-  locationTextActive: {
-    color: '#22C55E',
-  },
+
   rightSection: {
     flexDirection: 'row',
     alignItems: 'center',

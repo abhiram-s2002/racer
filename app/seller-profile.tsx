@@ -86,17 +86,16 @@ export default function SellerProfileScreen() {
   };
 
   const handleCallSeller = () => {
-    Alert.alert(
-      'Call Seller',
-      `Would you like to call ${sellerName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Call', onPress: () => {
-          // Here you would implement actual calling functionality
-          Alert.alert('Calling...', `Calling ${sellerName}`);
-        }}
-      ]
-    );
+    const phoneToCall = sellerInfo?.phone;
+    if (phoneToCall) {
+      Linking.openURL(`tel:${phoneToCall}`);
+    } else {
+      Alert.alert(
+        'No Phone Number',
+        'This seller has not provided a phone number.',
+        [{ text: 'OK', style: 'default' }]
+      );
+    }
   };
 
   const handleMessageSeller = () => {
@@ -225,9 +224,15 @@ export default function SellerProfileScreen() {
 
         {/* Contact Buttons */}
         <View style={styles.contactButtons}>
-          <TouchableOpacity style={styles.contactButton} onPress={handleCallSeller}>
-            <Phone size={20} color="#22C55E" />
-            <Text style={styles.contactButtonText}>Call</Text>
+          <TouchableOpacity 
+            style={[styles.contactButton, !sellerInfo?.phone && styles.disabledContactButton]} 
+            onPress={handleCallSeller}
+            disabled={!sellerInfo?.phone}
+          >
+            <Phone size={20} color={sellerInfo?.phone ? "#22C55E" : "#94A3B8"} />
+            <Text style={[styles.contactButtonText, !sellerInfo?.phone && styles.disabledContactButtonText]}>
+              {sellerInfo?.phone ? 'Call' : 'No Phone'}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.contactButton} onPress={handleMessageSeller}>
             <MessageCircle size={20} color="#22C55E" />
@@ -441,6 +446,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Medium',
     color: '#22C55E',
+  },
+  disabledContactButton: {
+    backgroundColor: '#F1F5F9',
+    opacity: 0.6,
+  },
+  disabledContactButtonText: {
+    color: '#94A3B8',
   },
   statsRow: {
     flexDirection: 'row',

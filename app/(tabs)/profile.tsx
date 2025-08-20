@@ -46,11 +46,6 @@ export default function ProfileScreen() {
     bio: '',
     avatar: '',
     isAvailable: true,
-    stats: {
-      totalListings: 0,
-      activePings: 0,
-      completedDeals: 0,
-    },
     username: '',
   });
 
@@ -69,11 +64,6 @@ export default function ProfileScreen() {
     bio: '',
     avatar: '',
     isAvailable: true,
-    stats: {
-      totalListings: 0,
-      activePings: 0,
-      completedDeals: 0,
-    },
     username: '',
   });
   const [avatarSeed, setAvatarSeed] = useState(getRandomSeed());
@@ -109,19 +99,9 @@ export default function ProfileScreen() {
     if (user) {
       // Fetch profile from 'users' table
       const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single();
-      let totalListings = 0;
-      if (profile && profile.username) {
-        // Fetch the real total listings count for this user
-        const { count, error: listingsError } = await supabase
-          .from('listings')
-          .select('id', { count: 'exact', head: true })
-          .eq('username', profile.username);
-        if (!listingsError && typeof count === 'number') {
-          totalListings = count;
-        }
-      }
+      
       if (profile) {
-        setProfileData({
+        const newProfileData = {
           name: profile.name || '',
           username: profile.username || '',
           email: profile.email || user.email || '',
@@ -130,11 +110,9 @@ export default function ProfileScreen() {
           bio: profile.bio || '',
           avatar: profile.avatar_url || '',
           isAvailable: profile.isAvailable !== undefined ? profile.isAvailable : true,
-          stats: {
-            ...((profile.stats as any) || {}),
-            totalListings,
-          },
-        });
+        };
+        
+        setProfileData(newProfileData);
 
         // Load notification settings
         setNotifications({
@@ -247,12 +225,20 @@ export default function ProfileScreen() {
       // Validate phone number before saving
       let phoneValue = null;
       if (editProfile.phone && editProfile.phone.trim() !== '') {
-        const phoneValidation = validatePhoneNumber(editProfile.phone.trim());
+        let phoneToValidate = editProfile.phone.trim();
+        
+        // Auto-prepend "91" if user enters 10 digits (common Indian mobile format)
+        if (phoneToValidate.length === 10 && /^\d{10}$/.test(phoneToValidate)) {
+          phoneToValidate = '91' + phoneToValidate;
+        }
+        
+        const phoneValidation = validatePhoneNumber(phoneToValidate);
+        
         if (!phoneValidation.isValid) {
           Alert.alert('Invalid Phone Number', phoneValidation.error || 'Please enter a valid phone number');
           return;
         }
-        phoneValue = phoneValidation.sanitizedValue || editProfile.phone.trim();
+        phoneValue = phoneValidation.sanitizedValue || phoneToValidate;
       }
 
       const upsertData = {
@@ -265,8 +251,8 @@ export default function ProfileScreen() {
         bio: editProfile.bio,
         avatar_url: `https://api.dicebear.com/7.x/pixel-art/png?seed=${avatarSeed}`,
         isAvailable: editProfile.isAvailable,
-        stats: editProfile.stats,
       };
+      
       if (!upsertData.username) {
         Alert.alert('Profile Error', 'Username is missing. Please contact support.');
         return;
@@ -382,7 +368,7 @@ export default function ProfileScreen() {
                 value={editProfile.phone}
                 onChangeText={text => setEditProfile(prev => ({ ...prev, phone: text }))}
                 keyboardType="phone-pad"
-                placeholder="+91 7306519350"
+                placeholder="7306519350 (10 digits) or 917306519350 (12 digits)"
                 placeholderTextColor="#94A3B8"
               />
               <Text style={styles.inputLabel}>Location</Text>
@@ -623,20 +609,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Stats Section */}
-        <View style={styles.statsSection}>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{profileData.stats.totalListings}</Text>
-            <Text style={styles.statLabel}>Total Listings</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{profileData.stats.activePings}</Text>
-            <Text style={styles.statLabel}>Active Pings</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statValue}>{profileData.stats.completedDeals}</Text>
-            <Text style={styles.statLabel}>Completed Deals</Text>
-          </View>
-        </View>
+        {/* Removed as per edit hint */}
 
         {/* Bio Section */}
         <View style={styles.bioSection}>
@@ -908,30 +881,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#22C55E',
   },
-  statsSection: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    marginTop: 8,
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  statCard: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 24,
-    fontFamily: 'Inter-Bold',
-    color: '#22C55E',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    color: '#64748B',
-    textAlign: 'center',
-  },
+
   bioSection: {
     backgroundColor: '#FFFFFF',
     marginTop: 8,

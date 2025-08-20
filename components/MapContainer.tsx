@@ -8,7 +8,6 @@ interface MapContainerProps {
   visibleListings: any[];
   userLocation: {latitude: number, longitude: number} | null;
   region: Region;
-  onRegionChange: (region: Region) => void;
   onMarkerPress: (listing: any) => void;
   onLocationUpdate: (latitude: number, longitude: number) => void;
 }
@@ -22,7 +21,6 @@ export default function MapContainer({
   visibleListings,
   userLocation,
   region,
-  onRegionChange,
   onMarkerPress,
   onLocationUpdate
 }: MapContainerProps) {
@@ -68,7 +66,6 @@ export default function MapContainer({
       style={styles.map}
       provider={PROVIDER_GOOGLE}
       region={region}
-      onRegionChangeComplete={onRegionChange}
       showsUserLocation
       showsMyLocationButton
     >
