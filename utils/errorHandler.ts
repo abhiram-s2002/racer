@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
+
 /* global console, setTimeout, clearTimeout */
 import { Alert } from 'react-native';
 import { logSecurityEvent } from './validation';
@@ -102,7 +102,7 @@ export class ErrorHandler {
   private categorizeError(error: any, context?: ErrorContext): AppError {
     let type = ErrorType.UNKNOWN;
     let severity = ErrorSeverity.MEDIUM;
-    let message = 'An unexpected error occurred';
+    const message = 'An unexpected error occurred';
 
     // Categorize based on error properties
     if (error?.code) {
@@ -172,7 +172,7 @@ export class ErrorHandler {
   async handleError(
     error: any, 
     context?: ErrorContext, 
-    showAlert: boolean = true,
+    showAlert = true,
     userId?: string
   ): Promise<AppError> {
     const appError = this.categorizeError(error, context);
@@ -289,7 +289,7 @@ export const errorHandler = ErrorHandler.getInstance();
 export async function withErrorHandling<T>(
   operation: () => Promise<T>,
   context?: ErrorContext,
-  showAlert: boolean = true,
+  showAlert = true,
   userId?: string
 ): Promise<T | null> {
   try {
@@ -317,7 +317,7 @@ export async function withSilentErrorHandling<T>(
 // Retry wrapper with exponential backoff
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  maxRetries: number = 3,
+  maxRetries = 3,
   context?: ErrorContext,
   userId?: string
 ): Promise<T | null> {

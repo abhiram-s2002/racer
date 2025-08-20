@@ -1,4 +1,4 @@
-import { SecureStorage } from './encryption';
+// Secure storage via encryption module
 import { cacheManager } from './cacheManager';
 
 interface SecureCacheConfig {

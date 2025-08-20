@@ -20,7 +20,7 @@ import { supabase } from '@/utils/supabaseClient';
 interface PingItemProps {
   item: any;
   username: string;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  
   onStatusChange?: (pingId: string, status: 'accepted' | 'rejected') => void;
 }
 

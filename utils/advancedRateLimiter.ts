@@ -38,7 +38,7 @@ export class AdvancedRateLimiter {
    */
   async checkRateLimit(
     key: string,
-    type: string = 'api',
+    type = 'api',
     customConfig?: Partial<RateLimitConfig>
   ): Promise<RateLimitResult> {
     try {
@@ -92,7 +92,7 @@ export class AdvancedRateLimiter {
    */
   async checkUserRateLimit(
     userId: string,
-    type: string = 'api',
+    type = 'api',
     customConfig?: Partial<RateLimitConfig>
   ): Promise<RateLimitResult> {
     return this.checkRateLimit(`user_${userId}`, type, customConfig);
@@ -103,7 +103,7 @@ export class AdvancedRateLimiter {
    */
   async checkIPRateLimit(
     ip: string,
-    type: string = 'api',
+    type = 'api',
     customConfig?: Partial<RateLimitConfig>
   ): Promise<RateLimitResult> {
     return this.checkRateLimit(`ip_${ip}`, type, customConfig);
@@ -195,7 +195,7 @@ export class AdvancedRateLimiter {
   /**
    * Reset rate limit for a specific key
    */
-  async resetRateLimit(key: string, type: string = 'api'): Promise<void> {
+  async resetRateLimit(key: string, type = 'api'): Promise<void> {
     try {
       const config = this.defaultConfigs.get(type);
       if (!config) return;
@@ -262,8 +262,8 @@ export class AdvancedRateLimiter {
    */
   async checkServerRateLimit(
     key: string,
-    maxRequests: number = 30,
-    windowMinutes: number = 5
+    maxRequests = 30,
+    windowMinutes = 5
   ): Promise<RateLimitResult> {
     try {
       const { data, error } = await supabase.rpc('check_rate_limit', {
@@ -327,7 +327,7 @@ export class AdvancedRateLimiter {
   async withRateLimit<T>(
     operation: () => Promise<T>,
     userId: string,
-    type: string = 'api'
+    type = 'api'
   ): Promise<T> {
     const rateLimit = await this.checkUserRateLimit(userId, type);
     

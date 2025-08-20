@@ -73,7 +73,7 @@ export const useOptimizedListings = (): UseOptimizedListingsReturn => {
   // Load listings with optimization
   const loadListings = useCallback(async (
     newFilters: ListingsFilters = {},
-    reset: boolean = false
+    reset = false
   ) => {
     if (!latitude || !longitude) {
       setState(prev => ({ ...prev, error: 'Location not available' }));
@@ -271,6 +271,6 @@ export const useCategoryListings = (category: string) => {
 };
 
 // Hook for nearby listings
-export const useNearbyListings = (maxDistance: number = 10) => {
+export const useNearbyListings = (maxDistance = 10) => {
   return useFilteredListings({ maxDistance });
 }; 

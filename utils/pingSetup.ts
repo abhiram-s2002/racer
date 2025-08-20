@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 
-// eslint-disable-next-line no-undef
+
 declare const console: Console;
 
 // Check if pings table exists
@@ -18,7 +18,7 @@ export async function checkPingsTableExists(): Promise<boolean> {
     
     return true;
   } catch (error) {
-    // eslint-disable-next-line no-console
+    
     console.error('Error checking pings table:', error);
     return false;
   }
@@ -31,9 +31,9 @@ export async function initializePingSystem(): Promise<boolean> {
     const pingsTableExists = await checkPingsTableExists();
     
     if (!pingsTableExists) {
-      // eslint-disable-next-line no-console
+      
       console.log('Pings table does not exist. Please run the migration:');
-      // eslint-disable-next-line no-console
+      
       console.log('supabase/migrations/20250116_create_pings_table.sql');
       return false;
     }
@@ -45,17 +45,17 @@ export async function initializePingSystem(): Promise<boolean> {
       .limit(1);
     
     if (analyticsError && analyticsError.code === '42P01') {
-      // eslint-disable-next-line no-console
+      
       console.log('Ping analytics table does not exist. Analytics will be disabled.');
       // Don't return false - analytics is optional
     }
     
     // Note: ping_limits table is no longer needed - using local storage instead
-    // eslint-disable-next-line no-console
+    
     console.log('Ping system is properly initialized. Using local storage for ping limits.');
     return true;
   } catch (error) {
-    // eslint-disable-next-line no-console
+    
     console.error('Error initializing ping system:', error);
     return false;
   }
@@ -81,7 +81,7 @@ export async function getPingSystemStatus(): Promise<{
       
       analyticsTableExists = !analyticsError || analyticsError.code !== '42P01';
     } catch (error) {
-      // eslint-disable-next-line no-console
+      
       console.error('Error checking analytics table:', error);
     }
   }

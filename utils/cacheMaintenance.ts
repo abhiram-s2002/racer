@@ -1,4 +1,4 @@
-import { cacheManager } from './cacheManager';
+// Cache maintenance operations placeholder
 import { ImageCache } from './imageCache';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

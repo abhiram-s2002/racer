@@ -32,7 +32,7 @@ function getRandomSeed() {
   return Math.random().toString(36).substring(2, 10);
 }
 
-// eslint-disable-next-line no-undef
+
 declare const console: Console;
 
 export default function ProfileScreen() {
@@ -150,10 +150,10 @@ export default function ProfileScreen() {
   const setLocationFromCoords = async (coords: { latitude: number, longitude: number }) => {
     try {
       // Getting location for coordinates
-      let [place] = await Location.reverseGeocodeAsync(coords);
+      const [place] = await Location.reverseGeocodeAsync(coords);
               // Reverse geocoded place
       
-      let address = place
+      const address = place
         ? [place.name, place.street, place.city, place.region, place.country].filter(Boolean).join(', ')
         : `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`;
       
@@ -412,7 +412,7 @@ export default function ProfileScreen() {
                     setGpsLoading(true);
                     try {
                       // Requesting location permission
-                      let { status } = await Location.requestForegroundPermissionsAsync();
+                      const { status } = await Location.requestForegroundPermissionsAsync();
                                               // Location permission status received
                       
                       if (status !== 'granted') {
@@ -431,7 +431,7 @@ export default function ProfileScreen() {
                       }
                       
                                               // Getting current position
-                      let location = await Location.getCurrentPositionAsync({ 
+                      const location = await Location.getCurrentPositionAsync({ 
                         accuracy: Location.Accuracy.Balanced,
                         timeInterval: 10000,
                         distanceInterval: 10,
@@ -530,13 +530,13 @@ export default function ProfileScreen() {
             onPress={async () => {
               try {
                 // Getting current location for map
-                let { status } = await Location.requestForegroundPermissionsAsync();
+                const { status } = await Location.requestForegroundPermissionsAsync();
                 if (status !== 'granted') {
                   Alert.alert('Permission Denied', 'Location permission is required to show your current location on the map.');
                   return;
                 }
                 
-                let location = await Location.getCurrentPositionAsync({ 
+                const location = await Location.getCurrentPositionAsync({ 
                   accuracy: Location.Accuracy.Balanced,
                   timeInterval: 10000,
                   distanceInterval: 10,
@@ -668,7 +668,7 @@ export default function ProfileScreen() {
             <View style={styles.toggleInfo}>
               <Text style={styles.toggleLabel}>Available for business</Text>
               <Text style={styles.toggleDescription}>
-                Turn this off when you're not available to respond to messages
+                Turn this off when you&apos;re not available to respond to messages
               </Text>
             </View>
             <Switch

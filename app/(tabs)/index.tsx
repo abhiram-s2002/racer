@@ -33,18 +33,21 @@ import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 import { supabase } from '@/utils/supabaseClient';
 import { advancedRateLimiter } from '../../utils/advancedRateLimiter';
 import { createPing, checkExistingPing } from '@/utils/activitySupabase';
-import { checkPingTimeLimit } from '@/utils/activitySupabase';
+
 import { formatDistance } from '@/utils/distance';
 import { LocationUtils } from '@/utils/locationUtils';
 import OfflineQueueIndicator from '@/components/OfflineQueueIndicator';
-import { ImageUrlHelper } from '@/utils/imageUrlHelper';
-import NewRobustImage from '@/components/NewRobustImage';
 
-import { formatPriceWithUnit } from '@/utils/formatters';
+import NewRobustImage from '@/components/NewRobustImage';
+import EnhancedImageViewer from '@/components/EnhancedImageViewer';
+
+
 import { Category } from '@/utils/types';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
+import { useLocationCheck } from '@/hooks/useLocationCheck';
+import LocationCheckPopup from '@/components/LocationCheckPopup';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 36) / 2; // Account for padding and gap
@@ -72,6 +75,10 @@ function HomeScreen() {
   const [hasShownFeedbackPrompt, setHasShownFeedbackPrompt] = useState(false);
   const [existingPings, setExistingPings] = useState<Record<string, boolean>>({});
   
+  // Image viewer state
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [selectedListingForViewer, setSelectedListingForViewer] = useState<any>(null);
+  
   // Location-based sorting with updated useListings hook
   const { 
     listings, 
@@ -90,6 +97,9 @@ function HomeScreen() {
   
   const [refreshing, setRefreshing] = useState(false);
   const { pingListingId } = useLocalSearchParams();
+
+  // Location check popup
+  const { showPopup, hidePopup, retryCheck } = useLocationCheck();
 
   // Ping limits for the selected listing
   const { limitInfo, loading: limitLoading, getPingLimitMessage, getPingLimitColor, checkPingLimit, recordPing } = usePingLimits(username);
@@ -461,6 +471,11 @@ function HomeScreen() {
     });
   };
 
+  const handleImageClick = (listing: any) => {
+    setSelectedListingForViewer(listing);
+    setShowImageViewer(true);
+  };
+
   const handleToggleSortByDistance = () => {
     if (!locationAvailable) {
       // Location not available, show alert with options
@@ -519,7 +534,7 @@ function HomeScreen() {
     
     return (
       <View style={styles.listingCard}>
-        <TouchableOpacity onPress={() => handleNavigateToSellerProfile(item)}>
+        <TouchableOpacity onPress={() => handleImageClick(item)}>
         <NewRobustImage
           images={item.images}
           thumbnailImages={item.thumbnail_images}
@@ -944,6 +959,12 @@ function HomeScreen() {
         >
           <Filter size={20} color={(sortByDistanceState || maxDistance !== null) ? '#22C55E' : '#64748B'} />
         </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.mapButton}
+          onPress={() => router.push('/map-view')}
+        >
+          <MapPin size={20} color="#64748B" />
+        </TouchableOpacity>
       </View>
 
       {/* Categories */}
@@ -1030,6 +1051,24 @@ function HomeScreen() {
         onClose={() => setShowFeedbackModal(false)}
         onSubmit={handleSubmitFeedback}
       />
+
+      {/* Location Check Popup */}
+      <LocationCheckPopup
+        visible={showPopup}
+        onClose={hidePopup}
+        onRetry={retryCheck}
+      />
+
+      {/* Enhanced Image Viewer */}
+      <EnhancedImageViewer
+        visible={showImageViewer}
+        onClose={() => setShowImageViewer(false)}
+        images={selectedListingForViewer?.images}
+        thumbnailImages={selectedListingForViewer?.thumbnail_images}
+        previewImages={selectedListingForViewer?.preview_images}
+        imageFolderPath={selectedListingForViewer?.image_folder_path}
+        title={selectedListingForViewer?.title || 'Image Viewer'}
+      />
     </View>
   );
 }
@@ -1066,6 +1105,15 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   filterButton: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  mapButton: {
     width: 40,
     height: 40,
     backgroundColor: '#F1F5F9',

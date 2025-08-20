@@ -198,7 +198,7 @@ export default function FeedbackModal({ visible, onClose, onSubmit }: FeedbackMo
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={styles.feedbackModalTitle}>Rate Our App</Text>
             <Text style={styles.feedbackModalText}>
-              We'd love to hear your feedback! How would you rate your experience?
+              We&apos;d love to hear your feedback! How would you rate your experience?
             </Text>
             
             {/* Star Rating */}

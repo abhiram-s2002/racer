@@ -16,20 +16,20 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
   ArrowLeft, 
-  Bell, 
+ 
   Shield, 
-  Globe, 
-  Smartphone, 
+ 
+ 
   Trash2, 
   LogOut,
   Eye,
-  EyeOff,
+
   MapPin,
-  MessageCircle,
-  ShoppingBag,
+
+
   Settings as SettingsIcon,
-  User,
-  Lock,
+
+
   HelpCircle,
   FileText,
   Info,
@@ -164,7 +164,7 @@ export default function SettingsScreen() {
     onPress, 
     showSwitch = false,
     switchValue = false,
-    onSwitchChange = () => {},
+    onSwitchChange = () => { /* no-op */ },
     showArrow = true 
   }: {
     icon: React.ReactNode;
@@ -375,7 +375,7 @@ export default function SettingsScreen() {
               This action cannot be undone. All your data will be permanently deleted.
             </Text>
             <Text style={styles.modalDescription}>
-              To confirm deletion, please type "delete" below:
+              To confirm deletion, please type &quot;delete&quot; below:
             </Text>
             <TextInput
               style={styles.deleteInput}

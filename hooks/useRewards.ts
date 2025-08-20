@@ -1,20 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  getUserRewardsSafe,
-  getUserStreakSafe,
-  getUserReferralCodeSafe,
-  getUserAchievements,
+
+
+
+
   getUserAchievementsSafe,
-  getDailyCheckins,
-  getReferralsByUser,
-  getRewardTransactions,
+
+
+
   createDailyCheckin,
   updateUserAchievementProgressSafe,
   createRewardTransaction,
   getCompleteRewardsDataSafe,
   initializeUserRewards,
   hasCheckedInToday,
-  getUserRewardsSummary,
+
   batchUpdateAchievements,
   getRecentActivity,
   type UserRewards,

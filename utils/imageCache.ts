@@ -1,8 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
-import { Platform } from 'react-native';
-import { cacheManager } from './cacheManager';
-import * as ImageManipulator from 'expo-image-manipulator';
+
+
+
 import React from 'react';
 
 export interface CachedImage {
@@ -150,7 +150,7 @@ export class ImageCache {
       
       const cacheEntries = await AsyncStorage.multiGet(cacheKeys);
       let totalSize = 0;
-      let timestamps: number[] = [];
+      const timestamps: number[] = [];
       
       for (const [key, value] of cacheEntries) {
         if (value) {

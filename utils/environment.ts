@@ -2,7 +2,7 @@
 // Provides type-safe access to environment variables and configuration
 
 import Constants from 'expo-constants';
-import { FEATURE_FLAGS, ENV_INFO } from './supabaseConfig';
+// Environment info is handled via configuration functions
 
 // Environment variable types
 interface EnvironmentVariables {

@@ -25,11 +25,11 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
 
 import { formatPriceWithUnit } from '@/utils/formatters';
-import { Category, Listing } from '@/utils/types';
+import { Category } from '@/utils/types';
 
 import NewRobustImage from '@/components/NewRobustImage';
 
-// eslint-disable-next-line no-undef
+
 declare const console: Console;
 
 // Add this function at the top level of the file

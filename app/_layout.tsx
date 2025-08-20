@@ -1,6 +1,6 @@
 /* global console */
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Alert } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { getCurrentUser } from '@/utils/auth';
 import AuthScreen from './auth';
 import { Slot, useRouter, usePathname } from 'expo-router';
@@ -10,6 +10,8 @@ import { validatePhoneNumber } from '@/utils/validation';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
+import { useLocationCheck } from '@/hooks/useLocationCheck';
+import LocationCheckPopup from '@/components/LocationCheckPopup';
 
 function validateUserProfileFields({ id, username, email, name }: { id: string; username: string; email: string; name: string }) {
   const missing = [];
@@ -132,6 +134,7 @@ export default function AuthGate() {
   const router = useRouter();
   const pathname = usePathname();
   const errorHandler = ErrorHandler.getInstance();
+  const { showPopup, hidePopup, retryCheck } = useLocationCheck();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -139,7 +142,7 @@ export default function AuthGate() {
         const { user } = await getCurrentUser();
         console.log('AuthGate: current user:', user);
         setAuthenticated(!!user);
-        setLoading(false);
+        
         if (user) {
           const username = user.user_metadata?.username;
           const name = user.user_metadata?.full_name || user.user_metadata?.name;
@@ -148,13 +151,20 @@ export default function AuthGate() {
             if (pathname !== '/ProfileSetup') {
               router.replace('/ProfileSetup');
             }
+            setLoading(false);
             return;
           }
+          
+          // Location permission is now handled by popup system
+          // No need to redirect - popup will show if there are issues
+          
           const result = await upsertUserProfile(user);
           if (result && result.error) {
             console.log('User profile upsert failed:', result.error);
           }
         }
+        
+        setLoading(false);
       } catch (error) {
         await errorHandler.handleError(error, {
           operation: 'check_auth',
@@ -164,7 +174,10 @@ export default function AuthGate() {
       }
     };
     checkAuth();
-  }, [pathname]);
+  }, []); // Remove pathname dependency to prevent loops
+
+  // Location check is now handled by popup system
+  // No need for complex navigation logic
 
   useEffect(() => {
     // Quick Supabase backend connection check
@@ -217,6 +230,13 @@ export default function AuthGate() {
     <ErrorBoundary componentName="AuthGate">
       <CacheManager>
         <Slot />
+        
+        {/* Location Check Popup */}
+        <LocationCheckPopup
+          visible={showPopup && authenticated}
+          onClose={hidePopup}
+          onRetry={retryCheck}
+        />
       </CacheManager>
     </ErrorBoundary>
   );

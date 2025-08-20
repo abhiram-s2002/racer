@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { signUp, signIn, signUpWithPhone, signInWithPhone } from '@/utils/auth';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
@@ -12,9 +12,14 @@ function AuthScreen() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [loading, setLoading] = useState(false);
+  const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetPhone, setResetPhone] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
   const router = useRouter();
   const errorHandler = ErrorHandler.getInstance();
 
@@ -36,6 +41,32 @@ function AuthScreen() {
       }
     
     if (mode === 'signup') {
+      // Check if passwords match for signup
+      if (password !== confirmPassword) {
+        await errorHandler.handleError(
+          new Error('Passwords do not match'),
+          {
+            operation: 'password_confirmation_validation',
+            component: 'AuthScreen',
+          }
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Check if confirmation password is provided
+      if (!confirmPassword.trim()) {
+        await errorHandler.handleError(
+          new Error('Please confirm your password'),
+          {
+            operation: 'password_confirmation_required',
+            component: 'AuthScreen',
+          }
+        );
+        setLoading(false);
+        return;
+      }
+
       if (authMethod === 'email') {
         if (!email.trim()) {
             await errorHandler.handleError(
@@ -227,16 +258,166 @@ function AuthScreen() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!networkMonitor.isOnline()) {
+      await errorHandler.handleError(
+        new Error('No internet connection available'),
+        {
+          operation: 'password_reset',
+          component: 'AuthScreen',
+        }
+      );
+      return;
+    }
+
+    setResetLoading(true);
+    
+    try {
+      if (authMethod === 'email') {
+        if (!resetEmail.trim()) {
+          Alert.alert('Error', 'Please enter your email address');
+          setResetLoading(false);
+          return;
+        }
+
+        const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+          redirectTo: 'omnimart://reset-password',
+        });
+
+        if (error) {
+          Alert.alert('Error', error.message);
+        } else {
+          Alert.alert(
+            'Password Reset Email Sent',
+            'Check your email for password reset instructions. You can close this window.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  setForgotPasswordMode(false);
+                  setResetEmail('');
+                },
+              },
+            ]
+          );
+        }
+      } else {
+        // Phone password reset
+        if (!resetPhone.trim()) {
+          Alert.alert('Error', 'Please enter your phone number');
+          setResetLoading(false);
+          return;
+        }
+
+        const validation = validatePhoneNumber(resetPhone);
+        if (!validation.isValid) {
+          Alert.alert('Invalid Phone Number', validation.error || 'Please enter a valid phone number');
+          setResetLoading(false);
+          return;
+        }
+
+        // For phone password reset, we'll use the phone verification system
+        const { error } = await supabase.auth.signInWithOtp({
+          phone: resetPhone,
+        });
+
+        if (error) {
+          Alert.alert('Error', error.message);
+        } else {
+          Alert.alert(
+            'OTP Sent',
+            'A verification code has been sent to your phone. Use it to reset your password.',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  setForgotPasswordMode(false);
+                  setResetPhone('');
+                },
+              },
+            ]
+          );
+        }
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to send password reset. Please try again.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const clearInputs = () => {
     setEmail('');
     setPhone('');
     setPassword('');
+    setConfirmPassword('');
+    setResetEmail('');
+    setResetPhone('');
   };
 
   const handleAuthMethodChange = (method: 'email' | 'phone') => {
     setAuthMethod(method);
     clearInputs();
   };
+
+  const exitForgotPasswordMode = () => {
+    setForgotPasswordMode(false);
+    setResetEmail('');
+    setResetPhone('');
+  };
+
+  // If in forgot password mode, show password reset UI
+  if (forgotPasswordMode) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.card}>
+          <Text style={styles.title}>Reset Password</Text>
+          <Text style={styles.subtitle}>
+            Enter your {authMethod === 'email' ? 'email' : 'phone number'} to receive password reset instructions
+          </Text>
+          
+          {authMethod === 'email' ? (
+            <TextInput
+              placeholder="Email Address"
+              value={resetEmail}
+              onChangeText={setResetEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              style={styles.input}
+              placeholderTextColor="#94A3B8"
+            />
+          ) : (
+            <TextInput
+              placeholder="Phone Number (+91XXXXXXXXXX)"
+              value={resetPhone}
+              onChangeText={setResetPhone}
+              keyboardType="phone-pad"
+              style={styles.input}
+              placeholderTextColor="#94A3B8"
+            />
+          )}
+
+          <TouchableOpacity
+            style={[styles.button, resetLoading && styles.buttonDisabled]}
+            onPress={handleForgotPassword}
+            disabled={resetLoading}
+          >
+            <Text style={styles.buttonText}>
+              {resetLoading ? 'Sending...' : 'Send Reset Instructions'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.switchButton}
+            onPress={exitForgotPasswordMode}
+            disabled={resetLoading}
+          >
+            <Text style={styles.switchButtonText}>Back to Login</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -295,6 +476,32 @@ function AuthScreen() {
           style={styles.input}
           placeholderTextColor="#94A3B8"
         />
+
+        {/* Confirmation Password Field - Only show in signup mode */}
+        {mode === 'signup' && (
+          <View style={styles.confirmPasswordContainer}>
+            <TextInput
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              style={[
+                styles.input,
+                confirmPassword && password !== confirmPassword && styles.inputError,
+                confirmPassword && password === confirmPassword && styles.inputSuccess
+              ]}
+              placeholderTextColor="#94A3B8"
+            />
+            {confirmPassword && (
+              <Text style={[
+                styles.passwordMatchText,
+                password === confirmPassword ? styles.passwordMatchSuccess : styles.passwordMatchError
+              ]}>
+                {password === confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+              </Text>
+            )}
+          </View>
+        )}
         
         <TouchableOpacity
           style={[styles.button, loading && styles.buttonDisabled]}
@@ -303,6 +510,17 @@ function AuthScreen() {
         >
           <Text style={styles.buttonText}>{mode === 'login' ? 'Login' : 'Sign Up'}</Text>
         </TouchableOpacity>
+
+        {/* Forgot Password Link - Only show in login mode */}
+        {mode === 'login' && (
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={() => setForgotPasswordMode(true)}
+            disabled={loading}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+          </TouchableOpacity>
+        )}
         
         <TouchableOpacity
           style={styles.switchButton}
@@ -347,6 +565,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: '#1E293B',
     marginBottom: 24,
+  },
+  subtitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
   },
   authMethodContainer: {
     flexDirection: 'row',
@@ -418,5 +644,40 @@ const styles = StyleSheet.create({
     color: '#22C55E',
     fontSize: 15,
     fontFamily: 'Inter-Medium',
+  },
+  confirmPasswordContainer: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  passwordMatchText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    marginTop: 4,
+    paddingHorizontal: 10,
+  },
+  passwordMatchSuccess: {
+    color: '#22C55E',
+  },
+  passwordMatchError: {
+    color: '#EF4444',
+  },
+  inputError: {
+    borderColor: '#EF4444',
+    borderWidth: 2,
+  },
+  inputSuccess: {
+    borderColor: '#22C55E',
+    borderWidth: 2,
+  },
+  forgotPasswordButton: {
+    marginTop: 8,
+    marginBottom: 16,
+    padding: 6,
+  },
+  forgotPasswordText: {
+    color: '#64748B',
+    fontSize: 15,
+    fontFamily: 'Inter-Medium',
+    textDecorationLine: 'underline',
   },
 }); 

@@ -54,7 +54,7 @@ export class ImageUrlHelper {
   /**
    * Get proper image source object with headers
    */
-  static getImageSource(uri: string, useCacheBusting: boolean = true) {
+  static getImageSource(uri: string, useCacheBusting = true) {
     const finalUri = useCacheBusting ? this.addCacheBusting(uri) : uri;
     
     return {

@@ -48,7 +48,7 @@ A React Native Expo project with the latest system versions and dependencies.
 ### AJV (Another JSON Validator) ✅ RESOLVED
 - **Primary Version**: 8.17.1 (via overrides)
 - **Used by**: schema-utils@4.3.0 (via expo-router)
-- **Secondary Version**: 6.12.6 (used by ESLint dependencies)
+- **Secondary Version**: 6.12.6
 - **Status**: Both versions are compatible and work together
 
 ### Expo Font ✅ RESOLVED
@@ -97,13 +97,13 @@ A React Native Expo project with the latest system versions and dependencies.
 
 - `npm run dev` - Start Expo development server
 - `npm run build:web` - Build for web platform
-- `npm run lint` - Run ESLint
+- `npm run type-check` - Run TypeScript type checking
 
 ## Notes
 
 - This project uses Expo SDK 53.0.0
 - React Native New Architecture is enabled
 - TypeScript strict mode is enabled
-- ESLint and Prettier are configured for code quality
+- TypeScript is configured for type safety and code quality
 - Supabase integration for backend services
 - AJV compatibility issues are resolved with version overrides

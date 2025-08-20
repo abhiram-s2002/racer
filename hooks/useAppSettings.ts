@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AppSettings, loadSettings, saveSettings, updateSetting, clearSettings } from '@/utils/appSettings';
+import { AppSettings, loadSettings, updateSetting, clearSettings } from '@/utils/appSettings';
 
 export const useAppSettings = () => {
   const [settings, setSettings] = useState<AppSettings | null>(null);

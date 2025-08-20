@@ -117,7 +117,8 @@ export function showImageValidationAlert(
 
 // Helper function for quick validation check
 export function validateImageQuick(uri: string, type: 'listing' | 'avatar'): Promise<boolean> {
-  return new Promise(async (resolve) => {
+  return new Promise((resolve) => {
+    (async () => {
     try {
       const extension = uri.split('.').pop()?.toLowerCase();
       const supportedFormats = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
@@ -160,5 +161,6 @@ export function validateImageQuick(uri: string, type: 'listing' | 'avatar'): Pro
       );
       resolve(false);
     }
+    })();
   });
 } 

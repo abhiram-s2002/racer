@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// eslint-disable-next-line no-undef
+
 declare const console: Console;
 
 export interface PingLimit {

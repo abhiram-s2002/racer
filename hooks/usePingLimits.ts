@@ -1,7 +1,7 @@
 /* global console */
 import { useState, useEffect } from 'react';
-import { checkPingLimit as checkLocalPingLimit, getPingStats as getLocalPingStats, recordPing as recordLocalPing } from '@/utils/localPingLimits';
-import { checkPingTimeLimit, getPingStats as getDatabasePingStats } from '@/utils/activitySupabase';
+import { checkPingLimit as checkLocalPingLimit, recordPing as recordLocalPing } from '@/utils/localPingLimits';
+import { checkPingTimeLimit } from '@/utils/activitySupabase';
 
 export interface PingLimitInfo {
   canPing: boolean;
@@ -44,11 +44,8 @@ export function usePingLimits(username: string | null) {
 
     setLoading(true);
     try {
-      let localResult;
+      const localResult = await checkLocalPingLimit(username);
       let databaseResult = null;
-
-      // Always check local first (fast)
-      localResult = await checkLocalPingLimit(username);
 
       // Only check database when user actually tries to ping (forceDatabaseCheck = true)
       if (forceDatabaseCheck && listingId) {

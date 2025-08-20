@@ -195,7 +195,7 @@ export default function PrivacyScreen() {
 
         {/* Children's Privacy */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>9. Children's Privacy</Text>
+          <Text style={styles.sectionTitle}>9. Children&apos;s Privacy</Text>
           <Text style={styles.paragraph}>
             OmniMart is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you believe we have collected information from a child under 13, please contact us immediately.
           </Text>

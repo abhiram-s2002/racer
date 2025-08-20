@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -429,7 +429,7 @@ export default function RewardsScreen() {
           {/* Rewards Summary */}
           <View style={styles.rewardsSummary}>
             <View style={styles.rewardItem}>
-              <Text style={styles.rewardLabel}>Today's Reward</Text>
+              <Text style={styles.rewardLabel}>Today&apos;s Reward</Text>
               <Text style={styles.rewardValue}>+10 OMNI</Text>
             </View>
             <View style={styles.rewardItem}>

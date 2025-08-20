@@ -1,4 +1,4 @@
-/* eslint-env node */
+
 /* global console */
 import { supabase } from './supabaseClient';
 import { ImageUrlHelper } from './imageUrlHelper';
@@ -203,7 +203,7 @@ export async function searchListings(query: string, page = 1, pageSize = 10): Pr
 }
 
 // Extend listing expiration
-export async function extendListingExpiration(listingId: string, extensionDays: number = 30): Promise<{
+export async function extendListingExpiration(listingId: string, extensionDays = 30): Promise<{
   success: boolean;
   newExpiresAt?: string;
   extensionCount?: number;
@@ -239,7 +239,7 @@ export async function extendListingExpiration(listingId: string, extensionDays: 
 }
 
 // Get listings that are expiring soon (within specified days)
-export async function getExpiringListings(username: string, daysUntilExpiry: number = 7): Promise<Listing[]> {
+export async function getExpiringListings(username: string, daysUntilExpiry = 7): Promise<Listing[]> {
   const expiryDate = new Date();
   expiryDate.setDate(expiryDate.getDate() + daysUntilExpiry);
   

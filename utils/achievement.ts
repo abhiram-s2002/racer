@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  * @param achievementId string - The achievement id (e.g. 'sales_master')
  * @param increment number - How much to increment progress by (default 1)
  */
-export async function updateUserAchievement(username: string, achievementId: string, increment: number = 1) {
+export async function updateUserAchievement(username: string, achievementId: string, increment = 1) {
   if (!username) {
     console.warn('updateUserAchievement: No username provided');
     return;

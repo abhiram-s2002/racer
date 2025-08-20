@@ -53,7 +53,7 @@ export const formatPrice = (price: string | number) => {
  * @param showDecimals - Whether to show decimal places
  * @returns Formatted price string
  */
-export const formatCurrency = (price: string | number, showDecimals: boolean = false) => {
+export const formatCurrency = (price: string | number, showDecimals = false) => {
   const numPrice = typeof price === 'string' ? parseFloat(price) : price;
   
   if (showDecimals) {

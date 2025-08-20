@@ -1,7 +1,7 @@
 /* global console */
 import { useState, useEffect, useCallback } from 'react';
 import { ChatService } from '@/utils/chatService';
-import { MessagesState } from '@/utils/types';
+
 import { ExtendedMessage } from '@/utils/chatService';
 
 export function useMessages(chatId: string | null, username: string) {

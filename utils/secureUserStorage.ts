@@ -1,4 +1,4 @@
-declare var console: any;
+declare let console: Console;
 import { SecureStorage, encryptPhoneNumber, decryptPhoneNumber } from './encryption';
 
 /**

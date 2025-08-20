@@ -203,13 +203,15 @@ export class LocationUtils {
       case 'relevance':
         // Combine distance and recency for relevance
         if (!userLocation) return sorted;
-        const withDistances = this.calculateDistances(sorted, userLocation);
-        return withDistances.sort((a, b) => {
-          const distanceScore = (a.distance || 0) - (b.distance || 0);
-          const recencyScore = b.createdAt.getTime() - a.createdAt.getTime();
-          // Weight: 70% distance, 30% recency
-          return distanceScore * 0.7 + (recencyScore / 86400000) * 0.3; // Normalize recency to days
-        });
+        {
+          const withDistances = this.calculateDistances(sorted, userLocation);
+          return withDistances.sort((a, b) => {
+            const distanceScore = (a.distance || 0) - (b.distance || 0);
+            const recencyScore = b.createdAt.getTime() - a.createdAt.getTime();
+            // Weight: 70% distance, 30% recency
+            return distanceScore * 0.7 + (recencyScore / 86400000) * 0.3; // Normalize recency to days
+          });
+        }
 
       default:
         return sorted;
@@ -304,7 +306,7 @@ export class LocationUtils {
   static async batchCalculateDistances(
     listings: ListingWithLocation[], 
     userLocation: LocationData,
-    batchSize: number = 100
+    batchSize = 100
   ): Promise<ListingWithLocation[]> {
     const results: ListingWithLocation[] = [];
     

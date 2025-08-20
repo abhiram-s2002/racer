@@ -6,7 +6,7 @@ import { useLocation } from './useLocation';
 // Optimized page size for better performance
 const PAGE_SIZE = 10; // Reduced from 20 for faster loading and better UX
 
-import { Listing, ListingsState } from '@/utils/types';
+import { Listing } from '@/utils/types';
 
 export function useListings() {
   const [listings, setListings] = useState<Listing[]>([]);

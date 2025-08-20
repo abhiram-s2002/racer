@@ -235,7 +235,7 @@ export class MarketplaceImageAnalytics {
   /**
    * Clear old analytics data
    */
-  static async clearOldData(daysToKeep: number = 90): Promise<void> {
+  static async clearOldData(daysToKeep = 90): Promise<void> {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);

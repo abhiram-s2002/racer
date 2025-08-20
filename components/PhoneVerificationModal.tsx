@@ -15,11 +15,11 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
-import { Phone, ArrowLeft, CheckCircle, X, RefreshCw, Timer } from 'lucide-react-native';
+import { Phone, X } from 'lucide-react-native';
 import { sendOTP, verifyOTP, updateUserPhone } from '@/utils/phoneVerification';
 import { validatePhoneNumber } from '@/utils/validation';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 interface PhoneVerificationModalProps {
   visible: boolean;
@@ -307,7 +307,7 @@ export default function PhoneVerificationModal({
       {/* Resend Section - Only when OTP sent */}
       {otpSent && (
         <View style={styles.resendContainer}>
-          <Text style={styles.resendText}>Didn't receive the code? </Text>
+          <Text style={styles.resendText}>Didn&apos;t receive the code? </Text>
           <TouchableOpacity
             onPress={handleResendOTP}
             disabled={countdown > 0 || loading}

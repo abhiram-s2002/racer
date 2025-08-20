@@ -14,6 +14,7 @@ interface SignupValidationProps {
   email: string;
   phoneNumber: string;
   password: string;
+  confirmPassword?: string;
   username?: string;
   onValidationChange: (isValid: boolean) => void;
 }
@@ -22,6 +23,7 @@ export default function SignupValidation({
   email, 
   phoneNumber, 
   password, 
+  confirmPassword = '', 
   username = '', 
   onValidationChange 
 }: SignupValidationProps) {
@@ -29,6 +31,7 @@ export default function SignupValidation({
     email: { value: '', isValid: false, error: '', isTouched: false },
     phoneNumber: { value: '', isValid: false, error: '', isTouched: false },
     password: { value: '', isValid: false, error: '', isTouched: false },
+    confirmPassword: { value: '', isValid: false, error: '', isTouched: false },
     username: { value: '', isValid: false, error: '', isTouched: false },
   });
 
@@ -42,9 +45,10 @@ export default function SignupValidation({
       email: { ...prev.email, value: email },
       phoneNumber: { ...prev.phoneNumber, value: phoneNumber },
       password: { ...prev.password, value: password },
+      confirmPassword: { ...prev.confirmPassword, value: confirmPassword },
       username: { ...prev.username, value: username },
     }));
-  }, [email, phoneNumber, password, username]);
+  }, [email, phoneNumber, password, confirmPassword, username]);
 
   useEffect(() => {
     // Validate all fields
@@ -88,6 +92,18 @@ export default function SignupValidation({
       setPasswordStrength(getPasswordStrength(password));
     }
 
+    // Confirm Password validation
+    if (confirmPassword) {
+      const passwordsMatch = password === confirmPassword;
+      newFields.confirmPassword = {
+        value: confirmPassword,
+        isValid: passwordsMatch,
+        error: passwordsMatch ? '' : 'Passwords do not match',
+        isTouched: true,
+      };
+      if (!passwordsMatch) allValid = false;
+    }
+
     // Username validation (if provided)
     if (username) {
       const usernameValidation = validateUsername(username);
@@ -109,7 +125,7 @@ export default function SignupValidation({
       duration: 300,
       useNativeDriver: true,
     }).start();
-  }, [email, phoneNumber, password, username]);
+  }, [email, phoneNumber, password, confirmPassword, username]);
 
   const ValidationItem = ({ 
     field, 
@@ -183,7 +199,7 @@ export default function SignupValidation({
             text="One number" 
           />
           <RequirementItem 
-            met={/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)} 
+            met={/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)} 
             text="One special character" 
           />
         </View>
@@ -221,6 +237,13 @@ export default function SignupValidation({
         label="Password" 
         icon={<CheckCircle size={16} color="#22C55E" />}
       />
+      {confirmPassword && (
+        <ValidationItem 
+          field={fields.confirmPassword} 
+          label="Confirm Password" 
+          icon={<CheckCircle size={16} color="#22C55E" />}
+        />
+      )}
       {username && (
         <ValidationItem 
           field={fields.username} 

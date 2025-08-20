@@ -176,7 +176,7 @@ export const optimizedApi = {
   },
 
   // Chat messages
-  async getChatMessages(chatId: string, page: number = 1) {
+  async getChatMessages(chatId: string, page = 1) {
     const key = cacheKeys.chatMessages(chatId, page);
     return requestDeduplicator.deduplicate(key, async () => {
       const response = await supabase
@@ -190,7 +190,7 @@ export const optimizedApi = {
   },
 
   // User activities
-  async getUserActivities(username: string, page: number = 1) {
+  async getUserActivities(username: string, page = 1) {
     const key = cacheKeys.userActivities(username, page);
     return requestDeduplicator.deduplicate(key, async () => {
       const response = await supabase

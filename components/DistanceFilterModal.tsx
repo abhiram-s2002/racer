@@ -14,7 +14,7 @@ interface DistanceFilterModalProps {
   visible: boolean;
   onClose: () => void;
   selectedDistance: number | null;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  
   onSelectDistance: (distance: number | null) => void;
 }
 

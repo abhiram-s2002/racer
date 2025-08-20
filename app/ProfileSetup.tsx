@@ -26,13 +26,13 @@ import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 
-const { width, height } = Dimensions.get('window');
+  const { height } = Dimensions.get('window');
 
 function getRandomSeed() {
   return Math.random().toString(36).substring(2, 10);
 }
 
-// eslint-disable-next-line no-unused-vars, no-undef
+
 declare function setTimeout(handler: (...args: any[]) => void, timeout?: number, ...args: any[]): number;
 
 function ProfileSetup() {

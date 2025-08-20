@@ -1,4 +1,4 @@
-import { ErrorHandler, ErrorType, ErrorSeverity } from './errorHandler';
+import { ErrorHandler } from './errorHandler';
 
 export interface NetworkStatus {
   isConnected: boolean;
@@ -258,7 +258,7 @@ class EnhancedNetworkMonitor {
     };
   }
 
-  public async waitForConnection(timeoutMs: number = 30000): Promise<boolean> {
+  public async waitForConnection(timeoutMs = 30000): Promise<boolean> {
     if (this.isOnline()) return true;
     
     return new Promise((resolve) => {
@@ -281,7 +281,7 @@ class EnhancedNetworkMonitor {
     return await this.checkNetworkStatus();
   }
 
-  public async testConnection(url: string = 'https://www.google.com'): Promise<boolean> {
+  public async testConnection(url = 'https://www.google.com'): Promise<boolean> {
     try {
       const response = await fetch(url, {
         method: 'HEAD',

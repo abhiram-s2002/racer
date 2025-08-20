@@ -1010,7 +1010,7 @@ export async function batchUpdateAchievements(updates: Array<{username: string, 
   }
 }
 
-export async function getRecentActivity(username: string, days: number = 7) {
+export async function getRecentActivity(username: string, days = 7) {
   try {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);

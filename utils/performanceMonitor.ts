@@ -125,7 +125,7 @@ export class PerformanceMonitor {
   /**
    * Get performance statistics
    */
-  async getPerformanceStats(timeWindow: number = 3600000): Promise<PerformanceStats> {
+  async getPerformanceStats(timeWindow = 3600000): Promise<PerformanceStats> {
     try {
       const now = Date.now();
       const windowStart = now - timeWindow;
@@ -376,7 +376,7 @@ export class PerformanceMonitor {
   /**
    * Get slow operations
    */
-  async getSlowOperations(threshold: number = 1000): Promise<PerformanceMetric[]> {
+  async getSlowOperations(threshold = 1000): Promise<PerformanceMetric[]> {
     return this.metrics.filter(metric => metric.duration > threshold);
   }
 
@@ -451,7 +451,7 @@ export class PerformanceMonitor {
 /**
    * Clean up old metrics
    */
-  async cleanupOldMetrics(olderThanDays: number = 7): Promise<void> {
+  async cleanupOldMetrics(olderThanDays = 7): Promise<void> {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);

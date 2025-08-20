@@ -5,8 +5,7 @@
  * This script helps identify and clean up debug logs for production release
  */
 
-const fs = require('fs');
-const path = require('path');
+// This script currently doesn't use fs and path
 
 console.log('🧹 Debug Log Cleanup Analysis for Production...\n');
 

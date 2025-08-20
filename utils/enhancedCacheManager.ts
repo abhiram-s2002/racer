@@ -75,7 +75,7 @@ export class EnhancedCacheManager {
   /**
    * Set cached data with TTL
    */
-  async set<T>(key: string, data: T, ttl: number = 300000): Promise<void> {
+  async set<T>(key: string, data: T, ttl = 300000): Promise<void> {
     try {
       const cacheKey = this.cachePrefix + this.hashKey(key);
       const entry: CacheEntry<T> = {
@@ -270,7 +270,7 @@ export class EnhancedCacheManager {
   /**
    * Cache listings with intelligent invalidation
    */
-  async cacheListings(key: string, listings: any[], ttl: number = 300000) {
+  async cacheListings(key: string, listings: any[], ttl = 300000) {
     await this.set(key, listings, ttl);
     
     // Also cache individual listings for quick access

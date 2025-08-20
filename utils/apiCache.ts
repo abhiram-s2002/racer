@@ -51,7 +51,7 @@ class ApiCache {
   public async select<T>(
     supabase: SupabaseClient,
     table: string,
-    query: string = '*',
+    query = '*',
     params: any = {}
   ): Promise<SupabaseResponse<T>> {
     if (!this.config.enabled) {

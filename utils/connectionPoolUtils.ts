@@ -20,7 +20,7 @@ export class ConnectionPoolMonitor {
   }
 
   // Start monitoring connection pool
-  startMonitoring(intervalMs: number = 30000): void {
+  startMonitoring(intervalMs = 30000): void {
     if (this.isMonitoring) {
       console.warn('Connection pool monitoring is already active');
       return;

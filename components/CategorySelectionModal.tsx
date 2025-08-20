@@ -17,7 +17,7 @@ const ITEM_WIDTH = (width - 48) / 2; // Account for padding and gap
 interface CategorySelectionModalProps {
   visible: boolean;
   onClose: () => void;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  
   onSelectCategory: (category: string) => void;
 }
 

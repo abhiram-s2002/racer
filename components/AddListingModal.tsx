@@ -13,10 +13,10 @@ import {
   Modal,
 } from 'react-native';
 import { 
-  Camera, 
+ 
   Image as ImageIcon, 
   Mic, 
-  ChevronDown,
+
   Upload,
   Check,
   X,

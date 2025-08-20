@@ -1,6 +1,6 @@
 import React, { Component, ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { ErrorHandler, ErrorType, ErrorSeverity } from '@/utils/errorHandler';
+import { ErrorHandler } from '@/utils/errorHandler';
 
 interface Props {
   children: ReactNode;
@@ -96,7 +96,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <View style={styles.content}>
             <Text style={styles.title}>Oops! Something went wrong</Text>
             <Text style={styles.message}>
-              We're sorry, but something unexpected happened. Please try again.
+              We&apos;re sorry, but something unexpected happened. Please try again.
             </Text>
             
             <View style={styles.buttonContainer}>

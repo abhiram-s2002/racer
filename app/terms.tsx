@@ -42,7 +42,7 @@ export default function TermsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Welcome to OmniMart</Text>
           <Text style={styles.paragraph}>
-            These Terms of Service ("Terms") govern your use of the OmniMart mobile application and services. By using OmniMart, you agree to these Terms.
+            These Terms of Service (&quot;Terms&quot;) govern your use of the OmniMart mobile application and services. By using OmniMart, you agree to these Terms.
           </Text>
           <Text style={styles.paragraph}>
             Last updated: {new Date().toLocaleDateString()}
@@ -78,7 +78,7 @@ export default function TermsScreen() {
             You are responsible for maintaining the confidentiality of your account information and for all activities under your account.
           </Text>
           <Text style={styles.paragraph}>
-            You must provide accurate and complete information when creating your account. You may not use another person's account or share your account credentials.
+            You must provide accurate and complete information when creating your account. You may not use another person&apos;s account or share your account credentials.
           </Text>
         </View>
 
@@ -149,7 +149,7 @@ export default function TermsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>9. Limitation of Liability</Text>
           <Text style={styles.paragraph}>
-            OmniMart is provided "as is" without warranties. We are not liable for any damages arising from your use of the service, including but not limited to:
+            OmniMart is provided &quot;as is&quot; without warranties. We are not liable for any damages arising from your use of the service, including but not limited to:
           </Text>
           <View style={styles.bulletList}>
             <Text style={styles.bullet}>• Transaction disputes between users</Text>

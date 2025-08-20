@@ -1,12 +1,14 @@
 // TypeScript module declarations for missing types
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { encode as btoa, decode as atob } from 'base-64';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { TextEncoder, TextDecoder } from 'text-encoding';
 import * as Crypto from 'expo-crypto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-declare var console: any;
+declare let console: Console;
 
 // Remove all previous globalThis/Buffer/require polyfills
 // Use imported btoa, atob, TextEncoder, and TextDecoder directly in the code
@@ -212,7 +214,7 @@ export class PasswordUtils {
   /**
    * Generate a secure password
    */
-  static generateSecurePassword(length: number = 12): string {
+  static generateSecurePassword(length = 12): string {
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
     let password = '';
     for (let i = 0; i < length; i++) {

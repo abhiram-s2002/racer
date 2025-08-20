@@ -409,7 +409,7 @@ const formatPhoneNumber = (digits: string): string => {
 export class RateLimiter {
   private attempts: Map<string, { count: number; lastAttempt: number }> = new Map();
   
-  isAllowed(key: string, maxAttempts: number = 5, windowMs: number = 60000): boolean {
+  isAllowed(key: string, maxAttempts = 5, windowMs = 60000): boolean {
     const now = Date.now();
     const attempt = this.attempts.get(key);
     
@@ -505,7 +505,7 @@ export const validatePassword = (password: string): ValidationResult => {
   const hasUpperCase = /[A-Z]/.test(password);
   const hasLowerCase = /[a-z]/.test(password);
   const hasNumbers = /\d/.test(password);
-  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password);
 
   const missingRequirements = [];
   if (!hasUpperCase) missingRequirements.push('uppercase letter');
@@ -562,7 +562,7 @@ export const getPasswordStrength = (password: string): { score: number; label: s
   if (/[A-Z]/.test(password)) score += 1;
   if (/[a-z]/.test(password)) score += 1;
   if (/\d/.test(password)) score += 1;
-  if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) score += 1;
+  if (/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password)) score += 1;
   
   // Penalty for common patterns
   const commonPatterns = ['password', '123456', 'qwerty', 'abc123'];

@@ -92,7 +92,7 @@ export class EnhancedImageService {
    */
   async uploadImage(
     imageUri: string,
-    bucket: string = 'images',
+    bucket = 'images',
     path?: string,
     options: Partial<ImageProcessingOptions> = {}
   ): Promise<ImageUploadResult> {
@@ -248,7 +248,7 @@ export class EnhancedImageService {
    */
   async batchUploadImages(
     imageUris: string[],
-    bucket: string = 'images',
+    bucket = 'images',
     options: Partial<ImageProcessingOptions> = {}
   ): Promise<ImageUploadResult[]> {
     return performanceMonitor.trackOperation('batch_upload_images', async () => {
@@ -365,7 +365,7 @@ export class EnhancedImageService {
   /**
    * Clean up old images
    */
-  async cleanupOldImages(bucket: string = 'images', olderThanDays: number = 30): Promise<void> {
+  async cleanupOldImages(bucket = 'images', olderThanDays = 30): Promise<void> {
     return performanceMonitor.trackOperation('cleanup_old_images', async () => {
       try {
         const cutoffDate = new Date();
