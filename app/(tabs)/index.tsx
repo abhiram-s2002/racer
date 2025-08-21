@@ -1,5 +1,6 @@
 /* global console */
 import React, { useState, useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -39,7 +40,7 @@ import { LocationUtils } from '@/utils/locationUtils';
 import OfflineQueueIndicator from '@/components/OfflineQueueIndicator';
 
 import NewRobustImage from '@/components/NewRobustImage';
-import EnhancedImageViewer from '@/components/EnhancedImageViewer';
+
 
 
 import { Category } from '@/utils/types';
@@ -76,9 +77,7 @@ function HomeScreen() {
   const [existingPings, setExistingPings] = useState<Record<string, boolean>>({});
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   
-  // Image viewer state
-  const [showImageViewer, setShowImageViewer] = useState(false);
-  const [selectedListingForViewer, setSelectedListingForViewer] = useState<any>(null);
+
   
   // Location-based sorting with updated useListings hook
   const { 
@@ -92,7 +91,8 @@ function HomeScreen() {
     maxDistance,
     setDistanceFilter,
     locationAvailable,
-    updateLocation
+    updateLocation,
+    markReturningFromNavigation
   } = useListings();
 
   
@@ -192,6 +192,25 @@ function HomeScreen() {
     
     loadExistingPings();
   }, [username, listings]);
+
+  // Mark when returning from navigation to prevent unnecessary refreshes
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('🎯 Home screen focused - useFocusEffect triggered');
+      console.log('📊 Current state:', {
+        listingsCount: listings.length,
+        hasListings: listings.length > 0
+      });
+      
+      // This runs when the screen comes into focus (returning from other screens)
+      if (listings.length > 0) {
+        console.log('🏠 Calling markReturningFromNavigation()');
+        markReturningFromNavigation();
+      } else {
+        console.log('⚠️ No listings available, skipping markReturningFromNavigation');
+      }
+    }, [listings.length, markReturningFromNavigation])
+  );
 
   useEffect(() => {
     if (pingListingId && listings.length > 0) {
@@ -460,21 +479,11 @@ function HomeScreen() {
     setPingMessage('Hi, I am interested in your listing!');
   };
 
-  const handleNavigateToSellerProfile = (listing: any) => {
-    router.push({
-      pathname: '/seller-profile',
-      params: {
-        sellerId: listing.username || listing.id,
-        sellerName: listing.sellerName,
-        sellerAvatar: listing.sellerAvatar,
-        sellerDistance: listing.distance,
-      }
-    });
-  };
+
 
   const handleImageClick = (listing: any) => {
-    setSelectedListingForViewer(listing);
-    setShowImageViewer(true);
+    // Navigate to listing detail page instead of showing image popup
+    router.push(`/listing-detail?id=${listing.id}`);
   };
 
   const handleToggleSortByDistance = () => {
@@ -556,7 +565,7 @@ function HomeScreen() {
         </TouchableOpacity>
 
         <View style={styles.listingContent}>
-          <TouchableOpacity onPress={() => handleNavigateToSellerProfile(item)}>
+          <TouchableOpacity onPress={() => handleImageClick(item)}>
             <View style={styles.titleAndDistanceRow}>
               <Text style={styles.listingTitle}>{item.title}</Text>
               <View style={styles.distanceContainer}>
@@ -1156,16 +1165,7 @@ function HomeScreen() {
         onRetry={retryCheck}
       />
 
-      {/* Enhanced Image Viewer */}
-      <EnhancedImageViewer
-        visible={showImageViewer}
-        onClose={() => setShowImageViewer(false)}
-        images={selectedListingForViewer?.images}
-        thumbnailImages={selectedListingForViewer?.thumbnail_images}
-        previewImages={selectedListingForViewer?.preview_images}
-        imageFolderPath={selectedListingForViewer?.image_folder_path}
-        title={selectedListingForViewer?.title || 'Image Viewer'}
-      />
+
     </View>
   );
 }

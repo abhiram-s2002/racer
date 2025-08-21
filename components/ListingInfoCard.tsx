@@ -1,122 +1,338 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { mockCategories } from '@/utils/mockData';
+import React, { useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Dimensions,
+} from 'react-native';
+import { Tag, Clock, CheckCircle, XCircle, Package, Calendar } from 'lucide-react-native';
+
+
+const { width } = Dimensions.get('window');
 
 interface ListingInfoCardProps {
-  listing: any;
-  onViewDetails: () => void;
-  onPingSeller: () => void;
-  onClose: () => void;
+  title: string;
+  description: string;
+  price: number;
+  priceUnit: string;
+  category: string;
+  createdAt: string;
+  isActive: boolean;
 }
 
-export default function ListingInfoCard({ listing, onViewDetails, onPingSeller, onClose }: ListingInfoCardProps) {
-  if (!listing) return null;
+const ListingInfoCard: React.FC<ListingInfoCardProps> = React.memo(({
+  title,
+  description,
+  price,
+  priceUnit,
+  category,
+  createdAt,
+  isActive,
+}) => {
+
+
+
+
+  const formattedDate = useMemo(() => {
+    if (!createdAt) return 'Recently';
+    
+    try {
+      const date = new Date(createdAt);
+      if (isNaN(date.getTime())) return 'Recently';
+      
+      const now = new Date();
+      const diffTime = Math.abs(now.getTime() - date.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) return 'Today';
+      if (diffDays === 2) return 'Yesterday';
+      if (diffDays <= 7) return `${diffDays} days ago`;
+      if (diffDays <= 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
+      if (diffDays <= 365) return `${Math.ceil(diffDays / 30)} months ago`;
+      return date.toLocaleDateString();
+    } catch (error) {
+      return 'Recently';
+    }
+  }, [createdAt]);
+
+  const categoryDisplay = useMemo(() => {
+    if (!category || typeof category !== 'string') return 'General';
+    return category.charAt(0).toUpperCase() + category.slice(1).toLowerCase();
+  }, [category]);
+
+
 
   return (
     <View style={styles.container}>
-      {/* Close Button */}
-      <TouchableOpacity 
-        style={styles.closeButton}
-        onPress={onClose}
-      >
-        <Text style={styles.closeButtonText}>✕</Text>
-      </TouchableOpacity>
-      
-      <Text style={styles.title}>{listing.title}</Text>
-      <Text style={styles.price}>
-        ${listing.price} · {mockCategories.find(c => c.id === listing.category)?.name || listing.category}
-      </Text>
-      
-      <View style={styles.actionButtons}>
-        <TouchableOpacity 
-          style={styles.viewButton}
-          onPress={onViewDetails}
-        >
-          <Text style={styles.buttonText}>View Details</Text>
-        </TouchableOpacity>
+      {/* Header Section with Enhanced Visual Hierarchy */}
+      <View style={styles.headerSection}>
+        <View style={styles.titleSection}>
+          <Text style={styles.title} numberOfLines={2}>
+            {title || 'Untitled Listing'}
+          </Text>
+          <View style={[styles.statusBadge, isActive ? styles.activeBadge : styles.inactiveBadge]}>
+            {isActive ? (
+              <CheckCircle size={16} color="#16A34A" />
+            ) : (
+              <XCircle size={16} color="#EF4444" />
+            )}
+            <Text style={[styles.statusText, isActive ? styles.activeText : styles.inactiveText]}>
+              {isActive ? 'Active' : 'Inactive'}
+            </Text>
+          </View>
+        </View>
         
-        <TouchableOpacity 
-          style={styles.pingButton}
-          onPress={onPingSeller}
-        >
-          <Text style={styles.pingButtonText}>Ping Seller</Text>
-        </TouchableOpacity>
+        {/* New Pricing Component */}
+        <View style={styles.pricingSection}>
+          <View style={styles.priceRow}>
+            <View style={styles.priceValueContainer}>
+              <Text style={styles.priceValue}>₹{price || 0}</Text>
+              <View style={styles.priceUnitContainer}>
+                              <Text style={styles.priceUnitText}>
+                {priceUnit === 'per_item' ? 'per item' : 
+                 priceUnit === 'per_hour' ? 'per hour' :
+                 priceUnit === 'per_day' ? 'per day' :
+                 priceUnit === 'per_week' ? 'per week' :
+                 priceUnit === 'per_month' ? 'per month' :
+                 priceUnit === 'per_year' ? 'per year' :
+                 (priceUnit && typeof priceUnit === 'string' ? priceUnit.replace('per_', 'per ').toLowerCase() : 'per item')}
+              </Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.pricingInfo}>
+            <Text style={styles.pricingSubtext}>Best offer welcome</Text>
+          </View>
+        </View>
       </View>
+
+      {/* Meta Information Grid - Only Real Data */}
+      <View style={styles.metaGrid}>
+        <View style={styles.metaItem}>
+          <View style={styles.metaIconContainer}>
+            <Package size={18} color="#3B82F6" />
+          </View>
+          <View style={styles.metaContent}>
+            <Text style={styles.metaLabel}>Category</Text>
+            <Text style={styles.metaValue}>{categoryDisplay}</Text>
+          </View>
+        </View>
+
+        <View style={styles.metaItem}>
+          <View style={styles.metaIconContainer}>
+            <Calendar size={18} color="#10B981" />
+          </View>
+          <View style={styles.metaContent}>
+            <Text style={styles.metaLabel}>Listed</Text>
+            <Text style={styles.metaValue}>{formattedDate}</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Description Section - Always Fully Visible */}
+      {description && description.trim() !== '' && (
+        <View style={styles.descriptionSection}>
+          <View style={styles.descriptionHeader}>
+            <Text style={styles.descriptionLabel}>About This Item</Text>
+          </View>
+          
+          <View style={styles.descriptionContent}>
+            <Text style={styles.descriptionText}>
+              {description}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Divider with enhanced styling */}
+      <View style={styles.divider} />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
-    bottom: 20,
-    left: 16,
-    right: 16,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
+    padding: 24,
+    marginBottom: 12,
+    borderRadius: 16,
+    elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
   },
-  title: {
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
-    color: '#1E293B',
-    marginBottom: 4,
+  
+  // Header Section
+  headerSection: {
+    marginBottom: 24,
   },
-  price: {
-    fontSize: 14,
-    fontFamily: 'Inter-Medium',
-    color: '#64748B',
-    marginBottom: 12,
-  },
-  actionButtons: {
+  titleSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
-  viewButton: {
+  title: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-    marginRight: 8,
-  },
-  pingButton: {
-    flex: 1,
-    backgroundColor: '#22C55E',
-    borderRadius: 8,
-    paddingVertical: 10,
-    alignItems: 'center',
-  },
-  buttonText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Medium',
+    fontSize: 26,
+    fontFamily: 'Inter-Bold',
     color: '#1E293B',
+    lineHeight: 34,
+    marginRight: 16,
   },
-  pingButtonText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Medium',
-    color: '#FFFFFF',
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 6,
   },
-  closeButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 24,
-    height: 24,
+  activeBadge: {
+    backgroundColor: '#DCFCE7',
+    borderWidth: 1,
+    borderColor: '#16A34A',
+  },
+  inactiveBadge: {
+    backgroundColor: '#FEF2F2',
+    borderWidth: 1,
+    borderColor: '#EF4444',
+  },
+  statusText: {
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
+  },
+  activeText: {
+    color: '#16A34A',
+  },
+  inactiveText: {
+    color: '#EF4444',
+  },
+
+
+
+  // New Pricing Component Styles
+  pricingSection: {
+    backgroundColor: '#F8FAFC',
+    padding: 16,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 24,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  priceValueContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  priceValue: {
+    fontSize: 28,
+    fontFamily: 'Inter-Bold',
+    color: '#22C55E',
+  },
+  priceUnitContainer: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#22C55E',
+  },
+  priceUnitText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#16A34A',
+    textTransform: 'uppercase',
+  },
+  pricingInfo: {
+    alignItems: 'flex-end',
+  },
+  pricingSubtext: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#10B981',
+    fontStyle: 'italic',
+  },
+
+  // Meta Information Grid
+  metaGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    marginBottom: 24,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    minWidth: (width - 80) / 2,
+  },
+  metaIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#F1F5F9',
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 1,
+    marginRight: 12,
   },
-  closeButtonText: {
-    fontSize: 14,
+  metaContent: {
+    flex: 1,
+  },
+  metaLabel: {
+    fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#64748B',
+    color: '#94A3B8',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  metaValue: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#1E293B',
+  },
+
+  // Enhanced Description Section
+  descriptionSection: {
+    marginBottom: 24,
+  },
+  descriptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  descriptionLabel: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    color: '#1E293B',
+  },
+  descriptionContent: {
+    position: 'relative',
+  },
+  descriptionText: {
+    fontSize: 15,
+    fontFamily: 'Inter-Regular',
+    color: '#475569',
+    lineHeight: 24,
+  },
+
+  // Enhanced Divider
+  divider: {
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginTop: 8,
+    borderRadius: 0.5,
   },
 });
+
+ListingInfoCard.displayName = 'ListingInfoCard';
+
+export default ListingInfoCard;

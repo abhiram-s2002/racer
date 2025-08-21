@@ -19,24 +19,34 @@ export function useListings() {
   // Cache for API responses to prevent duplicate calls
   const cacheRef = useRef<Map<string, { data: any[], timestamp: number }>>(new Map());
   const lastFetchRef = useRef<string>('');
+  const hasInitialDataRef = useRef<boolean>(false);
+  const isReturningFromNavigationRef = useRef<boolean>(false);
   
   // Get user location for distance sorting
   const location = useLocation();
 
   // Create cache key for current state
   const getCacheKey = useCallback((pageNumber: number, userLat?: number, userLon?: number) => {
-    return `${pageNumber}-${userLat}-${userLon}-${sortByDistance}-${maxDistance}`;
+    // Round coordinates to reduce unnecessary cache invalidation from minor GPS fluctuations
+    // Use more aggressive rounding to prevent cache invalidation from tiny GPS changes
+    const roundedLat = userLat ? Math.round(userLat * 100) / 100 : 'no-lat';
+    const roundedLon = userLon ? Math.round(userLon * 100) / 100 : 'no-lon';
+    return `${pageNumber}-${roundedLat}-${roundedLon}-${sortByDistance}-${maxDistance}`;
   }, [sortByDistance, maxDistance]);
 
   // Fetch listings from Supabase with geospatial queries
   const fetchListings = useCallback(async (pageNumber = 1, userLat?: number, userLon?: number) => {
+    console.log('📡 fetchListings called:', { pageNumber, userLat, userLon });
     const cacheKey = getCacheKey(pageNumber, userLat, userLon);
     
     // Check cache first (cache for 30 seconds)
     const cached = cacheRef.current.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < 30000) {
+      console.log('💾 Returning cached data for page', pageNumber);
       return cached.data;
     }
+    
+    console.log('🔄 Cache miss or expired, fetching from API for page', pageNumber);
 
     try {
       
@@ -113,25 +123,56 @@ export function useListings() {
 
   // Initial load of listings - only when location is stable
   useEffect(() => {
+    console.log('🔍 useListings useEffect triggered:', {
+      locationLoading: location.loading,
+      hasInitialData: hasInitialDataRef.current,
+      isReturningFromNavigation: isReturningFromNavigationRef.current,
+      listingsCount: listings.length,
+      cacheSize: cacheRef.current.size
+    });
     
     // Skip if location is still loading
-    if (location.loading) return;
+    if (location.loading) {
+      console.log('⏳ Skipping - location still loading');
+      return;
+    }
+    
+    // SIMPLE CHECK: If we already have listings, don't fetch again
+    if (listings.length > 0) {
+      console.log('🚫 Skipping - already have listings:', listings.length);
+      return;
+    }
     
     const cacheKey = getCacheKey(1, location.latitude || undefined, location.longitude || undefined);
+    console.log('🔑 Cache key:', cacheKey);
+    
+    // Check if we already have data for this location/page combination
+    const hasCachedData = cacheRef.current.has(cacheKey);
+    console.log('💾 Has cached data:', hasCachedData);
     
     // Prevent duplicate fetches
-    if (lastFetchRef.current === cacheKey) return;
+    if (lastFetchRef.current === cacheKey) {
+      console.log('🚫 Skipping - duplicate fetch detected');
+      return;
+    }
+    
+    console.log('✅ Proceeding with fetch - all checks passed');
     lastFetchRef.current = cacheKey;
 
     async function loadInitialListings() {
+      console.log('📡 Fetching initial listings...');
       const initialListings = await fetchListings(
         1, 
         location.latitude || undefined, 
         location.longitude || undefined
       );
+      console.log('📥 Received listings:', initialListings.length);
       setListings(initialListings);
       setHasMore(initialListings.length === PAGE_SIZE);
       setLoading(false);
+      hasInitialDataRef.current = true;
+      isReturningFromNavigationRef.current = false;
+      console.log('✅ Initial listings loaded and state updated');
     }
 
     loadInitialListings();
@@ -160,6 +201,7 @@ export function useListings() {
   // Refresh listings (pull to refresh) - clear cache
   const refreshListings = useCallback(async () => {
     try {
+      console.log('🔄 Clearing cache for refresh');
       // Clear ALL cache to ensure fresh data
       cacheRef.current.clear();
       
@@ -187,17 +229,30 @@ export function useListings() {
   // Toggle distance-based sorting
   const toggleDistanceSort = useCallback(() => {
     setSortByDistance(prev => !prev);
-    // Clear cache when sorting changes
-    cacheRef.current.clear();
-  }, []);
+    // Only clear cache if we actually have listings to avoid unnecessary fetches
+    if (listings.length > 0) {
+      console.log('🔄 Clearing cache for distance sort toggle');
+      cacheRef.current.clear();
+    }
+  }, [listings.length]);
 
   // Set distance filter
   const setDistanceFilter = useCallback((distance: number | null) => {
     setMaxDistance(distance);
     setPage(1); // Reset to first page when filter changes
-    // Clear cache when filter changes
-    cacheRef.current.clear();
-  }, []);
+    // Only clear cache if we actually have listings to avoid unnecessary fetches
+    if (listings.length > 0) {
+      console.log('🔄 Clearing cache for distance filter change');
+      cacheRef.current.clear();
+    }
+  }, [listings.length]);
+
+  // Mark that we're returning from navigation to prevent unnecessary refreshes
+  const markReturningFromNavigation = useCallback(() => {
+    console.log('🏠 markReturningFromNavigation called');
+    console.log('💾 Current cache size:', cacheRef.current.size);
+    console.log('📊 Current listings count:', listings.length);
+  }, [listings.length]);
 
   return {
     listings,
@@ -212,6 +267,7 @@ export function useListings() {
     locationAvailable: !!(location.latitude && location.longitude),
     locationLoading: location.loading,
     locationError: location.error,
-    updateLocation: location.updateLocation
+    updateLocation: location.updateLocation,
+    markReturningFromNavigation
   };
 }

@@ -15,9 +15,9 @@ interface LocationFilterModalProps {
   visible: boolean;
   onClose: () => void;
   onSelectDistance: (distance: number | null) => void;
-  onSelectCategory: (category: string) => void;
+  onSelectCategory: (categories: string[]) => void;
   selectedDistance: number | null;
-  selectedCategory: string;
+  selectedCategory: string | string[];
 }
 
 export default function LocationFilterModal({ 
@@ -30,13 +30,17 @@ export default function LocationFilterModal({
 }: LocationFilterModalProps) {
   
   const [localDistance, setLocalDistance] = useState(selectedDistance || 5);
-  const [localCategory, setLocalCategory] = useState(selectedCategory);
+  const [localCategory, setLocalCategory] = useState<string[]>(
+    Array.isArray(selectedCategory) ? selectedCategory : selectedCategory === 'all' ? [] : [selectedCategory]
+  );
   const lastUpdateRef = useRef<number>(0);
 
   // Update local state when props change
   useEffect(() => {
     setLocalDistance(selectedDistance || 5);
-    setLocalCategory(selectedCategory);
+    setLocalCategory(
+      Array.isArray(selectedCategory) ? selectedCategory : selectedCategory === 'all' ? [] : [selectedCategory]
+    );
   }, [selectedDistance, selectedCategory]);
 
   const handleApplyFilters = () => {
@@ -47,7 +51,7 @@ export default function LocationFilterModal({
 
   const handleResetFilters = () => {
     setLocalDistance(null);
-    setLocalCategory('all');
+    setLocalCategory([]);
   };
 
   const categoryIcons = {
@@ -121,13 +125,13 @@ export default function LocationFilterModal({
               <TouchableOpacity
                 style={[
                   styles.categoryOption,
-                  localCategory === 'all' && styles.selectedCategoryOption
+                  localCategory.length === 0 && styles.selectedCategoryOption
                 ]}
-                onPress={() => setLocalCategory('all')}
+                onPress={() => setLocalCategory([])}
               >
                 <Text style={[
                   styles.categoryText,
-                  localCategory === 'all' && styles.selectedCategoryText
+                  localCategory.length === 0 && styles.selectedCategoryText
                 ]}>
                   All Categories
                 </Text>
@@ -139,15 +143,21 @@ export default function LocationFilterModal({
                   key={category.id}
                   style={[
                     styles.categoryOption,
-                    localCategory === category.id && styles.selectedCategoryOption
+                    localCategory.includes(category.id) && styles.selectedCategoryOption
                   ]}
-                  onPress={() => setLocalCategory(category.id)}
+                  onPress={() => {
+                    if (localCategory.includes(category.id)) {
+                      setLocalCategory(localCategory.filter(cat => cat !== category.id));
+                    } else {
+                      setLocalCategory([...localCategory, category.id]);
+                    }
+                  }}
                 >
                   <Text style={[
                     styles.categoryText,
-                    localCategory === category.id && styles.selectedCategoryText
+                    localCategory.includes(category.id) && styles.selectedCategoryText
                   ]}>
-                    {category.name}
+                    {localCategory.includes(category.id) ? '✓ ' : ''}{category.name}
                   </Text>
                 </TouchableOpacity>
               ))}

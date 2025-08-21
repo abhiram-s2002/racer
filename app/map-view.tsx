@@ -13,7 +13,7 @@ import MapHeader from '@/components/MapHeader';
 import LoadMoreSection from '@/components/LoadMoreSection';
 import ListingsInfoBox from '@/components/ListingsInfoBox';
 import MapContainer from '@/components/MapContainer';
-import ListingInfoCard from '@/components/ListingInfoCard';
+import MapPinPopup from '@/components/MapPinPopup';
 
 const { width, height } = Dimensions.get('window');
 const LATITUDE_DELTA = 0.01;
@@ -24,7 +24,7 @@ function MapViewScreen() {
   const insets = useSafeAreaInsets();
 
   // State
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState<string[]>([]);
   const [showLocationFilterModal, setShowLocationFilterModal] = useState(false);
   const [showListView, setShowListView] = useState(false);
   const [showBetaDisclaimer, setShowBetaDisclaimer] = useState(true);
@@ -37,6 +37,7 @@ function MapViewScreen() {
   });
   const [visibleListings, setVisibleListings] = useState<any[]>([]);
   const [selectedListing, setSelectedListing] = useState<any>(null);
+  const [showPinPopup, setShowPinPopup] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
 
   
@@ -55,8 +56,8 @@ function MapViewScreen() {
   useEffect(() => {
     if (listings && listings.length > 0) {
       const filtered = listings.filter((listing: any) => {
-        if (selectedCategory === 'all') return true;
-        return listing.category === selectedCategory;
+        if (selectedCategory.length === 0) return true; // Show all categories
+        return selectedCategory.includes(listing.category);
       });
       
       setVisibleListings(filtered);
@@ -91,8 +92,8 @@ function MapViewScreen() {
     }
   };
 
-  const handleSelectCategory = (categoryId: string) => {
-    setSelectedCategory(categoryId);
+  const handleSelectCategory = (categories: string[]) => {
+    setSelectedCategory(categories);
   };
 
   const handleSetDistanceFilter = (distance: number | null) => {
@@ -102,25 +103,26 @@ function MapViewScreen() {
 
   const handleMarkerPress = (listing: any) => {
     setSelectedListing(listing);
+    setShowPinPopup(true);
   };
 
   const handleCloseListing = () => {
     setSelectedListing(null);
   };
 
-  const handleViewListing = () => {
+  const handleClosePinPopup = () => {
+    setShowPinPopup(false);
+    setSelectedListing(null);
+  };
+
+  const handlePingFromPopup = () => {
     if (selectedListing) {
       // Navigate to home screen and open ping modal for this listing
       router.replace({ pathname: '/', params: { pingListingId: selectedListing.id } });
     }
   };
 
-  const handlePingListing = () => {
-    if (selectedListing) {
-      // Navigate to home screen and open ping modal for this listing
-      router.replace({ pathname: '/', params: { pingListingId: selectedListing.id } });
-    }
-  };
+
 
 
 
@@ -193,13 +195,24 @@ function MapViewScreen() {
         />
       )}
 
-      {/* Selected listing info */}
-      <ListingInfoCard
+      {/* Overlay to handle map taps and close popup */}
+      {showPinPopup && (
+        <TouchableOpacity
+          style={styles.mapOverlay}
+          activeOpacity={1}
+          onPress={handleClosePinPopup}
+        />
+      )}
+
+      {/* Map Pin Popup */}
+      <MapPinPopup
         listing={selectedListing}
-        onViewDetails={handleViewListing}
-        onPingSeller={handlePingListing}
-        onClose={handleCloseListing}
+        visible={showPinPopup}
+        onClose={handleClosePinPopup}
+        onPing={handlePingFromPopup}
       />
+
+
 
       {/* Combined Location & Category Filter Modal */}
       <LocationFilterModal
@@ -220,7 +233,16 @@ function MapViewScreen() {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Current Listings ({visibleListings.length})</Text>
+            <Text style={styles.modalTitle}>
+              Current Listings ({visibleListings.length})
+              {selectedCategory.length > 0 && (
+                <Text style={styles.categorySubtitle}>
+                  {'\n'}Categories: {selectedCategory.map(cat => 
+                    mockCategories.find(c => c.id === cat)?.name || cat
+                  ).join(', ')}
+                </Text>
+              )}
+            </Text>
             <TouchableOpacity 
               style={styles.closeButton}
               onPress={() => setShowListView(false)}
@@ -301,6 +323,12 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
   },
+  categorySubtitle: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+    marginTop: 4,
+  },
   closeButton: {
     padding: 4,
   },
@@ -338,6 +366,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Medium',
     color: '#64748B',
+  },
+  mapOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 1,
   },
 });
 
