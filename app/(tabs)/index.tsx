@@ -17,7 +17,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, MapPin, Phone, MessageCircle, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Check, Home } from 'lucide-react-native';
+import { Search, MapPin, Phone, MessageCircle, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Check, Home, Star, Clock, Tag } from 'lucide-react-native';
 import { Plus } from 'lucide-react-native';
 import { mockCategories } from '@/utils/mockData';
 import AddListingModal from '@/components/AddListingModal';
@@ -74,6 +74,7 @@ function HomeScreen() {
   const [userActivityCount, setUserActivityCount] = useState(0);
   const [hasShownFeedbackPrompt, setHasShownFeedbackPrompt] = useState(false);
   const [existingPings, setExistingPings] = useState<Record<string, boolean>>({});
+  const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   
   // Image viewer state
   const [showImageViewer, setShowImageViewer] = useState(false);
@@ -556,30 +557,9 @@ function HomeScreen() {
 
         <View style={styles.listingContent}>
           <TouchableOpacity onPress={() => handleNavigateToSellerProfile(item)}>
-          <Text style={styles.listingTitle}>{item.title}</Text>
-          <View style={styles.priceContainer}>
-            <Text style={styles.listingPrice}>₹{item.price}</Text>
-            <View style={styles.priceUnitBadge}>
-              <Text style={styles.priceUnitText}>
-                {item.price_unit ? 
-                  (item.price_unit === 'per_item' ? 'per item' : item.price_unit.replace('per_', 'per ')) 
-                  : 'per item'
-                }
-              </Text>
-            </View>
-          </View>
-          
-
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.sellerInfo}
-            onPress={() => handleNavigateToSellerProfile(item)}
-          >
-            <Image source={{ uri: seller.avatar_url || 'https://via.placeholder.com/30' }} style={styles.sellerAvatar} />
-            <View style={styles.sellerDetails}>
-              <Text style={styles.sellerName}>{seller.name}</Text>
-              <View style={styles.locationRow}>
+            <View style={styles.titleAndDistanceRow}>
+              <Text style={styles.listingTitle}>{item.title}</Text>
+              <View style={styles.distanceContainer}>
                 <MapPin size={12} color="#64748B" />
                 {item.distance_km !== undefined && item.distance_km !== null ? (
                   <Text style={styles.distance}>{formatDistance(item.distance_km)}</Text>
@@ -590,12 +570,88 @@ function HomeScreen() {
                 )}
               </View>
             </View>
-            <View style={[styles.statusBadge, item.is_active && styles.activeBadge]}>
-              <Text style={[styles.statusText, item.is_active && styles.activeText]}>
-                {item.is_active ? 'Active' : 'Inactive'}
-              </Text>
+            <View style={styles.priceContainer}>
+              <Text style={styles.listingPrice}>₹{item.price}</Text>
+              <View style={styles.priceUnitBadge}>
+                <Text style={styles.priceUnitText}>
+                  {item.price_unit ? 
+                    (item.price_unit === 'per_item' ? 'per item' : item.price_unit.replace('per_', 'per ')) 
+                    : 'per item'
+                  }
+                </Text>
+              </View>
             </View>
+
+            {/* Additional Info Section */}
+            <View style={styles.additionalInfoContainer}>
+              {/* Category, Tags and Date Row */}
+              <View style={styles.categoryDateRow}>
+                <View style={styles.leftSection}>
+                  <View style={styles.categoryBadge}>
+                    <Tag size={10} color="#64748B" />
+                                      <Text style={styles.listingCategoryText}>
+                    {mockCategories.find(cat => cat.id === item.category)?.name || item.category || 'General'}
+                  </Text>
+                  </View>
+                  {item.tags && item.tags.length > 0 && (
+                    <Text style={styles.tagsText}>
+                      #{item.tags.slice(0, 2).join(' #')}
+                    </Text>
+                  )}
+                </View>
+                <View style={styles.dateContainer}>
+                  <Clock size={10} color="#94A3B8" />
+                  <Text style={styles.dateText}>
+                    {formatTimeAgo(item.created_at)}
+                  </Text>
+                </View>
+              </View>
+
+
+
+              {/* Seller Rating */}
+              <View style={styles.ratingRow}>
+                <View style={styles.ratingContainer}>
+                  <Star size={10} color="#F59E0B" fill="#F59E0B" />
+                  <Text style={styles.ratingText}>
+                    {getDummyRating(item).rating}
+                  </Text>
+                  <Text style={styles.reviewCountText}>
+                    ({getDummyRating(item).reviewCount} reviews)
+                  </Text>
+                </View>
+                <View style={[styles.statusBadge, item.is_active && styles.activeBadge]}>
+                  <Text style={[styles.statusText, item.is_active && styles.activeText]}>
+                    {item.is_active ? 'Active' : 'Inactive'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          
+
           </TouchableOpacity>
+          
+          {getDescriptionText(item) ? (
+            <View style={styles.descriptionContainer}>
+              <TouchableOpacity 
+                style={styles.descriptionTextContainer}
+                onPress={() => toggleDescriptionExpansion(item.id)}
+                activeOpacity={0.7}
+              >
+                <Text 
+                  style={styles.descriptionText}
+                  numberOfLines={expandedDescriptions[item.id] ? undefined : 2}
+                >
+                  {getDescriptionText(item)}
+                </Text>
+                {getDescriptionText(item) && getDescriptionText(item)!.length > 100 && (
+                  <Text style={styles.expandIndicator}>
+                    {expandedDescriptions[item.id] ? 'Show less' : 'Show more'}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          ) : null}
 
 
 
@@ -645,6 +701,46 @@ function HomeScreen() {
   // Handler for the feedback button
   const handleFeedback = () => {
     setShowFeedbackModal(true);
+  };
+
+  const toggleDescriptionExpansion = (listingId: string) => {
+    setExpandedDescriptions(prev => ({
+      ...prev,
+      [listingId]: !prev[listingId]
+    }));
+  };
+
+  const getDescriptionText = (item: any) => {
+    if (item.description && item.description.trim()) {
+      return item.description.trim();
+    }
+    return null;
+  };
+
+  const formatTimeAgo = (dateString: string) => {
+    if (!dateString) return 'Recently';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 48) return 'Yesterday';
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+    if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}w ago`;
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const getDummyRating = (item: any) => {
+    // Generate consistent dummy rating based on item ID for demo purposes
+    const seed = item.id ? item.id.toString().charCodeAt(0) : 0;
+    const rating = 3.5 + (seed % 3) * 0.5; // 3.5, 4.0, 4.5
+    const reviewCount = 10 + (seed % 20); // 10-30 reviews
+    return { rating: rating.toFixed(1), reviewCount };
   };
 
   const trackUserActivity = () => {
@@ -1009,6 +1105,7 @@ function HomeScreen() {
             contentContainerStyle={styles.listingsContainer}
             columnWrapperStyle={styles.columnWrapper}
             showsVerticalScrollIndicator={false}
+            removeClippedSubviews={false}
             onEndReached={() => {
               if (hasMore && !loading) {
                 loadMoreListings();
@@ -1171,12 +1268,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
-    marginBottom: 6,
+    marginBottom: 4,
     marginHorizontal: 16,
   },
   listingsContainer: {
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingBottom: 16,
   },
   columnWrapper: {
     justifyContent: 'space-between',
@@ -1184,7 +1281,7 @@ const styles = StyleSheet.create({
   listingCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    marginBottom: 10,
+    marginBottom: 8,
     width: ITEM_WIDTH,
     boxShadow: '0px 2px 6px rgba(0,0,0,0.1)',
     elevation: 3,
@@ -1192,7 +1289,7 @@ const styles = StyleSheet.create({
   },
   listingImage: {
     width: '100%',
-    height: 120,
+    height: 150,
   },
   favoriteButton: {
     position: 'absolute',
@@ -1205,26 +1302,159 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   listingContent: {
-    padding: 12,
+    padding: 8,
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
   },
   listingTitle: {
     fontSize: 13,
     fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
-    marginBottom: 2,
-    minHeight: 28,
+    marginBottom: 1,
+    minHeight: 24,
+  },
+  titleAndDistanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 1,
+  },
+  distanceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  descriptionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 3,
+  },
+  descriptionTextContainer: {
+    flex: 1,
+    marginRight: 8,
+  },
+  descriptionText: {
+    fontSize: 11,
+    fontFamily: 'Inter-Regular',
+    color: '#475569',
+    lineHeight: 16,
+  },
+  expandIndicator: {
+    fontSize: 10,
+    fontFamily: 'Inter-Medium',
+    color: '#22C55E',
+    marginTop: 2,
+    textDecorationLine: 'underline',
+  },
+  statusOnlyContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 3,
+  },
+  additionalInfoContainer: {
+    marginBottom: 8,
+  },
+  categoryDateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  categoryBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    gap: 4,
+  },
+  listingCategoryText: {
+    fontSize: 9,
+    fontFamily: 'Inter-Medium',
+    color: '#475569',
+  },
+  tagsText: {
+    fontSize: 8,
+    fontFamily: 'Inter-Regular',
+    color: '#94A3B8',
+    fontStyle: 'italic',
+  },
+  conditionRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  conditionBadge: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  conditionText: {
+    fontSize: 8,
+    fontFamily: 'Inter-Medium',
+    color: '#92400E',
+  },
+  dateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  dateText: {
+    fontSize: 8,
+    fontFamily: 'Inter-Regular',
+    color: '#94A3B8',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  ratingText: {
+    fontSize: 9,
+    fontFamily: 'Inter-SemiBold',
+    color: '#1E293B',
+  },
+  reviewCountText: {
+    fontSize: 8,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+  },
+  trustBadge: {
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  trustText: {
+    fontSize: 8,
+    fontFamily: 'Inter-Medium',
+    color: '#16A34A',
   },
   listingPrice: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
     color: '#22C55E',
-    marginBottom: 6,
+    marginBottom: 3,
   },
   priceContainer: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
-    marginBottom: 6,
-    gap: 8,
+    alignItems: 'center',
+    marginBottom: 3,
+    gap: 6,
   },
   priceUnit: {
     fontSize: 10,
@@ -1241,13 +1471,11 @@ const styles = StyleSheet.create({
   },
   priceUnitBadge: {
     backgroundColor: 'transparent',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
-    alignSelf: 'flex-end',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: 'rgba(100, 116, 139, 0.3)',
-    marginBottom: 2,
   },
   priceUnitText: {
     fontSize: 9,
@@ -1259,13 +1487,13 @@ const styles = StyleSheet.create({
   sellerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 5,
+    marginBottom: 3,
   },
   sellerAvatar: {
     width: 18,
     height: 18,
     borderRadius: 9,
-    marginRight: 5,
+    marginRight: 4,
   },
   sellerDetails: {
     flex: 1,
@@ -1274,14 +1502,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Inter-Medium',
     color: '#1E293B',
-    marginBottom: 1,
+    marginBottom: 0,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   distance: {
-    fontSize: 8,
+    fontSize: 12,
     fontFamily: 'Inter-Regular',
     color: '#64748B',
     marginLeft: 1,
@@ -1291,11 +1519,11 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   statusContainer: {
-    marginBottom: 5,
+    marginBottom: 3,
   },
   statusBadge: {
     alignSelf: 'flex-start',
-    paddingHorizontal: 5,
+    paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 2,
     backgroundColor: '#F1F5F9',
@@ -1313,14 +1541,16 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
-    gap: 4,
+    gap: 3,
+    justifyContent: 'flex-end',
+    marginTop: 'auto',
   },
   callButton: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#22C55E',
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: 3,
   },
   messageButton: {
@@ -1328,7 +1558,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F0FDF4',
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: 3,
     borderWidth: 1,
     borderColor: '#22C55E',

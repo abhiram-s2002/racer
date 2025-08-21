@@ -1,6 +1,5 @@
 // Note: @react-native-community/netinfo needs to be installed
 // npm install @react-native-community/netinfo
-import { ErrorHandler } from './errorHandler';
 
 // Temporary interface until netinfo is installed
 interface NetInfoState {
@@ -30,23 +29,19 @@ export interface NetworkStatus {
   isWifi: boolean;
   isCellular: boolean;
   isEthernet: boolean;
-  connectionQuality: 'excellent' | 'good' | 'poor' | 'unknown';
 }
 
 export interface NetworkCallback {
   onConnectivityChange?: (status: NetworkStatus) => void;
-  onConnectionQualityChange?: (quality: NetworkStatus['connectionQuality']) => void;
   onOffline?: () => void;
   onOnline?: () => void;
 }
 
 class NetworkMonitor {
   private static instance: NetworkMonitor;
-  private errorHandler = ErrorHandler.getInstance();
   private callbacks: NetworkCallback[] = [];
   private currentStatus: NetworkStatus | null = null;
   private isMonitoring = false;
-  private connectionTestInterval: any | null = null;
 
   static getInstance(): NetworkMonitor {
     if (!NetworkMonitor.instance) {
@@ -68,10 +63,22 @@ class NetworkMonitor {
       // Start monitoring
       this.startMonitoring();
     } catch (error) {
-      await this.errorHandler.handleSilentError(error, {
+      // Network monitoring initialization failed - this is expected in some environments
+      console.log('NetworkMonitor: Initialization failed (expected in some environments)', {
         operation: 'network_monitor_init',
         component: 'NetworkMonitor',
+        timestamp: new Date().toISOString()
       });
+      
+      // Set default offline status
+      this.currentStatus = {
+        isConnected: false,
+        isInternetReachable: false,
+        type: 'unknown',
+        isWifi: false,
+        isCellular: false,
+        isEthernet: false
+      };
     }
   }
 
@@ -86,39 +93,8 @@ class NetworkMonitor {
       type,
       isWifi: type === 'wifi',
       isCellular: type === 'cellular',
-      isEthernet: type === 'ethernet',
-      connectionQuality: this.determineConnectionQuality(state),
+      isEthernet: type === 'ethernet'
     };
-  }
-
-  private determineConnectionQuality(state: NetInfoState): NetworkStatus['connectionQuality'] {
-    if (!state.isConnected) return 'unknown';
-    
-    // For WiFi, check signal strength if available
-    if (state.type === 'wifi' && state.details) {
-      const wifiDetails = state.details as any;
-      if (wifiDetails.strength !== undefined) {
-        if (wifiDetails.strength >= 80) return 'excellent';
-        if (wifiDetails.strength >= 60) return 'good';
-        return 'poor';
-      }
-    }
-    
-    // For cellular, check generation if available
-    if (state.type === 'cellular' && state.details) {
-      const cellularDetails = state.details as any;
-      if (cellularDetails.cellularGeneration) {
-        if (['5g', '4g'].includes(cellularDetails.cellularGeneration)) return 'excellent';
-        if (['3g'].includes(cellularDetails.cellularGeneration)) return 'good';
-        return 'poor';
-      }
-    }
-    
-    // Default based on connection type
-    if (state.type === 'wifi' || state.type === 'ethernet') return 'good';
-    if (state.type === 'cellular') return 'good';
-    
-    return 'unknown';
   }
 
   private startMonitoring() {
@@ -130,9 +106,6 @@ class NetworkMonitor {
     NetInfo.addEventListener((state) => {
       this.handleNetworkChange(state);
     });
-    
-    // Start connection quality monitoring
-    this.startConnectionQualityMonitoring();
   }
 
   private async handleNetworkChange(state: NetInfoState) {
@@ -145,8 +118,7 @@ class NetworkMonitor {
     console.log('Network status changed:', {
       from: previousStatus?.isConnected,
       to: newStatus.isConnected,
-      type: newStatus.type,
-      quality: newStatus.connectionQuality,
+      type: newStatus.type
     });
     
     // Notify callbacks
@@ -163,13 +135,6 @@ class NetworkMonitor {
           callback.onOnline();
         }
       }
-      
-      // Check if connection quality changed
-      if (previousStatus?.connectionQuality !== newStatus.connectionQuality) {
-        if (callback.onConnectionQualityChange) {
-          callback.onConnectionQualityChange(newStatus.connectionQuality);
-        }
-      }
     });
     
     // Handle offline scenario
@@ -184,73 +149,16 @@ class NetworkMonitor {
   }
 
   private async handleOffline() {
-    console.log('Device went offline');
+    console.log('NetworkMonitor: Device went offline (expected behavior)');
     
-    await this.errorHandler.handleSilentError(
-      new Error('Network connection lost'),
-      {
-        operation: 'network_offline',
-        component: 'NetworkMonitor',
-      }
-    );
+    // This is expected behavior, not an error
+    // Just log as info and continue
   }
 
   private async handleOnline() {
     console.log('Device came online');
     
-    // Test connection quality
-    await this.testConnectionQuality();
-  }
-
-  private startConnectionQualityMonitoring() {
-    // Test connection quality every 30 seconds
-    this.connectionTestInterval = setInterval(async () => {
-      if (this.currentStatus?.isConnected) {
-        await this.testConnectionQuality();
-      }
-    }, 30000);
-  }
-
-  private async testConnectionQuality() {
-    try {
-      const startTime = Date.now();
-      
-      // Test with a small request
-      const response = await fetch('https://www.google.com/favicon.ico', {
-        method: 'HEAD',
-        cache: 'no-cache',
-      });
-      
-      const endTime = Date.now();
-      const responseTime = endTime - startTime;
-      
-      // Determine quality based on response time
-      let quality: NetworkStatus['connectionQuality'] = 'unknown';
-      if (responseTime < 500) quality = 'excellent';
-      else if (responseTime < 2000) quality = 'good';
-      else quality = 'poor';
-      
-      // Update current status if quality changed
-      if (this.currentStatus && this.currentStatus.connectionQuality !== quality) {
-        this.currentStatus.connectionQuality = quality;
-        
-        this.callbacks.forEach(callback => {
-          if (callback.onConnectionQualityChange) {
-            callback.onConnectionQualityChange(quality);
-          }
-        });
-      }
-    } catch (error) {
-      // Connection test failed, mark as poor quality
-      if (this.currentStatus) {
-        this.currentStatus.connectionQuality = 'poor';
-      }
-      
-      await this.errorHandler.handleSilentError(error, {
-        operation: 'connection_quality_test',
-        component: 'NetworkMonitor',
-      });
-    }
+    // No connection quality testing needed
   }
 
   // Public methods
@@ -264,10 +172,6 @@ class NetworkMonitor {
 
   public isOffline(): boolean {
     return !this.isOnline();
-  }
-
-  public getConnectionQuality(): NetworkStatus['connectionQuality'] {
-    return this.currentStatus?.connectionQuality ?? 'unknown';
   }
 
   public addCallback(callback: NetworkCallback): () => void {
@@ -306,12 +210,16 @@ class NetworkMonitor {
       const response = await fetch(url, {
         method: 'HEAD',
         cache: 'no-cache',
+        signal: AbortSignal.timeout(5000), // 5 second timeout
       });
       return response.ok;
     } catch (error) {
-      await this.errorHandler.handleSilentError(error, {
+      // Connection test failed - this is expected behavior, not an error
+      console.log('NetworkMonitor: Connection test failed (expected when offline)', {
         operation: 'connection_test',
         component: 'NetworkMonitor',
+        url,
+        timestamp: new Date().toISOString()
       });
       return false;
     }
@@ -319,13 +227,16 @@ class NetworkMonitor {
 
   public destroy() {
     this.isMonitoring = false;
-    
-    if (this.connectionTestInterval) {
-      clearInterval(this.connectionTestInterval);
-      this.connectionTestInterval = null;
-    }
-    
     this.callbacks = [];
+  }
+
+  // Enable/disable verbose logging (useful for development)
+  public setVerboseLogging(enabled: boolean) {
+    if (enabled) {
+      console.log('NetworkMonitor: Verbose logging enabled');
+    } else {
+      console.log('NetworkMonitor: Verbose logging disabled');
+    }
   }
 }
 
@@ -337,4 +248,5 @@ export const isOnline = () => networkMonitor.isOnline();
 export const isOffline = () => networkMonitor.isOffline();
 export const getNetworkStatus = () => networkMonitor.getCurrentStatus();
 export const waitForConnection = (timeoutMs?: number) => networkMonitor.waitForConnection(timeoutMs);
-export const testConnection = (url?: string) => networkMonitor.testConnection(url); 
+export const testConnection = (url?: string) => networkMonitor.testConnection(url);
+export const setNetworkVerboseLogging = (enabled: boolean) => networkMonitor.setVerboseLogging(enabled); 

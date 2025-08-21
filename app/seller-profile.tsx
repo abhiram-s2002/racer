@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
   },
   listingImage: {
     width: '100%',
-    height: 90,
+    height: 150,
   },
   statusBadgeContainer: {
     position: 'absolute',

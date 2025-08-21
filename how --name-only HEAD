@@ -1,0 +1,5 @@
+[33m7404d7f[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Update profile tab with latest changes
+[33ma8747cd[m  Major Update: New Map View, Enhanced UI, & Complete Feature Overhaul
+[33mf919121[m Clean up: Remove dependencies and build artifacts for clean local development
+[33mea4a8b7[m Remove remaining temp project files
+[33mefa5120[m Clean project update: Latest features and optimizations without dependencies
