@@ -94,6 +94,41 @@ export async function upsertUserProfile(authUser: any) {
       });
       return { error };
     }
+
+    // Process referral code if user has one stored in metadata
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log('🔍 [DEBUG] Checking user metadata for referral code...');
+    console.log('🔍 [DEBUG] User metadata:', user?.user_metadata);
+    
+    if (user?.user_metadata?.referral_code) {
+      console.log('🔍 [DEBUG] Found referral code in metadata:', user.user_metadata.referral_code);
+      try {
+        console.log('🔍 [DEBUG] Attempting to import processReferralCode...');
+        // Import the function dynamically to avoid circular dependencies
+        const { processReferralCode } = await import('./auth');
+        console.log('✅ [DEBUG] processReferralCode imported successfully');
+        
+        console.log('🔍 [DEBUG] Calling processReferralCode with:', {
+          code: user.user_metadata.referral_code,
+          username: username
+        });
+        
+        const result = await processReferralCode(user.user_metadata.referral_code, username);
+        console.log('🔍 [DEBUG] processReferralCode result:', result);
+        
+        // Clear the referral code from metadata after processing
+        console.log('🔍 [DEBUG] Clearing referral code from metadata...');
+        await supabase.auth.updateUser({
+          data: { referral_code: null }
+        });
+        console.log('✅ [DEBUG] Referral code processed and cleared from metadata');
+      } catch (referralError) {
+        console.error('❌ [DEBUG] Error processing referral code:', referralError);
+        console.error('❌ [DEBUG] Error stack:', referralError.stack);
+      }
+    } else {
+      console.log('🔍 [DEBUG] No referral code found in user metadata');
+    }
   } catch (upsertError) {
     // If upsert fails, try insert instead
     console.log('Upsert failed, trying insert:', upsertError);

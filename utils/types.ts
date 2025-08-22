@@ -283,6 +283,23 @@ export interface Referral {
   referral_code: string;
   status: ReferralStatus;
   omni_earned: number;
+  commission_rate: number;
+  total_commission_earned: number;
+  created_at: string;
+}
+
+/**
+ * Referral commission record
+ */
+export interface ReferralCommission {
+  id: string;
+  referral_id: string;
+  referrer_username: string;
+  referred_username: string;
+  commission_amount: number;
+  source_transaction_id: string;
+  source_type: string;
+  source_amount: number;
   created_at: string;
 }
 
@@ -344,6 +361,7 @@ export type TransactionType =
   | 'daily_checkin'
   | 'achievement_completed'
   | 'referral_bonus'
+  | 'referral_commission'
   | 'listing_created'
   | 'ping_sent'
   | 'message_sent'

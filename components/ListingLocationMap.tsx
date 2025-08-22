@@ -185,3 +185,5 @@ const styles = StyleSheet.create({
 ListingLocationMap.displayName = 'ListingLocationMap';
 
 export default ListingLocationMap;
+
+

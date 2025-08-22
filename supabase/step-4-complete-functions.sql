@@ -418,7 +418,7 @@ BEGIN
                 completed_at = timezone('utc', now())
             WHERE referred_username = NEW.username AND status = 'pending';
             
-            -- Award OMNI to both referrer and referred user
+            -- Award OMNI only to referrer (referred user already got bonus from app)
             INSERT INTO reward_transactions (username, transaction_type, amount, description, reference_id, reference_type)
             VALUES (
                 referrer_username_var,
@@ -429,15 +429,7 @@ BEGIN
                 'referral'
             );
             
-            INSERT INTO reward_transactions (username, transaction_type, amount, description, reference_id, reference_type)
-            VALUES (
-                NEW.username,
-                'referral',
-                100,
-                'Welcome bonus for being referred',
-                referral_id_var,
-                'referral'
-            );
+            -- Note: Referred user bonus is handled by the app code, not here
             
             -- Update Referral King achievement progress for the referrer
             -- Count total completed referrals for this user

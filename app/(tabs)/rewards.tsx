@@ -9,6 +9,7 @@ import {
   RefreshControl,
   FlatList,
   StyleSheet,
+  Clipboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,6 +39,7 @@ import {
   Crown,
   Sparkles,
   Info,
+  DollarSign,
 } from 'lucide-react-native';
 import { useBackHandler } from '@/hooks/useBackHandler';
 
@@ -58,6 +60,8 @@ export default function RewardsScreen() {
     transactions,
     rewardsSummary,
     recentActivity,
+    referralCommissions,
+    commissionStats,
     loading: rewardsLoading,
     error: rewardsError,
     refreshing,
@@ -87,11 +91,11 @@ export default function RewardsScreen() {
   const copyReferralCode = async () => {
     if (userReferralCode?.referral_code) {
       try {
-        await Share.share({
-          message: `Join me on OmniMarketplace! Use my referral code: ${userReferralCode.referral_code}`,
-        });
+        await Clipboard.setString(userReferralCode.referral_code);
+        Alert.alert('Copied!', 'Referral code copied to clipboard');
       } catch (error) {
-        console.error('Error sharing referral code:', error);
+        console.error('Error copying referral code:', error);
+        Alert.alert('Error', 'Failed to copy referral code');
       }
     }
   };
@@ -101,7 +105,7 @@ export default function RewardsScreen() {
     if (userReferralCode?.referral_code) {
       try {
         await Share.share({
-          message: `Join me on OmniMarketplace! Use my referral code: ${userReferralCode.referral_code}`,
+          message: `Join me on OmniMarketplace! Use my referral code: ${userReferralCode.referral_code} and get 100 OMNI bonus!`,
         });
       } catch (error) {
         console.error('Error sharing referral code:', error);
@@ -451,8 +455,8 @@ export default function RewardsScreen() {
               <Text style={styles.referralCode}>
                 {userReferralCode?.referral_code || generateReferralCode(username)}
               </Text>
-              <Text style={styles.referralCodeDescription}>
-                Share this code with friends to earn rewards together
+                                                    <Text style={styles.referralCodeDescription}>
+                Share this code with friends to earn 10% of all rewards they earn + they get 100 OMNI bonus!
               </Text>
             </View>
             <View style={styles.codeActions}>
@@ -493,17 +497,17 @@ export default function RewardsScreen() {
               </Text>
             </View>
           </View>
-          <View style={styles.stepCard}>
-            <View style={styles.stepNumber}>
-              <Text style={styles.stepNumberText}>3</Text>
-            </View>
-            <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>Both Earn Rewards</Text>
-              <Text style={styles.stepDescription}>
-                You both get 100 OMNI tokens when they create their first listing
-              </Text>
-            </View>
-          </View>
+                     <View style={styles.stepCard}>
+             <View style={styles.stepNumber}>
+               <Text style={styles.stepNumberText}>3</Text>
+             </View>
+             <View style={styles.stepContent}>
+               <Text style={styles.stepTitle}>You Earn Commissions</Text>
+                               <Text style={styles.stepDescription}>
+                  You earn 10% of all rewards they earn, plus they get 100 OMNI immediately for using your code!
+                </Text>
+             </View>
+           </View>
         </View>
 
         {/* Achievements Section */}
@@ -591,6 +595,34 @@ export default function RewardsScreen() {
               <Text style={styles.emptyHistorySubtext}>
                 Share your referral code to start earning rewards
               </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Commission Earnings Section */}
+        {commissionStats.totalCommissions > 0 && (
+          <View style={styles.historySection}>
+            <View style={styles.historyHeader}>
+              <Text style={styles.sectionTitle}>Commission Earnings</Text>
+              <View style={styles.historyStats}>
+                <Text style={styles.historyStatsText}>
+                  +{commissionStats.totalCommissions} OMNI total
+                </Text>
+              </View>
+            </View>
+            <View style={styles.commissionCard}>
+              <View style={styles.commissionIcon}>
+                <DollarSign size={24} color="#10B981" />
+              </View>
+              <View style={styles.commissionContent}>
+                <Text style={styles.commissionTitle}>10% Commission Active</Text>
+                <Text style={styles.commissionDescription}>
+                  You're earning 10% of all rewards from your referrals
+                </Text>
+                <Text style={styles.commissionAmount}>
+                  Total earned: {commissionStats.totalCommissions} OMNI
+                </Text>
+              </View>
             </View>
           </View>
         )}
@@ -1266,8 +1298,46 @@ const styles = StyleSheet.create({
   emptyHistorySubtext: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#94A3B8',
+    color: '#64748B',
     textAlign: 'center',
+  },
+  commissionCard: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DCFCE7',
+  },
+  commissionIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  commissionContent: {
+    flex: 1,
+  },
+  commissionTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#065F46',
+    marginBottom: 4,
+  },
+  commissionDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#047857',
+    marginBottom: 8,
+  },
+  commissionAmount: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: '#10B981',
   },
   bonusSection: {
     margin: 16,

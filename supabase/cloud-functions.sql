@@ -223,13 +223,12 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION update_user_rewards_balance()
 RETURNS trigger AS $$
 BEGIN
-    -- Update the user_rewards table
-    INSERT INTO user_rewards (username, total_omni_earned, current_balance)
-    VALUES (NEW.username, NEW.amount, NEW.amount)
-    ON CONFLICT (username) DO UPDATE SET
-        total_omni_earned = user_rewards.total_omni_earned + NEW.amount,
-        current_balance = user_rewards.current_balance + NEW.amount,
-        updated_at = timezone('utc', now());
+    -- Update the user_rewards table (only update, don't insert)
+    UPDATE user_rewards SET
+        total_omni_earned = total_omni_earned + NEW.amount,
+        current_balance = current_balance + NEW.amount,
+        updated_at = timezone('utc', now())
+    WHERE username = NEW.username;
     
     RETURN NEW;
 END;
@@ -303,7 +302,7 @@ BEGIN
                 completed_at = timezone('utc', now())
             WHERE referred_username = NEW.username AND status = 'pending';
             
-            -- Award OMNI to both referrer and referred user
+            -- Award OMNI only to referrer (referred user already got bonus from app)
             INSERT INTO reward_transactions (username, transaction_type, amount, description, reference_id, reference_type)
             VALUES (
                 referrer_username_var,
@@ -314,15 +313,7 @@ BEGIN
                 'referral'
             );
             
-            INSERT INTO reward_transactions (username, transaction_type, amount, description, reference_id, reference_type)
-            VALUES (
-                NEW.username,
-                'referral',
-                100,
-                'Welcome bonus for being referred',
-                referral_id_var,
-                'referral'
-            );
+            -- Note: Referred user bonus is handled by the app code, not here
             
             -- Update Referral King achievement progress for the referrer
             -- Count total completed referrals for this user
@@ -600,8 +591,77 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================================================
+-- REFERRAL COMMISSION SYSTEM
+-- ============================================================================
+
+-- Function to process referral commissions on all reward transactions
+CREATE OR REPLACE FUNCTION process_referral_commission()
+RETURNS trigger AS $$
+DECLARE
+    referral_record RECORD;
+    commission_amount integer;
+BEGIN
+    -- Skip if this is already a commission transaction to avoid loops
+    IF NEW.transaction_type = 'referral_commission' THEN
+        RETURN NEW;
+    END IF;
+    
+    -- Find active referral for this user
+    SELECT * INTO referral_record
+    FROM referrals
+    WHERE referred_username = NEW.username 
+    AND status = 'completed'
+    AND commission_rate > 0;
+    
+    IF FOUND THEN
+        -- Calculate 10% commission (rounded down to avoid fractional OMNI)
+        commission_amount := (NEW.amount * referral_record.commission_rate)::integer;
+        
+        -- Only process if commission is at least 1 OMNI
+        IF commission_amount >= 1 THEN
+            -- Record commission
+            INSERT INTO referral_commissions (
+                referral_id, referrer_username, referred_username,
+                commission_amount, source_transaction_id, source_type, source_amount
+            ) VALUES (
+                referral_record.id, referral_record.referrer_username,
+                NEW.username, commission_amount, NEW.id, NEW.transaction_type, NEW.amount
+            );
+            
+            -- Award commission to referrer
+            INSERT INTO reward_transactions (
+                username, transaction_type, amount, description, 
+                reference_id, reference_type
+            ) VALUES (
+                referral_record.referrer_username,
+                'referral_commission',
+                commission_amount,
+                '10% commission from ' || NEW.username || 's ' || NEW.transaction_type || ' reward',
+                NEW.id,
+                'referral_commission'
+            );
+            
+            -- Update total commission earned in referrals table
+            UPDATE referrals 
+            SET total_commission_earned = total_commission_earned + commission_amount
+            WHERE id = referral_record.id;
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================================
 -- TRIGGERS
 -- ============================================================================
+
+-- Drop existing triggers to avoid conflicts
+DROP TRIGGER IF EXISTS trigger_update_user_rewards_balance ON reward_transactions;
+DROP TRIGGER IF EXISTS trigger_update_user_streak ON daily_checkins;
+DROP TRIGGER IF EXISTS trigger_complete_referral_on_first_listing ON listings;
+DROP TRIGGER IF EXISTS trigger_award_achievement_completion ON user_achievements;
+DROP TRIGGER IF EXISTS trigger_process_referral_commission ON reward_transactions;
 
 -- Trigger to update user rewards when transactions are inserted
 CREATE TRIGGER trigger_update_user_rewards_balance
@@ -627,6 +687,12 @@ CREATE TRIGGER trigger_award_achievement_completion
     AFTER UPDATE ON user_achievements
     FOR EACH ROW
     EXECUTE FUNCTION award_achievement_completion();
+
+-- Trigger to process referral commissions on all reward transactions
+CREATE TRIGGER trigger_process_referral_commission
+    AFTER INSERT ON reward_transactions
+    FOR EACH ROW
+    EXECUTE FUNCTION process_referral_commission();
 
 -- ============================================================================
 -- VERIFICATION

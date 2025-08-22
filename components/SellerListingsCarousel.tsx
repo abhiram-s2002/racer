@@ -230,3 +230,5 @@ const styles = StyleSheet.create({
 SellerListingsCarousel.displayName = 'SellerListingsCarousel';
 
 export default SellerListingsCarousel;
+
+

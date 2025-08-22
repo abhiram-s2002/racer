@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import type { ReferralCommission } from './types';
 
 // ============================================================================
 // TYPES (OPTIMIZED)
@@ -88,7 +89,7 @@ export interface UserAchievement {
 export interface RewardTransaction {
   id: string;
   username: string;
-  transaction_type: 'earned' | 'spent' | 'bonus' | 'referral' | 'achievement' | 'checkin';
+  transaction_type: 'earned' | 'spent' | 'bonus' | 'referral' | 'achievement' | 'checkin' | 'referral_commission';
   amount: number;
   description: string;
   reference_id: string | null;
@@ -375,6 +376,55 @@ export async function getReferralByCode(referralCode: string): Promise<UserRefer
   } catch (error) {
     console.error('Error in getReferralByCode:', error);
     return null;
+  }
+}
+
+// ============================================================================
+// REFERRAL COMMISSIONS (NEW)
+// ============================================================================
+
+export async function getReferralCommissions(username: string): Promise<ReferralCommission[]> {
+  try {
+    const { data, error } = await supabase
+      .from('referral_commissions')
+      .select('*')
+      .eq('referrer_username', username)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching referral commissions:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error in getReferralCommissions:', error);
+    return [];
+  }
+}
+
+export async function getReferralCommissionStats(username: string) {
+  try {
+    const { data, error } = await supabase
+      .from('referral_commissions')
+      .select('commission_amount, source_type')
+      .eq('referrer_username', username);
+
+    if (error) {
+      console.error('Error fetching referral commission stats:', error);
+      return { totalCommissions: 0, commissionsByType: {} };
+    }
+
+    const totalCommissions = data?.reduce((sum, item) => sum + item.commission_amount, 0) || 0;
+    const commissionsByType = data?.reduce((acc, item) => {
+      acc[item.source_type] = (acc[item.source_type] || 0) + item.commission_amount;
+      return acc;
+    }, {} as Record<string, number>) || {};
+
+    return { totalCommissions, commissionsByType };
+  } catch (error) {
+    console.error('Error in getReferralCommissionStats:', error);
+    return { totalCommissions: 0, commissionsByType: {} };
   }
 }
 
@@ -1032,6 +1082,38 @@ export async function getRecentActivity(username: string, days = 7) {
   } catch (error) {
     console.error('Error in getRecentActivity:', error);
     return [];
+  }
+}
+
+// ============================================================================
+// REFERRAL BONUS
+// ============================================================================
+
+export async function awardReferralBonus(username: string) {
+  try {
+    // Create reward transaction for referral bonus
+    const transaction = await createRewardTransaction(
+      username,
+      'referral',
+      100,
+      'Referral code bonus - Welcome to OmniMarketplace!',
+      undefined,
+      'referral_bonus'
+    );
+
+    if (!transaction) {
+      console.error('Error creating referral bonus transaction');
+      return false;
+    }
+
+    // Note: Balance update is handled automatically by database trigger
+    // No need to manually update here - the trigger will add the 100 OMNI
+
+    console.log('Referral bonus of 100 OMNI awarded to:', username);
+    return true;
+  } catch (error) {
+    console.error('Error awarding referral bonus:', error);
+    return false;
   }
 }
 

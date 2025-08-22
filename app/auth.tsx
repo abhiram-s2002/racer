@@ -7,12 +7,69 @@ import { validatePhoneNumber } from '@/utils/validation';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
+import { getReferralByCode, createReferral, awardReferralBonus } from '@/utils/rewardsSupabase';
+
+// Process referral code function (moved outside component for export)
+export const processReferralCode = async (code: string, identifier: string) => {
+  try {
+    // Validate referral code exists
+    const referralData = await getReferralByCode(code);
+    if (!referralData) {
+      return false;
+    }
+
+    // Get the current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return false;
+    }
+
+    // Get the username from the user profile
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('username')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError || !profile) {
+      return false;
+    }
+
+    const username = profile.username;
+
+    // Create the referral relationship
+    const referralResult = await createReferral(
+      referralData.username, // referrer
+      username, // referred (username, not email/phone)
+      code // referral code
+    );
+    
+    if (!referralResult) {
+      return false;
+    }
+
+    // Award 100 OMNI bonus for using referral code
+    const bonusResult = await awardReferralBonus(username);
+    
+    if (!bonusResult) {
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error processing referral code:', error);
+    return false;
+  }
+};
 
 function AuthScreen() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [referralCode, setReferralCode] = useState('');
+  const [referralCodeValid, setReferralCodeValid] = useState<boolean | null>(null);
+  const [validatingReferral, setValidatingReferral] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [loading, setLoading] = useState(false);
@@ -88,10 +145,22 @@ function AuthScreen() {
                 component: 'AuthScreen',
               });
             } else {
-          // Navigate to profile setup page for new users
-          router.replace('/ProfileSetup');
-          setLoading(false);
-          return;
+              // Store referral code in user metadata for later processing
+              if (referralCode.trim() && referralCodeValid) {
+                try {
+                  await supabase.auth.updateUser({
+                    data: { referral_code: referralCode.trim() }
+                  });
+                  // Referral code stored in user metadata
+                } catch (referralError) {
+                  console.error('Failed to store referral code in metadata:', referralError);
+                }
+              }
+              
+              // Navigate to profile setup page for new users
+              router.replace('/ProfileSetup');
+              setLoading(false);
+              return;
             }
           } catch (error) {
             await errorHandler.handleError(error, {
@@ -134,10 +203,22 @@ function AuthScreen() {
                 component: 'AuthScreen',
               });
             } else {
-          // Navigate to profile setup page for new users
-          router.replace('/ProfileSetup');
-          setLoading(false);
-          return;
+              // Store referral code in user metadata for later processing
+              if (referralCode.trim() && referralCodeValid) {
+                try {
+                  await supabase.auth.updateUser({
+                    data: { referral_code: referralCode.trim() }
+                  });
+                  // Referral code stored in user metadata
+                } catch (referralError) {
+                  console.error('Failed to store referral code in metadata:', referralError);
+                }
+              }
+              
+              // Navigate to profile setup page for new users
+              router.replace('/ProfileSetup');
+              setLoading(false);
+              return;
         }
           } catch (error) {
             await errorHandler.handleError(error, {
@@ -346,11 +427,36 @@ function AuthScreen() {
     }
   };
 
+  const validateReferralCode = async () => {
+    if (!referralCode.trim()) return;
+    
+    const normalized = referralCode.trim().toUpperCase();
+    // Validating referral code
+    
+    setValidatingReferral(true);
+    try {
+      const referralData = await getReferralByCode(normalized);
+            if (referralData) {
+        setReferralCodeValid(true);
+      } else {
+        setReferralCodeValid(false);
+      }
+    } catch (error) {
+      console.error('Exception during referral validation:', error);
+      setReferralCodeValid(false);
+    } finally {
+      setValidatingReferral(false);
+    }
+  };
+
   const clearInputs = () => {
     setEmail('');
     setPhone('');
     setPassword('');
     setConfirmPassword('');
+    setReferralCode('');
+    setReferralCodeValid(null);
+    setValidatingReferral(false);
     setResetEmail('');
     setResetPhone('');
   };
@@ -498,6 +604,47 @@ function AuthScreen() {
                 password === confirmPassword ? styles.passwordMatchSuccess : styles.passwordMatchError
               ]}>
                 {password === confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Referral Code Field - Only show in signup mode */}
+        {mode === 'signup' && (
+          <View style={styles.referralCodeContainer}>
+            <View style={styles.referralCodeRow}>
+              <TextInput
+                placeholder="Referral Code (Optional)"
+                value={referralCode}
+                onChangeText={setReferralCode}
+                autoCapitalize="characters"
+                style={[styles.input, styles.referralCodeInput]}
+                placeholderTextColor="#94A3B8"
+              />
+              {referralCode.trim() && (
+                <TouchableOpacity 
+                  style={styles.validateButton}
+                  onPress={validateReferralCode}
+                  disabled={validatingReferral}
+                >
+                  <Text style={styles.validateButtonText}>
+                    {validatingReferral ? '...' : '✓'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            {referralCode.trim() && (
+              <Text style={[
+                styles.referralCodeText,
+                referralCodeValid === true && styles.validCodeText,
+                referralCodeValid === false && styles.invalidCodeText
+              ]}>
+                {referralCodeValid === true 
+                  ? '✓ Valid referral code! You\'ll earn 100 OMNI bonus!'
+                  : referralCodeValid === false 
+                  ? '✗ Invalid referral code. Please check and try again.'
+                  : 'You\'ll earn 100 OMNI bonus for using a referral code!'
+                }
               </Text>
             )}
           </View>
@@ -679,5 +826,45 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Inter-Medium',
     textDecorationLine: 'underline',
+  },
+  referralCodeContainer: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  referralCodeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  referralCodeInput: {
+    flex: 1,
+  },
+  validateButton: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  validateButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+  },
+  referralCodeText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#10B981',
+    marginTop: 8,
+    paddingHorizontal: 10,
+    textAlign: 'center',
+  },
+  validCodeText: {
+    color: '#10B981',
+  },
+  invalidCodeText: {
+    color: '#EF4444',
   },
 }); 

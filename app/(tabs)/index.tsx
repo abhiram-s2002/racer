@@ -129,7 +129,6 @@ function HomeScreen() {
         .select('username, name, avatar_url, email, phone, location, location_display, bio')
         .in('username', missingUsernames);
       if (error || !users) {
-        console.error('Error fetching seller info:', error);
         return;
       }
       
@@ -174,7 +173,6 @@ function HomeScreen() {
           .eq('status', 'pending');
         
         if (error) {
-          console.error('Error loading existing pings:', error);
           return;
         }
         
@@ -186,7 +184,7 @@ function HomeScreen() {
         
         setExistingPings(pingMap);
       } catch (error) {
-        console.error('Error loading existing pings:', error);
+        // Silent error handling
       }
     }
     
@@ -196,18 +194,9 @@ function HomeScreen() {
   // Mark when returning from navigation to prevent unnecessary refreshes
   useFocusEffect(
     React.useCallback(() => {
-      console.log('🎯 Home screen focused - useFocusEffect triggered');
-      console.log('📊 Current state:', {
-        listingsCount: listings.length,
-        hasListings: listings.length > 0
-      });
-      
       // This runs when the screen comes into focus (returning from other screens)
       if (listings.length > 0) {
-        console.log('🏠 Calling markReturningFromNavigation()');
         markReturningFromNavigation();
-      } else {
-        console.log('⚠️ No listings available, skipping markReturningFromNavigation');
       }
     }, [listings.length, markReturningFromNavigation])
   );
@@ -424,7 +413,6 @@ function HomeScreen() {
           trackUserActivity(); // Track meaningful activity
           return;
         } catch (error) {
-          console.error('Online ping failed, adding to offline queue:', error);
           // Fall through to offline queue
         }
       }
@@ -554,12 +542,11 @@ function HomeScreen() {
           style={styles.listingImage}
           placeholderText="No Image"
           title={item.title}
-          debug={false}
           onError={(error, imageSet, metadata) => {
-            // Error handling without debug logging
+            // Error handling
           }}
           onLoad={(imageSet, metadata) => {
-            // Load handling without debug logging
+            // Load handling
           }}
         />
         </TouchableOpacity>
@@ -797,7 +784,6 @@ function HomeScreen() {
         });
 
       if (error) {
-        console.error('Error submitting feedback:', error);
         Alert.alert('Error', 'Failed to submit feedback. Please try again.');
         return;
       }
@@ -805,7 +791,6 @@ function HomeScreen() {
       Alert.alert('Thank You!', `You rated us ${rating} stars. Your feedback helps us improve!`);
       setShowFeedbackModal(false);
     } catch (error) {
-      console.error('Error submitting feedback:', error);
       Alert.alert('Error', 'Failed to submit feedback. Please try again.');
     }
   };
@@ -1424,12 +1409,12 @@ const styles = StyleSheet.create({
     gap: 3,
   },
   ratingText: {
-    fontSize: 9,
+    fontSize: 12,
     fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
   },
   reviewCountText: {
-    fontSize: 8,
+    fontSize: 10,
     fontFamily: 'Inter-Regular',
     color: '#64748B',
   },

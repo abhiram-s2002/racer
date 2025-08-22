@@ -17,12 +17,15 @@ import {
 
   batchUpdateAchievements,
   getRecentActivity,
+  getReferralCommissions,
+  getReferralCommissionStats,
   type UserRewards,
   type UserStreak,
   type UserReferralCode,
   type UserAchievement,
   type DailyCheckin,
   type Referral,
+  type ReferralCommission,
   type RewardTransaction,
   type UserRewardsSummary
 } from '@/utils/rewardsSupabase';
@@ -42,6 +45,8 @@ export function useRewards(username: string) {
   const [transactions, setTransactions] = useState<RewardTransaction[]>([]);
   const [rewardsSummary, setRewardsSummary] = useState<UserRewardsSummary | null>(null);
   const [recentActivity, setRecentActivity] = useState<RewardTransaction[]>([]);
+  const [referralCommissions, setReferralCommissions] = useState<ReferralCommission[]>([]);
+  const [commissionStats, setCommissionStats] = useState({ totalCommissions: 0, commissionsByType: {} });
 
   // Load all rewards data
   const loadRewardsData = useCallback(async () => {
@@ -80,6 +85,14 @@ export function useRewards(username: string) {
       // Load recent activity separately for better UX
       const activity = await getRecentActivity(username, 7);
       setRecentActivity(activity);
+
+      // Load referral commissions
+      const [commissions, stats] = await Promise.all([
+        getReferralCommissions(username),
+        getReferralCommissionStats(username)
+      ]);
+      setReferralCommissions(commissions);
+      setCommissionStats(stats);
     } catch (err) {
       console.error('Error loading rewards data:', err);
       setError('Failed to load rewards data');
@@ -427,6 +440,8 @@ export function useRewards(username: string) {
     transactions,
     rewardsSummary,
     recentActivity,
+    referralCommissions,
+    commissionStats,
     
     // State
     loading,

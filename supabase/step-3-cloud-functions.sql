@@ -77,13 +77,12 @@ CREATE TRIGGER trigger_validate_price_unit
 CREATE OR REPLACE FUNCTION update_user_rewards_balance()
 RETURNS trigger AS $$
 BEGIN
-    -- Update the user_rewards table
-    INSERT INTO user_rewards (username, total_omni_earned, current_balance)
-    VALUES (NEW.username, NEW.amount, NEW.amount)
-    ON CONFLICT (username) DO UPDATE SET
-        total_omni_earned = user_rewards.total_omni_earned + NEW.amount,
-        current_balance = user_rewards.current_balance + NEW.amount,
-        updated_at = timezone('utc', now());
+    -- Update the user_rewards table (only update, don't insert)
+    UPDATE user_rewards SET
+        total_omni_earned = total_omni_earned + NEW.amount,
+        current_balance = current_balance + NEW.amount,
+        updated_at = timezone('utc', now())
+    WHERE username = NEW.username;
     
     RETURN NEW;
 END;
