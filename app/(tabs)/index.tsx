@@ -18,7 +18,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, MapPin, Phone, MessageCircle, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Check, Home, Star, Clock, Tag } from 'lucide-react-native';
+import { Search, MapPin, Phone, MessageCircle, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Check, Home, Star, Clock, Tag, Car, MoreHorizontal } from 'lucide-react-native';
 import { Plus } from 'lucide-react-native';
 import { mockCategories } from '@/utils/mockData';
 import AddListingModal from '@/components/AddListingModal';
@@ -239,6 +239,8 @@ function HomeScreen() {
     home: HomeIcon,
     electronics: Zap,
     rental: Home,
+    vehicles: Car,
+    others: MoreHorizontal,
   };
 
   // Corrected filteredListings with proper types

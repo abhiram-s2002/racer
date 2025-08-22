@@ -8,7 +8,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import { X, ShoppingCart, Apple, UtensilsCrossed, Wrench, Palette, Home } from 'lucide-react-native';
+import { X, ShoppingCart, Apple, UtensilsCrossed, Wrench, Palette, Home, Car, MoreHorizontal } from 'lucide-react-native';
 import { mockCategories } from '@/utils/mockData';
 
 const { width } = Dimensions.get('window');
@@ -34,7 +34,21 @@ export default function CategorySelectionModal({
     services: Wrench,
     art: Palette,
     rental: Home,
+    vehicles: Car,
+    others: MoreHorizontal,
   };
+
+  // Extended categories including vehicles and others
+  const extendedCategories = [
+    { id: 'groceries', name: 'Groceries' },
+    { id: 'fruits', name: 'Fruits' },
+    { id: 'food', name: 'Food' },
+    { id: 'services', name: 'Services' },
+    { id: 'art', name: 'Art' },
+    { id: 'rental', name: 'Rental' },
+    { id: 'vehicles', name: 'Vehicles' },
+    { id: 'others', name: 'Others' },
+  ];
 
   const handleCategorySelect = (categoryId: string) => {
     onSelectCategory(categoryId);
@@ -60,7 +74,7 @@ export default function CategorySelectionModal({
         {/* Categories Grid */}
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.categoriesGrid}>
-            {mockCategories.slice(1).map((category) => { // Skip 'all' category
+            {extendedCategories.map((category) => {
               const IconComponent = categoryIcons[category.id as keyof typeof categoryIcons];
               
               return (

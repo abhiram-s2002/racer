@@ -8,6 +8,8 @@ export const mockCategories = [
   { id: 'services', name: 'Services' },
   { id: 'art', name: 'Art' },
   { id: 'rental', name: 'Rental' },
+  { id: 'vehicles', name: 'Vehicles' },
+  { id: 'others', name: 'Others' },
 ];
 
 export const mockListings = [

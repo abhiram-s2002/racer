@@ -26,7 +26,9 @@ import {
   UtensilsCrossed,
   Wrench,
   Palette,
-  Home
+  Home,
+  Car,
+  MoreHorizontal
 } from 'lucide-react-native';
 import { mockCategories } from '@/utils/mockData';
 import { supabase } from '@/utils/supabaseClient';
@@ -518,6 +520,8 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
                   services: Wrench,
                   art: Palette,
                   rental: Home,
+                  vehicles: Car,
+                  others: MoreHorizontal,
                 };
                 const IconComponent = categoryIcons[category.id as keyof typeof categoryIcons];
                 const isSelected = formData.category === category.id;

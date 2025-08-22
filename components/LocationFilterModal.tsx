@@ -8,7 +8,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { X, MapPin, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Palette, Home } from 'lucide-react-native';
+import { X, MapPin, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Palette, Home, Car, MoreHorizontal } from 'lucide-react-native';
 import { mockCategories } from '@/utils/mockData';
 
 interface LocationFilterModalProps {
@@ -50,7 +50,7 @@ export default function LocationFilterModal({
   };
 
   const handleResetFilters = () => {
-    setLocalDistance(null);
+    setLocalDistance(5); // Reset to default distance instead of null
     setLocalCategory([]);
   };
 
@@ -61,6 +61,8 @@ export default function LocationFilterModal({
     services: Wrench,
     art: Palette,
     rental: Home,
+    vehicles: Car,
+    others: MoreHorizontal,
   };
 
   return (
