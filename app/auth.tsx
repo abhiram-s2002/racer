@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
-import { signUp, signIn, signUpWithPhone, signInWithPhone } from '@/utils/auth';
+import { signUp, signIn } from '@/utils/auth';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
-import { validatePhoneNumber } from '@/utils/validation';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { getReferralByCode, createReferral, awardReferralBonus } from '@/utils/rewardsSupabase';
 
 // Process referral code function (moved outside component for export)
-export const processReferralCode = async (code: string, identifier: string) => {
+export const processReferralCode = async (code: string) => {
   try {
     // Validate referral code exists
     const referralData = await getReferralByCode(code);
@@ -64,18 +63,15 @@ export const processReferralCode = async (code: string, identifier: string) => {
 
 function AuthScreen() {
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [referralCode, setReferralCode] = useState('');
   const [referralCodeValid, setReferralCodeValid] = useState<boolean | null>(null);
   const [validatingReferral, setValidatingReferral] = useState(false);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [loading, setLoading] = useState(false);
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
-  const [resetPhone, setResetPhone] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
   const router = useRouter();
   const errorHandler = ErrorHandler.getInstance();
@@ -124,211 +120,93 @@ function AuthScreen() {
         return;
       }
 
-      if (authMethod === 'email') {
-        if (!email.trim()) {
-            await errorHandler.handleError(
-              new Error('Email is required'),
-              {
-                operation: 'email_signup_validation',
-                component: 'AuthScreen',
-              }
-            );
-          setLoading(false);
-          return;
-        }
-          
-          try {
-        const { error } = await signUp(email, password);
-            if (error) {
-              await errorHandler.handleError(error, {
-                operation: 'email_signup',
-                component: 'AuthScreen',
-              });
-            } else {
-              // Store referral code in user metadata for later processing
-              if (referralCode.trim() && referralCodeValid) {
-                try {
-                  await supabase.auth.updateUser({
-                    data: { referral_code: referralCode.trim() }
-                  });
-                  // Referral code stored in user metadata
-                } catch (referralError) {
-                  console.error('Failed to store referral code in metadata:', referralError);
-                }
-              }
-              
-              // Navigate to profile setup page for new users
-              router.replace('/ProfileSetup');
-              setLoading(false);
-              return;
-            }
-          } catch (error) {
-            await errorHandler.handleError(error, {
-              operation: 'email_signup',
-              component: 'AuthScreen',
-            });
-        }
-      } else {
-        // Phone signup
-        if (!phone.trim()) {
-            await errorHandler.handleError(
-              new Error('Phone number is required'),
-              {
-                operation: 'phone_signup_validation',
-                component: 'AuthScreen',
-              }
-            );
-          setLoading(false);
-          return;
-        }
-        
-        const validation = validatePhoneNumber(phone);
-        if (!validation.isValid) {
-            await errorHandler.handleError(
-              new Error(validation.error || 'Invalid phone number'),
-              {
-                operation: 'phone_validation',
-                component: 'AuthScreen',
-              }
-            );
-          setLoading(false);
-          return;
-        }
-        
-          try {
-        const { error } = await signUpWithPhone(phone, password);
-            if (error) {
-              await errorHandler.handleError(error, {
-                operation: 'phone_signup',
-                component: 'AuthScreen',
-              });
-            } else {
-              // Store referral code in user metadata for later processing
-              if (referralCode.trim() && referralCodeValid) {
-                try {
-                  await supabase.auth.updateUser({
-                    data: { referral_code: referralCode.trim() }
-                  });
-                  // Referral code stored in user metadata
-                } catch (referralError) {
-                  console.error('Failed to store referral code in metadata:', referralError);
-                }
-              }
-              
-              // Navigate to profile setup page for new users
-              router.replace('/ProfileSetup');
-              setLoading(false);
-              return;
-        }
-          } catch (error) {
-            await errorHandler.handleError(error, {
-              operation: 'phone_signup',
-              component: 'AuthScreen',
-            });
+      if (!email.trim()) {
+        await errorHandler.handleError(
+          new Error('Email is required'),
+          {
+            operation: 'email_signup_validation',
+            component: 'AuthScreen',
           }
+        );
+        setLoading(false);
+        return;
+      }
+        
+      try {
+        const { error } = await signUp(email, password);
+        if (error) {
+          await errorHandler.handleError(error, {
+            operation: 'email_signup',
+            component: 'AuthScreen',
+          });
+        } else {
+          // Store referral code in user metadata for later processing
+          if (referralCode.trim() && referralCodeValid) {
+            try {
+              await supabase.auth.updateUser({
+                data: { referral_code: referralCode.trim() }
+              });
+              // Referral code stored in user metadata
+            } catch (referralError) {
+              console.error('Failed to store referral code in metadata:', referralError);
+            }
+          }
+          
+          // Navigate to profile setup page for new users
+          router.replace('/ProfileSetup');
+          setLoading(false);
+          return;
         }
+      } catch (error) {
+        await errorHandler.handleError(error, {
+          operation: 'email_signup',
+          component: 'AuthScreen',
+        });
+      }
     } else {
       // Login
-      if (authMethod === 'email') {
-        if (!email.trim()) {
-            await errorHandler.handleError(
-              new Error('Email is required'),
-              {
-                operation: 'email_login_validation',
-                component: 'AuthScreen',
-              }
-            );
-          setLoading(false);
-          return;
-        }
-          
-          try {
-        const { error } = await signIn(email, password);
-            if (error) {
-              await errorHandler.handleError(error, {
-                operation: 'email_login',
-                component: 'AuthScreen',
-              });
-            } else {
-          // Get user and check if profile setup is needed
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const username = user.user_metadata?.username;
-            const name = user.user_metadata?.full_name || user.user_metadata?.name;
-            
-            if (!username || !name) {
-              // User needs to complete profile setup
-              router.replace('/ProfileSetup');
-            } else {
-              // User has complete profile, proceed to main app
-              router.replace('/');
-            }
+      if (!email.trim()) {
+        await errorHandler.handleError(
+          new Error('Email is required'),
+          {
+            operation: 'email_login_validation',
+            component: 'AuthScreen',
           }
-            }
-          } catch (error) {
-            await errorHandler.handleError(error, {
-              operation: 'email_login',
-              component: 'AuthScreen',
-            });
-        }
-      } else {
-        // Phone login
-        if (!phone.trim()) {
-            await errorHandler.handleError(
-              new Error('Phone number is required'),
-              {
-                operation: 'phone_login_validation',
-                component: 'AuthScreen',
-              }
-            );
-          setLoading(false);
-          return;
-        }
-        
-        const validation = validatePhoneNumber(phone);
-        if (!validation.isValid) {
-            await errorHandler.handleError(
-              new Error(validation.error || 'Invalid phone number'),
-              {
-                operation: 'phone_validation',
-                component: 'AuthScreen',
-              }
-            );
-          setLoading(false);
-          return;
-        }
-        
-          try {
-        const { error } = await signInWithPhone(phone, password);
-            if (error) {
-              await errorHandler.handleError(error, {
-                operation: 'phone_login',
-                component: 'AuthScreen',
-              });
-            } else {
-          // Get user and check if profile setup is needed
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const username = user.user_metadata?.username;
-            const name = user.user_metadata?.full_name || user.user_metadata?.name;
-            
-            if (!username || !name) {
-              // User needs to complete profile setup
-              router.replace('/ProfileSetup');
-            } else {
-              // User has complete profile, proceed to main app
-              router.replace('/');
-            }
-          }
-            }
-          } catch (error) {
-            await errorHandler.handleError(error, {
-              operation: 'phone_login',
-              component: 'AuthScreen',
-            });
-          }
-        }
+        );
+        setLoading(false);
+        return;
       }
+        
+      try {
+        const { error } = await signIn(email, password);
+        if (error) {
+          await errorHandler.handleError(error, {
+            operation: 'email_login',
+            component: 'AuthScreen',
+          });
+        } else {
+          // Get user and check if profile setup is needed
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const username = user.user_metadata?.username;
+            const name = user.user_metadata?.full_name || user.user_metadata?.name;
+            
+            if (!username || !name) {
+              // User needs to complete profile setup
+              router.replace('/ProfileSetup');
+            } else {
+              // User has complete profile, proceed to main app
+              router.replace('/');
+            }
+          }
+        }
+      } catch (error) {
+        await errorHandler.handleError(error, {
+          operation: 'email_login',
+          component: 'AuthScreen',
+        });
+      }
+    }
     } catch (error) {
       await errorHandler.handleError(error, {
         operation: 'authentication_general',
@@ -354,71 +232,32 @@ function AuthScreen() {
     setResetLoading(true);
     
     try {
-      if (authMethod === 'email') {
-        if (!resetEmail.trim()) {
-          Alert.alert('Error', 'Please enter your email address');
-          setResetLoading(false);
-          return;
-        }
+      if (!resetEmail.trim()) {
+        Alert.alert('Error', 'Please enter your email address');
+        setResetLoading(false);
+        return;
+      }
 
-        const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
-          redirectTo: 'omnimart://reset-password',
-        });
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: 'omnimart://reset-password',
+      });
 
-        if (error) {
-          Alert.alert('Error', error.message);
-        } else {
-          Alert.alert(
-            'Password Reset Email Sent',
-            'Check your email for password reset instructions. You can close this window.',
-            [
-              {
-                text: 'OK',
-                onPress: () => {
-                  setForgotPasswordMode(false);
-                  setResetEmail('');
-                },
-              },
-            ]
-          );
-        }
+      if (error) {
+        Alert.alert('Error', error.message);
       } else {
-        // Phone password reset
-        if (!resetPhone.trim()) {
-          Alert.alert('Error', 'Please enter your phone number');
-          setResetLoading(false);
-          return;
-        }
-
-        const validation = validatePhoneNumber(resetPhone);
-        if (!validation.isValid) {
-          Alert.alert('Invalid Phone Number', validation.error || 'Please enter a valid phone number');
-          setResetLoading(false);
-          return;
-        }
-
-        // For phone password reset, we'll use the phone verification system
-        const { error } = await supabase.auth.signInWithOtp({
-          phone: resetPhone,
-        });
-
-        if (error) {
-          Alert.alert('Error', error.message);
-        } else {
-          Alert.alert(
-            'OTP Sent',
-            'A verification code has been sent to your phone. Use it to reset your password.',
-            [
-              {
-                text: 'OK',
-                onPress: () => {
-                  setForgotPasswordMode(false);
-                  setResetPhone('');
-                },
+        Alert.alert(
+          'Password Reset Email Sent',
+          'Check your email for password reset instructions. You can close this window.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                setForgotPasswordMode(false);
+                setResetEmail('');
               },
-            ]
-          );
-        }
+            },
+          ]
+        );
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to send password reset. Please try again.');
@@ -436,7 +275,7 @@ function AuthScreen() {
     setValidatingReferral(true);
     try {
       const referralData = await getReferralByCode(normalized);
-            if (referralData) {
+      if (referralData) {
         setReferralCodeValid(true);
       } else {
         setReferralCodeValid(false);
@@ -451,25 +290,17 @@ function AuthScreen() {
 
   const clearInputs = () => {
     setEmail('');
-    setPhone('');
     setPassword('');
     setConfirmPassword('');
     setReferralCode('');
     setReferralCodeValid(null);
     setValidatingReferral(false);
     setResetEmail('');
-    setResetPhone('');
-  };
-
-  const handleAuthMethodChange = (method: 'email' | 'phone') => {
-    setAuthMethod(method);
-    clearInputs();
   };
 
   const exitForgotPasswordMode = () => {
     setForgotPasswordMode(false);
     setResetEmail('');
-    setResetPhone('');
   };
 
   // If in forgot password mode, show password reset UI
@@ -479,29 +310,18 @@ function AuthScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>Reset Password</Text>
           <Text style={styles.subtitle}>
-            Enter your {authMethod === 'email' ? 'email' : 'phone number'} to receive password reset instructions
+            Enter your email to receive password reset instructions
           </Text>
           
-          {authMethod === 'email' ? (
-            <TextInput
-              placeholder="Email Address"
-              value={resetEmail}
-              onChangeText={setResetEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              style={styles.input}
-              placeholderTextColor="#94A3B8"
-            />
-          ) : (
-            <TextInput
-              placeholder="Phone Number (+91XXXXXXXXXX)"
-              value={resetPhone}
-              onChangeText={setResetPhone}
-              keyboardType="phone-pad"
-              style={styles.input}
-              placeholderTextColor="#94A3B8"
-            />
-          )}
+          <TextInput
+            placeholder="Email Address"
+            value={resetEmail}
+            onChangeText={setResetEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            style={styles.input}
+            placeholderTextColor="#94A3B8"
+          />
 
           <TouchableOpacity
             style={[styles.button, resetLoading && styles.buttonDisabled]}
@@ -530,49 +350,16 @@ function AuthScreen() {
       <View style={styles.card}>
         <Text style={styles.title}>{mode === 'login' ? 'Login' : 'Sign Up'}</Text>
         
-        {/* Auth Method Toggle */}
-        <View style={styles.authMethodContainer}>
-          <TouchableOpacity
-            style={[styles.authMethodButton, authMethod === 'email' && styles.authMethodActive]}
-            onPress={() => handleAuthMethodChange('email')}
-            disabled={loading}
-          >
-            <Text style={[styles.authMethodText, authMethod === 'email' && styles.authMethodTextActive]}>
-              Email
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.authMethodButton, authMethod === 'phone' && styles.authMethodActive]}
-            onPress={() => handleAuthMethodChange('phone')}
-            disabled={loading}
-          >
-            <Text style={[styles.authMethodText, authMethod === 'phone' && styles.authMethodTextActive]}>
-              Phone
-            </Text>
-          </TouchableOpacity>
-        </View>
-
         {/* Input Fields */}
-        {authMethod === 'email' ? (
-          <TextInput
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={styles.input}
-            placeholderTextColor="#94A3B8"
-          />
-        ) : (
-          <TextInput
-            placeholder="Phone Number (+91XXXXXXXXXX)"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-            style={styles.input}
-            placeholderTextColor="#94A3B8"
-          />
-        )}
+        <TextInput
+          placeholder="Email"
+          value={email}
+          onChangeText={setEmail}
+          autoCapitalize="none"
+          keyboardType="email-address"
+          style={styles.input}
+          placeholderTextColor="#94A3B8"
+        />
         
         <TextInput
           placeholder="Password"
@@ -720,38 +507,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
     lineHeight: 22,
-  },
-  authMethodContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 20,
-    width: '100%',
-  },
-  authMethodButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  authMethodActive: {
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  authMethodText: {
-    fontSize: 16,
-    fontFamily: 'Inter-Medium',
-    color: '#64748B',
-  },
-  authMethodTextActive: {
-    color: '#22C55E',
-    fontFamily: 'Inter-SemiBold',
   },
   input: {
     width: '100%',
