@@ -23,6 +23,10 @@ module.exports = {
   ],
   rules: {
     'react/react-in-jsx-scope': 'off',
+    'react/prop-types': 'off', // Disable PropTypes since we're using TypeScript
+    '@typescript-eslint/no-explicit-any': 'warn', // Make 'any' types warnings instead of errors
+    '@typescript-eslint/no-unused-vars': 'warn', // Make unused vars warnings
+    '@typescript-eslint/no-non-null-assertion': 'warn', // Make non-null assertions warnings
   },
   settings: {
     react: {
