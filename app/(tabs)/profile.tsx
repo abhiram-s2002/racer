@@ -24,6 +24,7 @@ import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 import { Button } from 'react-native';
 import { validatePhoneNumber, formatPhoneNumberForDisplay } from '@/utils/validation';
+import RatingDisplay from '@/components/RatingDisplay';
 
 
 
@@ -583,6 +584,18 @@ export default function ProfileScreen() {
             <View style={styles.profileInfo}>
               <Text style={styles.name}>{profileData.name || 'No name set'}</Text>
               <Text style={styles.username}>@{profileData.username || 'username'}</Text>
+              
+              {/* User Rating Display */}
+              <View style={styles.ratingRow}>
+                <RatingDisplay 
+                  username={profileData.username}
+                  showDetails={false}
+                  size="medium"
+                  showCount={true}
+                  showAverage={true}
+                />
+              </View>
+              
               <View style={styles.locationRow}>
                 <MapPin size={16} color="#64748B" />
                 <Text style={styles.location}>{profileData.locationDisplay ? profileData.locationDisplay : 'No location set'}</Text>
@@ -825,6 +838,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#64748B',
     marginBottom: 4,
+  },
+  ratingRow: {
+    marginBottom: 8,
   },
   locationRow: {
     flexDirection: 'row',

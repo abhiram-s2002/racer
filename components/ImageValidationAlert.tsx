@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Alert, ScrollView } from 'react-native';
-import { AlertTriangle, CheckCircle, XCircle, Info } from 'lucide-react-native';
+import { Alert } from 'react-native';
 
 interface ValidationDetails {
   fileSize?: number;
@@ -22,7 +21,6 @@ interface ImageValidationAlertProps {
   errors: string[];
   warnings: string[];
   details: ValidationDetails;
-  onDismiss: () => void;
   onContinue?: () => void;
   onRetry?: () => void;
 }
@@ -32,7 +30,6 @@ export default function ImageValidationAlert({
   errors,
   warnings,
   details,
-  onDismiss,
   onContinue,
   onRetry
 }: ImageValidationAlertProps) {

@@ -12,13 +12,15 @@ import {
   Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Package, MessageCircle, Send, Eye, EyeOff, Trash2, Check, X, Plus, MapPin } from 'lucide-react-native';
+import { Package, MessageCircle, Send, Eye, EyeOff, Trash2, Check, X, Plus, MapPin, Star } from 'lucide-react-native';
 import AddListingModal from '@/components/AddListingModal';
 import CategorySelectionModal from '@/components/CategorySelectionModal';
+import RatingModal from '@/components/RatingModal';
 import { Activity, deleteActivity } from '@/utils/activitySupabase';
 import { deleteListing as deleteListingWithImages } from '../../utils/listingSupabase';
 import { useIsFocused } from '@react-navigation/native';
 import { useCachedActivities } from '@/hooks/useCachedActivities';
+import RatingService from '@/utils/ratingService';
 
 import { useRouter } from 'expo-router';
 // Removed react-native-expo-image-cache import - using standard Image component
@@ -62,6 +64,12 @@ export default function ActivityScreen() {
   
   // New state for enhanced organization
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'accepted' | 'rejected'>('all');
+  
+  // Rating modal state
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [userToRate, setUserToRate] = useState<string>('');
+  const [pingIdToRate, setPingIdToRate] = useState<string>('');
+  const [pingRatings, setPingRatings] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     async function fetchUser() {
@@ -85,8 +93,92 @@ export default function ActivityScreen() {
     addActivity,
   } = useCachedActivities(username);
 
+  // Load existing user ratings
+  useEffect(() => {
+    if (username && (sentPings.length > 0 || receivedPings.length > 0)) {
+      loadExistingRatings();
+    }
+  }, [username, sentPings, receivedPings]);
+
+  const loadExistingRatings = async () => {
+    if (!username) return;
+    
+    try {
+      const ratings: Record<string, boolean> = {};
+      
+      // Check which ping interactions the current user has already rated
+      for (const ping of [...sentPings, ...receivedPings]) {
+        if (ping.status === 'accepted') {
+          try {
+            const existingRating = await RatingService.getRatingByPingId(ping.id);
+            if (existingRating && existingRating.rater_username === username) {
+              ratings[ping.id] = true;
+            }
+          } catch (error) {
+            console.error('Error checking existing rating:', error);
+          }
+        }
+      }
+      
+      setPingRatings(ratings);
+    } catch (error) {
+      console.error('Error loading existing ratings:', error);
+    }
+  };
+
   // Assume you have a way to get the current user's ID
   const currentUsername = username || '';
+
+  // Rating functions
+  const openRatingModal = (username: string, pingId: string) => {
+    setUserToRate(username);
+    setPingIdToRate(pingId);
+    setShowRatingModal(true);
+  };
+
+  const handleRatingSubmit = async (ratingData: any) => {
+    if (!currentUsername) {
+      Alert.alert('Error', 'Please log in to submit a rating.');
+      return;
+    }
+
+    try {
+      const result = await RatingService.submitRating(
+        currentUsername,
+        userToRate,
+        pingIdToRate,
+        ratingData
+      );
+
+      if (result.success) {
+        Alert.alert('Success', 'Rating submitted successfully!');
+        // Mark this ping as rated
+        setPingRatings(prev => ({
+          ...prev,
+          [pingIdToRate]: true
+        }));
+        setShowRatingModal(false);
+      } else {
+        Alert.alert('Error', result.error || 'Failed to submit rating. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+    }
+  };
+
+  const checkIfUserCanRate = async (username: string, pingId: string) => {
+    if (!currentUsername) return false;
+    
+    try {
+      // Check if user can rate this person
+      const eligibility = await RatingService.canRateUser(currentUsername, username);
+      return eligibility.can_rate;
+    } catch (error) {
+      console.error('Error checking rating eligibility:', error);
+      return false;
+    }
+  };
 
   // Handle back button
   useEffect(() => {
@@ -538,7 +630,35 @@ export default function ActivityScreen() {
           </TouchableOpacity>
         )}
       </View>
-      <Text style={styles.pingMessage}>{item.message}</Text>
+      {/* Ping message and rating button on same line for accepted pings */}
+      {item.status === 'accepted' ? (
+        <View style={styles.messageRatingRow}>
+          <Text style={styles.pingMessage}>{item.message}</Text>
+          
+          {/* Rating button - positioned on the right */}
+          {!pingRatings[item.id] ? (
+            <TouchableOpacity
+              style={styles.rateButton}
+              onPress={() => openRatingModal(displayUser.username, item.id)}
+            >
+              <Star size={16} color="#F59E0B" />
+              <Text style={styles.rateButtonText}>
+                {item.type === 'sent_ping' ? 'Rate Seller' : 'Rate Buyer'}
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.ratedIndicator}>
+              <Star size={16} color="#22C55E" fill="#22C55E" />
+              <Text style={styles.ratedText}>Rated</Text>
+            </View>
+          )}
+        </View>
+      ) : (
+        <Text style={styles.pingMessage}>{item.message}</Text>
+      )}
+      
+      {/* Remove the old rating section since it's now inline */}
+      
       {item.type === 'received_ping' && item.status === 'pending' && (
         <View style={styles.pingActions}>
           <TouchableOpacity
@@ -563,8 +683,18 @@ export default function ActivityScreen() {
   );
   };
 
+  const getRatingRole = (pingId: string) => {
+    const ping = sentPings.find(p => p.id === pingId) || receivedPings.find(p => p.id === pingId);
+    if (!ping) return 'User';
 
-
+    if (ping.type === 'sent_ping') {
+      // Current user sent the ping (is buyer), so they're rating the seller
+      return 'Seller';
+    } else {
+      // Current user received the ping (is seller), so they're rating the buyer
+      return 'Buyer';
+    }
+  };
 
 
   return (
@@ -712,6 +842,16 @@ export default function ActivityScreen() {
         visible={showCategoryModal}
         onClose={() => setShowCategoryModal(false)}
         onSelectCategory={handleCategorySelect}
+      />
+      
+      {/* Rating Modal */}
+      <RatingModal
+        visible={showRatingModal}
+        ratedUsername={userToRate}
+        pingId={pingIdToRate}
+        onSubmit={handleRatingSubmit}
+        onClose={() => setShowRatingModal(false)}
+        title={`Rate ${userToRate} (${getRatingRole(pingIdToRate)})`}
       />
     </View>
   );
@@ -1023,6 +1163,8 @@ const styles = StyleSheet.create({
     color: '#475569',
     lineHeight: 20,
     marginBottom: 12,
+    flex: 1,
+    marginRight: 12,
   },
   pingActions: {
     flexDirection: 'row',
@@ -1124,5 +1266,42 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#64748B',
     textAlign: 'center',
+  },
+  rateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    gap: 4,
+  },
+  rateButtonText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
+  },
+  ratedIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    gap: 4,
+  },
+  ratedText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#16A34A',
+  },
+  messageRatingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
   },
 });

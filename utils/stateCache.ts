@@ -188,9 +188,7 @@ export function useCachedSearch<T>(
 
   // Debounced search
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    const performSearch = async () => {
+    const timeoutId = setTimeout(async () => {
       if (!query.trim()) {
         setResults([]);
         return;
@@ -207,9 +205,7 @@ export function useCachedSearch<T>(
       } finally {
         setLoading(false);
       }
-    };
-
-    timeoutId = setTimeout(performSearch, debounceMs);
+    }, debounceMs);
 
     return () => clearTimeout(timeoutId);
   }, [query, searchFn, debounceMs, setResults]);

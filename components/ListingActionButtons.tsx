@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
-  Platform,
 } from 'react-native';
 import { Phone, MessageCircle, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';

@@ -171,7 +171,7 @@ export default function LocationFilterModal({
             <View style={styles.infoContent}>
               <Text style={styles.infoIcon}>💡</Text>
               <Text style={styles.infoText}>
-                Filters help you find exactly what you're looking for. The map will update automatically when you apply filters.
+                Filters help you find exactly what you&apos;re looking for. The map will update automatically when you apply filters.
               </Text>
             </View>
           </View>

@@ -51,32 +51,22 @@ export default function RewardsScreen() {
 
   // Use the rewards hook for database operations
   const {
-    userRewards,
     userStreak,
     userReferralCode,
     userAchievements,
-    dailyCheckins,
     referrals,
-    transactions,
-    rewardsSummary,
-    recentActivity,
-    referralCommissions,
     commissionStats,
     loading: rewardsLoading,
     error: rewardsError,
     refreshing,
     refreshRewards,
     performDailyCheckin,
-    updateAchievement,
-    updateAchievementsBatch,
     checkEasyAchievements,
     getWeeklyCheckins,
     getAchievementStats,
     getReferralStats,
     getUserBalance,
-    getTotalEarned,
-    checkTodayCheckedIn,
-    hasCheckedInToday
+    checkTodayCheckedIn
   } = useRewards(username);
 
   // Back handler
@@ -617,7 +607,7 @@ export default function RewardsScreen() {
               <View style={styles.commissionContent}>
                 <Text style={styles.commissionTitle}>10% Commission Active</Text>
                 <Text style={styles.commissionDescription}>
-                  You're earning 10% of all rewards from your referrals
+                  You&apos;re earning 10% of all rewards from your referrals
                 </Text>
                 <Text style={styles.commissionAmount}>
                   Total earned: {commissionStats.totalCommissions} OMNI

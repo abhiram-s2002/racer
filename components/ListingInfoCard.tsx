@@ -1,11 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { Tag, Clock, CheckCircle, XCircle, Package, Calendar } from 'lucide-react-native';
+import { CheckCircle, XCircle, Package, Calendar } from 'lucide-react-native';
 
 
 const { width } = Dimensions.get('window');

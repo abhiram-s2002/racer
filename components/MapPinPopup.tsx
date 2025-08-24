@@ -4,14 +4,21 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Dimensions,
 } from 'react-native';
 import { MapPin, MessageCircle, X } from 'lucide-react-native';
 
-const { width } = Dimensions.get('window');
+
+
+interface Listing {
+  id: string;
+  title: string;
+  price: number;
+  category: string;
+  location_display: string;
+}
 
 interface MapPinPopupProps {
-  listing: any;
+  listing: Listing;
   onClose: () => void;
   onPing: () => void;
   visible: boolean;

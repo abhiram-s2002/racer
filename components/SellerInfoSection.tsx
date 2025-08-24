@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import { MapPin, User } from 'lucide-react-native';
 import { LocationUtils } from '@/utils/locationUtils';
+import HomeRatingDisplay from './HomeRatingDisplay';
 
 interface SellerInfo {
   username: string;
@@ -55,6 +56,17 @@ const SellerInfoSection: React.FC<SellerInfoSectionProps> = React.memo(({
             <View style={styles.locationRow}>
               <MapPin size={14} color="#64748B" />
               <Text style={styles.location}>{formattedLocation}</Text>
+            </View>
+            
+            {/* Seller Rating Display */}
+            <View style={styles.ratingRow}>
+              <HomeRatingDisplay 
+                username={seller.username}
+                size="small"
+                showCount={true}
+                showAverage={true}
+                compact={true}
+              />
             </View>
           </View>
         </View>
@@ -115,11 +127,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    marginBottom: 6,
   },
   location: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: '#64748B',
+  },
+  ratingRow: {
+    marginTop: 2,
   },
   bioSection: {
     marginBottom: 16,

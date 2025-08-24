@@ -1,4 +1,4 @@
-/* global console */
+
 import React, { useState, useEffect } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -7,7 +7,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Image,
   FlatList,
   Dimensions,
   BackHandler,
@@ -24,6 +23,7 @@ import { mockCategories } from '@/utils/mockData';
 import AddListingModal from '@/components/AddListingModal';
 import PingTemplateSelector from '@/components/PingTemplateSelector';
 import FeedbackModal from '@/components/FeedbackModal';
+import HomeRatingDisplay from '@/components/HomeRatingDisplay';
 
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import CategorySelectionModal from '@/components/CategorySelectionModal';
@@ -49,6 +49,7 @@ import { networkMonitor } from '@/utils/networkMonitor';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { useLocationCheck } from '@/hooks/useLocationCheck';
 import LocationCheckPopup from '@/components/LocationCheckPopup';
+import RatingService from '@/utils/ratingService';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 36) / 2; // Account for padding and gap
@@ -70,6 +71,7 @@ function HomeScreen() {
   const [showDistanceFilterModal, setShowDistanceFilterModal] = useState(false);
   const [sellerInfoMap, setSellerInfoMap] = useState<Record<string, any>>({});
   const [username, setUsername] = useState<string | null>(null);
+  const [userRatings, setUserRatings] = useState<Record<string, { rating: string; reviewCount: number } | null>>({});
 
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [userActivityCount, setUserActivityCount] = useState(0);
@@ -191,6 +193,67 @@ function HomeScreen() {
     loadExistingPings();
   }, [username, listings]);
 
+  // Load ratings for all users in listings
+  useEffect(() => {
+    if (listings.length > 0) {
+      loadUserRatings();
+    }
+  }, [listings]);
+
+  const loadUserRatings = async () => {
+    try {
+      const ratings: Record<string, { rating: string; reviewCount: number }> = {};
+      const checkedUsers: Record<string, boolean> = {};
+      
+      for (const listing of listings) {
+        if (listing.username && !userRatings[listing.username] && !checkedUsers[listing.username]) {
+          try {
+            const stats = await RatingService.getUserRatingStats(listing.username);
+            
+            if (stats && stats.total_ratings > 0) {
+              ratings[listing.username] = {
+                rating: stats.average_rating.toFixed(1),
+                reviewCount: stats.total_ratings
+              };
+            }
+            // Mark this user as checked (even if they have no ratings)
+            checkedUsers[listing.username] = true;
+          } catch (error) {
+            console.error('Error getting rating for user:', listing.username, error);
+            // Mark this user as checked even on error
+            checkedUsers[listing.username] = true;
+          }
+        }
+      }
+      
+      // Update ratings and mark checked users
+      setUserRatings(prev => {
+        const newRatings = { ...prev };
+        // Add new ratings
+        Object.assign(newRatings, ratings);
+        // Mark users as checked by setting them to null if they have no ratings
+        Object.keys(checkedUsers).forEach(username => {
+          if (!newRatings[username]) {
+            newRatings[username] = null;
+          }
+        });
+        return newRatings;
+      });
+    } catch (error) {
+      console.error('Error loading user ratings:', error);
+    }
+  };
+
+  const getRealRating = (username: string) => {
+    // Return cached rating data from database only
+    if (userRatings[username]) {
+      return userRatings[username];
+    }
+    
+    // Return null if no rating data available
+    return null;
+  };
+
   // Mark when returning from navigation to prevent unnecessary refreshes
   useFocusEffect(
     React.useCallback(() => {
@@ -300,7 +363,7 @@ function HomeScreen() {
       }
 
       // Check ping limits using hybrid system (forces database check)
-      const limitResult = await checkPingLimit(listing.id, true);
+      await checkPingLimit(listing.id, true);
       
       // Always open modal, let the modal handle the limit display
       setSelectedListingForPing(listing);
@@ -388,7 +451,7 @@ function HomeScreen() {
       // Try to create ping online first
       if (isOnline) {
         try {
-          const pingResult = await createPing({
+          await createPing({
             listing_id: listing.id,
             sender_username: currentUser.username,
             receiver_username: seller.username,
@@ -610,13 +673,21 @@ function HomeScreen() {
               {/* Seller Rating */}
               <View style={styles.ratingRow}>
                 <View style={styles.ratingContainer}>
-                  <Star size={10} color="#F59E0B" fill="#F59E0B" />
-                  <Text style={styles.ratingText}>
-                    {getDummyRating(item).rating}
-                  </Text>
-                  <Text style={styles.reviewCountText}>
-                    ({getDummyRating(item).reviewCount} reviews)
-                  </Text>
+                  {getRealRating(item.username) ? (
+                    <>
+                      <Star size={10} color="#F59E0B" fill="#F59E0B" />
+                      <Text style={styles.ratingText}>
+                        {getRealRating(item.username)?.rating}
+                      </Text>
+                      <Text style={styles.reviewCountText}>
+                        ({getRealRating(item.username)?.reviewCount} reviews)
+                      </Text>
+                    </>
+                  ) : userRatings[item.username] === undefined ? (
+                    <Text style={styles.loadingRatingText}>Loading...</Text>
+                  ) : (
+                    <Text style={styles.noRatingText}>No ratings yet</Text>
+                  )}
                 </View>
                 <View style={[styles.statusBadge, item.is_active && styles.activeBadge]}>
                   <Text style={[styles.statusText, item.is_active && styles.activeText]}>
@@ -733,14 +804,6 @@ function HomeScreen() {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const getDummyRating = (item: any) => {
-    // Generate consistent dummy rating based on item ID for demo purposes
-    const seed = item.id ? item.id.toString().charCodeAt(0) : 0;
-    const rating = 3.5 + (seed % 3) * 0.5; // 3.5, 4.0, 4.5
-    const reviewCount = 10 + (seed % 20); // 10-30 reviews
-    return { rating: rating.toFixed(1), reviewCount };
-  };
-
   const trackUserActivity = () => {
     if (hasShownFeedbackPrompt) return; // Don't track if already shown
     
@@ -820,6 +883,8 @@ function HomeScreen() {
       }
 
       await refreshListings();
+      // Also reload user ratings after refreshing listings
+      await loadUserRatings();
     } catch (error) {
       await errorHandler.handleError(error, {
         operation: 'refresh_listings',
@@ -1416,6 +1481,16 @@ const styles = StyleSheet.create({
     color: '#1E293B',
   },
   reviewCountText: {
+    fontSize: 10,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+  },
+  noRatingText: {
+    fontSize: 10,
+    fontFamily: 'Inter-Regular',
+    color: '#94A3B8',
+  },
+  loadingRatingText: {
     fontSize: 10,
     fontFamily: 'Inter-Regular',
     color: '#64748B',

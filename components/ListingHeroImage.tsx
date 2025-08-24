@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   Text,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react-native';
 import NewRobustImage from './NewRobustImage';
 
@@ -34,15 +33,7 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoading, setImageLoading] = useState(true);
 
-  // Memoize the current image data to prevent unnecessary re-renders
-  const currentImage = useMemo(() => {
-    if (!images || images.length === 0) return null;
-    return {
-      full: images[currentImageIndex],
-      thumbnail: thumbnailImages?.[currentImageIndex],
-      preview: previewImages?.[currentImageIndex],
-    };
-  }, [images, thumbnailImages, previewImages, currentImageIndex]);
+
 
   // Handle next image
   const handleNext = useCallback(() => {
