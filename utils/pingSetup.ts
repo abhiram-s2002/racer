@@ -32,9 +32,8 @@ export async function initializePingSystem(): Promise<boolean> {
     
     if (!pingsTableExists) {
       
-      console.log('Pings table does not exist. Please run the migration:');
-      
-      console.log('supabase/migrations/20250116_create_pings_table.sql');
+      // Pings table does not exist. Please run the migration:
+      // supabase/migrations/20250116_create_pings_table.sql
       return false;
     }
     
@@ -46,13 +45,13 @@ export async function initializePingSystem(): Promise<boolean> {
     
     if (analyticsError && analyticsError.code === '42P01') {
       
-      console.log('Ping analytics table does not exist. Analytics will be disabled.');
+      // Ping analytics table does not exist. Analytics will be disabled.
       // Don't return false - analytics is optional
     }
     
     // Note: ping_limits table is no longer needed - using local storage instead
     
-    console.log('Ping system is properly initialized. Using local storage for ping limits.');
+    // Ping system is properly initialized. Using local storage for ping limits.
     return true;
   } catch (error) {
     

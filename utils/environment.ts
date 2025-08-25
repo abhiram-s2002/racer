@@ -360,7 +360,7 @@ export const isProduction = Environment.isProduction;
 
 // Log configuration in development
 if (Environment.isDevelopment) {
-  console.log('🔧 Environment Configuration:', Environment.getConfig());
+  // Environment configuration loaded silently in development
   
   const validation = Environment.validate();
   if (!validation.isValid) {

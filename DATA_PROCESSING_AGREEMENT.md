@@ -3,8 +3,8 @@
 **Last Updated:** January 24, 2025
 
 **Between:**
-- **Data Controller**: Racer Marketplace ("Controller")
-- **Data Processor**: Racer Marketplace ("Processor")
+- **Data Controller**: GeoMart ("Controller")
+- **Data Processor**: GeoMart ("Processor")
 
 ## 1. Introduction
 
@@ -21,7 +21,7 @@ This Data Processing Agreement ("DPA") is entered into between the Controller an
 ## 3. Subject Matter and Duration
 
 ### 3.1 Subject Matter
-This DPA governs the processing of Personal Data by the Processor on behalf of the Controller in connection with the Racer Marketplace mobile application and services.
+This DPA governs the processing of Personal Data by the Processor on behalf of the Controller in connection with the GeoMart mobile application and services.
 
 ### 3.2 Duration
 This DPA remains in effect for the duration of the service agreement and until all Personal Data is deleted or returned.
@@ -201,29 +201,29 @@ This DPA constitutes the entire agreement regarding data processing between the 
 ## 15. Contact Information
 
 ### 15.1 Controller Contact
-**Racer Marketplace**
-Email: privacy@racermarketplace.com
+**GeoMart**
+Email: privacy@geomart.com
 Address: [Your Business Address]
 
 ### 15.2 Processor Contact
-**Racer Marketplace**
-Email: dpo@racermarketplace.com
+**GeoMart**
+Email: dpo@geomart.com
 Address: [Your Business Address]
 
 ### 15.3 Data Protection Officer
-Email: dpo@racermarketplace.com
+Email: dpo@geomart.com
 
 ---
 
 **Signatures:**
 
-**Controller (Racer Marketplace):**
+**Controller (GeoMart):**
 Name: _________________
 Title: _________________
 Date: _________________
 Signature: _________________
 
-**Processor (Racer Marketplace):**
+**Processor (GeoMart):**
 Name: _________________
 Title: _________________
 Date: _________________

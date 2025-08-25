@@ -78,7 +78,6 @@ class OfflineQueueManager {
         this.isProcessing = status.isProcessing || false;
       }
 
-      console.log(`Offline queue initialized with ${this.queue.length} actions`);
     } catch (error) {
       console.error('Error initializing offline queue:', error);
       await errorHandler.handleSilentError(error, {
@@ -136,7 +135,7 @@ class OfflineQueueManager {
       // Save to storage
       await this.saveQueue();
 
-      console.log(`Action added to offline queue: ${action.type} (${actionId})`);
+      // Action added to offline queue successfully
 
       // Try to process immediately if online
       if (networkMonitor.isOnline()) {
@@ -176,7 +175,7 @@ class OfflineQueueManager {
     };
 
     try {
-      console.log(`Processing offline queue with ${this.queue.length} actions`);
+      // Processing offline queue silently
 
       // Process actions in batches
       const batchSize = QUEUE_CONFIG.SYNC_BATCH_SIZE;
@@ -199,7 +198,7 @@ class OfflineQueueManager {
             // Failed - increment retry count or remove
             if (action.retryCount < action.maxRetries) {
               action.retryCount++;
-              console.log(`Action ${action.id} failed, retry ${action.retryCount}/${action.maxRetries}`);
+              // Action failed, retry count incremented
             } else {
               // Max retries reached - remove from queue
               this.removeAction(action.id);
@@ -213,7 +212,7 @@ class OfflineQueueManager {
         await this.saveQueue();
       }
 
-      console.log(`Queue processing completed: ${result.processedCount} processed, ${result.failedCount} failed`);
+      // Queue processing completed silently
     } catch (error) {
       console.error('Error processing offline queue:', error);
       result.success = false;

@@ -489,7 +489,6 @@ export async function getUserAchievementsSafe(username: string): Promise<UserAch
     
     // If no achievements exist, initialize them
     if (achievements.length === 0) {
-      console.log('No user achievements found, initializing...');
       return await initializeUserAchievements(username);
     }
     
@@ -753,8 +752,6 @@ export async function initializeUserRewards(username: string) {
       return null;
     }
 
-    console.log('Initializing rewards for user:', username);
-    
     // Check if user exists in users table first
     const { data: userExists, error: userError } = await supabase
       .from('users')
@@ -859,7 +856,6 @@ async function initializeUserAchievements(username: string): Promise<UserAchieve
     // Get all active achievements
     const achievements = await getAllAchievements();
     if (!achievements.length) {
-      console.log('No achievements found to initialize');
       return [];
     }
 
@@ -908,7 +904,6 @@ export async function getUserRewardsSafe(username: string): Promise<UserRewards 
     if (error) {
       if (error.code === 'PGRST116') {
         // Record doesn't exist, initialize it
-        console.log('User rewards record not found, initializing...');
         return await initializeUserRewardsRecord(username);
       }
       console.error('Error fetching user rewards:', error);
@@ -933,7 +928,6 @@ export async function getUserStreakSafe(username: string): Promise<UserStreak | 
     if (error) {
       if (error.code === 'PGRST116') {
         // Record doesn't exist, initialize it
-        console.log('User streak record not found, initializing...');
         return await initializeUserStreakRecord(username);
       }
       console.error('Error fetching user streak:', error);
@@ -958,7 +952,6 @@ export async function getUserReferralCodeSafe(username: string): Promise<UserRef
     if (error) {
       if (error.code === 'PGRST116') {
         // Record doesn't exist, initialize it
-        console.log('User referral code record not found, initializing...');
         return await initializeUserReferralCodeRecord(username);
       }
       console.error('Error fetching user referral code:', error);
@@ -1109,7 +1102,6 @@ export async function awardReferralBonus(username: string) {
     // Note: Balance update is handled automatically by database trigger
     // No need to manually update here - the trigger will add the 100 OMNI
 
-    console.log('Referral bonus of 100 OMNI awarded to:', username);
     return true;
   } catch (error) {
     console.error('Error awarding referral bonus:', error);
@@ -1142,7 +1134,6 @@ export async function awardWelcomeAchievements(username: string) {
     if (!completedIds.has('welcome_bonus')) {
       await updateUserAchievementProgressSafe(username, 'welcome_bonus', 1);
       // Don't create reward transaction since welcome bonus is already given in initializeUserRewards
-      console.log('Welcome Bonus achievement marked as completed for:', username);
     }
 
     // Early Adopter achievement - only mark as completed, don't award OMNI automatically
@@ -1154,7 +1145,6 @@ export async function awardWelcomeAchievements(username: string) {
     if (isEarlyAdopter && !completedIds.has('early_adopter')) {
       await updateUserAchievementProgressSafe(username, 'early_adopter', 1);
       // Don't create reward transaction - let users earn this through gameplay
-      console.log('Early Adopter achievement marked as completed for:', username);
     }
 
     return true;

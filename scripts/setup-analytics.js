@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Analytics Setup Script for Racer Marketplace App
- * This script helps set up Google Analytics and Sentry for production monitoring
+ * Analytics Setup Script for GeoMart App
+ * This script helps set up analytics tracking for your app
  */
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -10,7 +10,7 @@ const fs = require('fs');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
 
-console.log('🚀 Setting up Analytics for Racer Marketplace App...\n');
+console.log('🚀 Setting up Analytics for GeoMart App...\n');
 
 // Check if .env file exists
 const envPath = path.join(__dirname, '..', '.env');
@@ -30,25 +30,25 @@ console.log('\n📊 Analytics Setup Instructions:\n');
 
 console.log('1. 🌐 GOOGLE ANALYTICS:');
 console.log('   - Go to https://analytics.google.com/');
-console.log('   - Create a new property for "Racer Marketplace"');
+console.log('   - Create a new property for "GeoMart"');
 console.log('   - Get your Measurement ID (format: G-XXXXXXXXXX)');
 console.log('   - Add to .env: EXPO_PUBLIC_ANALYTICS_ID=G-XXXXXXXXXX\n');
 
 console.log('2. 🐛 SENTRY ERROR MONITORING:');
 console.log('   - Go to https://sentry.io/');
-console.log('   - Create a new project for "Racer Marketplace"');
+console.log('   - Create a new project for "GeoMart"');
 console.log('   - Get your DSN (format: https://xxxxx@xxxxx.ingest.sentry.io/xxxxx)');
 console.log('   - Add to .env: EXPO_PUBLIC_SENTRY_DSN=https://xxxxx@xxxxx.ingest.sentry.io/xxxxx\n');
 
 console.log('3. 📱 APP STORE CONNECT:');
 console.log('   - Go to https://appstoreconnect.apple.com/');
-console.log('   - Create a new app: "Racer Marketplace"');
+console.log('   - Create a new app: "GeoMart"');
 console.log('   - Bundle ID: com.racermarketplace.app');
 console.log('   - Platform: iOS\n');
 
 console.log('4. 🤖 GOOGLE PLAY CONSOLE:');
 console.log('   - Go to https://play.google.com/console/');
-console.log('   - Create a new app: "Racer Marketplace"');
+console.log('   - Create a new app: "GeoMart"');
 console.log('   - Package name: com.racermarketplace.app');
 console.log('   - Platform: Android\n');
 

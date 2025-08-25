@@ -451,7 +451,7 @@ export const logSecurityEvent = (event: string, details: any, username?: string)
     userId: username || 'unknown', // Use the actual username if provided
   };
   // In production, send to security monitoring service
-  console.log('Security Event:', securityLog);
+  // Security Event logged silently
   // Store locally for debugging
   // AsyncStorage.setItem('security_logs', JSON.stringify([...existingLogs, securityLog]));
 };

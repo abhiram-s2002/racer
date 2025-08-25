@@ -58,8 +58,6 @@ export async function upsertUserProfile(authUser: any) {
   }
   // If phone is null/undefined, phoneValue remains null
   
-  console.log('Upserting user profile with:', { id, username, email, phone: phoneValue, name, avatar_url });
-  
   // Check network connectivity before database operation
   if (!networkMonitor.isOnline()) {
     await errorHandler.handleError(
@@ -97,41 +95,25 @@ export async function upsertUserProfile(authUser: any) {
 
     // Process referral code if user has one stored in metadata
     const { data: { user } } = await supabase.auth.getUser();
-    console.log('🔍 [DEBUG] Checking user metadata for referral code...');
-    console.log('🔍 [DEBUG] User metadata:', user?.user_metadata);
     
     if (user?.user_metadata?.referral_code) {
-      console.log('🔍 [DEBUG] Found referral code in metadata:', user.user_metadata.referral_code);
       try {
-        console.log('🔍 [DEBUG] Attempting to import processReferralCode...');
         // Import the function dynamically to avoid circular dependencies
         const { processReferralCode } = await import('./auth');
-        console.log('✅ [DEBUG] processReferralCode imported successfully');
         
-        console.log('🔍 [DEBUG] Calling processReferralCode with:', {
-          code: user.user_metadata.referral_code,
-          username: username
-        });
-        
-        const result = await processReferralCode(user.user_metadata.referral_code, username);
-        console.log('🔍 [DEBUG] processReferralCode result:', result);
+        const result = await processReferralCode(user.user_metadata.referral_code);
         
         // Clear the referral code from metadata after processing
-        console.log('🔍 [DEBUG] Clearing referral code from metadata...');
         await supabase.auth.updateUser({
           data: { referral_code: null }
         });
-        console.log('✅ [DEBUG] Referral code processed and cleared from metadata');
-      } catch (referralError) {
-        console.error('❌ [DEBUG] Error processing referral code:', referralError);
-        console.error('❌ [DEBUG] Error stack:', referralError.stack);
+      } catch (referralError: any) {
+        console.error('Error processing referral code:', referralError);
+        console.error('Error stack:', referralError.stack);
       }
-    } else {
-      console.log('🔍 [DEBUG] No referral code found in user metadata');
     }
   } catch (upsertError) {
     // If upsert fails, try insert instead
-    console.log('Upsert failed, trying insert:', upsertError);
     try {
       const { error } = await supabase.from('users').insert([
         {
@@ -175,7 +157,6 @@ export default function AuthGate() {
     const checkAuth = async () => {
       try {
         const { user } = await getCurrentUser();
-        console.log('AuthGate: current user:', user);
         setAuthenticated(!!user);
         
         if (user) {
@@ -195,7 +176,7 @@ export default function AuthGate() {
           
           const result = await upsertUserProfile(user);
           if (result && result.error) {
-            console.log('User profile upsert failed:', result.error);
+            // User profile upsert failed - handled silently
           }
         }
         
@@ -237,9 +218,8 @@ export default function AuthGate() {
             operation: 'supabase_connection_check',
             component: 'AuthGate',
           });
-        } else {
-          console.log('Supabase connection successful:', data);
         }
+        // Connection check completed silently
       } catch (error) {
         await errorHandler.handleError(error, {
           operation: 'supabase_connection_check',

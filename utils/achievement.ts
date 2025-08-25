@@ -37,7 +37,7 @@ export async function updateUserAchievement(username: string, achievementId: str
       data.totalCompleted = (data.totalCompleted || 0) + 1;
       data.totalRewards = (data.totalRewards || 0) + (achievement.reward || 0);
       data.recentUnlocked = [...(data.recentUnlocked || []), achievementId];
-      console.log(`Achievement unlocked: ${achievementId} for user ${username}`);
+      // Achievement unlocked successfully
     }
     
     await AsyncStorage.setItem(key, JSON.stringify(data));

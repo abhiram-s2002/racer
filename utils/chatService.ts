@@ -268,7 +268,7 @@ export const ChatService = {
         });
       } catch {
         // Function might not exist yet, that's okay
-        console.log('mark_messages_read function not available yet');
+        // mark_messages_read function not available yet
       }
     } catch (error) {
       console.error('Error marking messages as read:', error);
@@ -366,7 +366,7 @@ export const ChatService = {
   // Update message status (for delivery simulation)
   async updateMessageStatus(messageId: string, status: 'sent' | 'delivered' | 'read'): Promise<void> {
     // This is for UI simulation only since we don't have status in messages table
-    console.log(`Message ${messageId} status updated to ${status}`);
+    // Message status updated silently
   },
   
   // Simulate message delivery

@@ -1,5 +1,6 @@
 // Cache maintenance operations placeholder
 import { ImageCache } from './imageCache';
+import { apiCache } from './apiCache';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface MaintenanceConfig {
@@ -174,8 +175,13 @@ class CacheMaintenance {
    */
   private async maintainApiCache(): Promise<void> {
     try {
-      // Skip API cache maintenance for now since apiCache is not available
-      console.log('API cache maintenance skipped - apiCache not available');
+      // API cache maintenance
+      try {
+        // API cache maintenance skipped - runMaintenance method not available
+        // TODO: Implement API cache maintenance if needed
+      } catch (error) {
+        console.error('API cache maintenance error:', error);
+      }
     } catch (error) {
       console.error('API cache maintenance error:', error);
     }

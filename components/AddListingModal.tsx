@@ -1,22 +1,23 @@
 /* global setTimeout */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
-  ScrollView,
   TextInput,
   TouchableOpacity,
-  Image,
-  Alert,
-  Platform,
   Modal,
+  StyleSheet,
+  Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform as RNPlatform,
+  Image,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { 
- 
-  Image as ImageIcon, 
   Mic, 
-
   Upload,
   Check,
   X,
@@ -28,12 +29,13 @@ import {
   Palette,
   Home,
   Car,
-  MoreHorizontal
+  MoreHorizontal,
+  Image as ImageIcon
 } from 'lucide-react-native';
 import { mockCategories } from '@/utils/mockData';
-import { supabase } from '@/utils/supabaseClient';
-import { withErrorHandling, ErrorContext } from '@/utils/errorHandler';
 import { useLocation } from '@/hooks/useLocation';
+import { supabase } from '@/utils/supabaseClient';
+import { withErrorHandling } from '@/utils/errorHandler';
 import { 
   validateListingTitle, 
   validateListingDescription, 
@@ -45,12 +47,12 @@ import {
   validateForm,
   logSecurityEvent 
 } from '@/utils/validation';
-import { addListingWithImages as addListingSupabase, updateListingWithImages as updateListingSupabase, createListingWithExpiration } from '@/utils/listingSupabase';
+import { updateListingWithImages as updateListingSupabase, createListingWithExpiration } from '@/utils/listingSupabase';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { advancedRateLimiter } from '@/utils/advancedRateLimiter';
 
-import { Listing, Category, PriceUnit, ListingFormData } from '@/utils/types';
+import { Listing, Category, PriceUnit } from '@/utils/types';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 // Helper function to get pricing units based on category
@@ -186,11 +188,6 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
   };
 
   const handleVoiceInput = () => {
-    if (Platform.OS === 'web') {
-      Alert.alert('Voice Input', 'Voice input is not available on web platform');
-      return;
-    }
-    
     setIsRecording(!isRecording);
     setTimeout(() => {
       setIsRecording(false);
@@ -381,7 +378,7 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
       return;
     }
 
-    const context: ErrorContext = {
+    const context = {
       operation: editListing ? 'update_listing' : 'create_listing',
       component: 'AddListingModal',
       userId: sellerUsername,

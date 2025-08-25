@@ -84,8 +84,8 @@ async function sendSMS(phoneNumber: string, message: string): Promise<boolean> {
   try {
     // For development/testing, log the SMS instead of sending
     if (__DEV__ && !process.env.EXPO_PUBLIC_ENABLE_REAL_SMS) {
-      console.log(`📱 SMS to ${phoneNumber}: ${message}`);
-      console.log(`🔑 OTP Code: ${message.split('is: ')[1].split('.')[0]}`);
+      // SMS logged for development (not sent)
+      // OTP Code extracted for development
       return true;
     }
 
@@ -107,7 +107,7 @@ async function sendSMS(phoneNumber: string, message: string): Promise<boolean> {
     const result = await response.json();
     
     if (result.type === 'success') {
-      console.log('SMS sent successfully');
+      // SMS sent successfully
       return true;
     } else {
       console.error('SMS sending failed:', result);

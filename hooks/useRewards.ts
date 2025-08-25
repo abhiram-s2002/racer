@@ -25,10 +25,11 @@ import {
   type UserAchievement,
   type DailyCheckin,
   type Referral,
-  type ReferralCommission,
   type RewardTransaction,
   type UserRewardsSummary
 } from '@/utils/rewardsSupabase';
+
+import { type ReferralCommission } from '@/utils/types';
 
 export function useRewards(username: string) {
   const [loading, setLoading] = useState(true);
@@ -51,7 +52,6 @@ export function useRewards(username: string) {
   // Load all rewards data
   const loadRewardsData = useCallback(async () => {
     if (!username || username.trim() === '') {
-      console.log('Skipping rewards data load - username is empty');
       setLoading(false);
       return;
     }
@@ -73,7 +73,6 @@ export function useRewards(username: string) {
         setTransactions(completeData.transactions);
       } else {
         // Fallback: try to initialize rewards data for new user
-        console.log('Attempting to initialize rewards for new user:', username);
         const initData = await initializeUserRewards(username);
         if (initData) {
           setUserRewards(initData.userRewards);
@@ -104,7 +103,6 @@ export function useRewards(username: string) {
   // Refresh rewards data
   const refreshRewards = useCallback(async () => {
     if (!username || username.trim() === '') {
-      console.log('Skipping rewards refresh - username is empty');
       return;
     }
 
@@ -223,7 +221,6 @@ export function useRewards(username: string) {
       if (powerUserAchievement && !powerUserAchievement.completed && userStreak.current_streak >= 7) {
         const success = await updateAchievement('power_user', 7);
         if (success) {
-          console.log('Power User achievement awarded!');
           return true;
         }
       }
@@ -279,7 +276,6 @@ export function useRewards(username: string) {
         if (newProgress >= 30) {
           const success = await updateAchievement('loyal_user', 30);
           if (success) {
-            console.log('Loyal User achievement awarded!');
             return true;
           }
         } else if (newProgress > (loyalUserAchievement.progress || 0)) {

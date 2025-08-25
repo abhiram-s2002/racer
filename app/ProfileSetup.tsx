@@ -19,8 +19,8 @@ import { supabase } from '@/utils/supabaseClient';
 import { useRouter } from 'expo-router';
 import { upsertUserProfile } from '@/app/_layout';
 import { awardWelcomeAchievements } from '@/utils/rewardsSupabase';
-import { User, RefreshCw, ArrowRight, Sparkles, Phone, Lock } from 'lucide-react-native';
-import PhoneVerificationModal from '@/components/PhoneVerificationModal';
+import { User, RefreshCw, ArrowRight, Sparkles, Phone } from 'lucide-react-native';
+
 import { validatePhoneNumber, validateUsername } from '@/utils/validation';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
@@ -33,7 +33,7 @@ function getRandomSeed() {
 }
 
 
-declare function setTimeout(handler: (...args: any[]) => void, timeout?: number, ...args: any[]): number;
+
 
 function ProfileSetup() {
   const [username, setUsername] = useState('');
@@ -42,10 +42,10 @@ function ProfileSetup() {
   const [avatarSeed, setAvatarSeed] = useState(getRandomSeed());
   const [loading, setLoading] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(0));
-  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
-  const [userId, setUserId] = useState('');
-  const [userAuthMethod, setUserAuthMethod] = useState<'email' | 'phone'>('email');
-  const [phoneVerified, setPhoneVerified] = useState(false);
+
+
+
+
   const [usernameError, setUsernameError] = useState('');
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameCheckTimeout, setUsernameCheckTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
@@ -63,18 +63,18 @@ function ProfileSetup() {
       useNativeDriver: true,
     }).start();
 
-    // Check user's authentication method
-    checkUserAuthMethod();
+    // Check for existing phone number
+    checkExistingPhone();
   }, []);
 
-  const checkUserAuthMethod = async () => {
+  const checkExistingPhone = async () => {
     try {
       // Check network connectivity first
       if (!networkMonitor.isOnline()) {
         await errorHandler.handleError(
           new Error('No internet connection available'),
           {
-            operation: 'check_user_auth_method',
+            operation: 'check_existing_phone',
             component: 'ProfileSetup',
           },
           false // Don't show alert for network issues during startup
@@ -86,31 +86,19 @@ function ProfileSetup() {
       if (user) {
         // User data loaded successfully
         
-        // Check if user has phone in metadata or if phone is their primary identifier
-        if (user.phone) {
-          // Phone signup user detected
-          setUserAuthMethod('phone');
-          setPhoneNumber(user.phone);
-          setPhoneVerified(true); // Phone users are already verified
-        } else if (user.email) {
-          // Email signup user detected
-          setUserAuthMethod('email');
-          // Check if user already has a phone number in the database
-          const { data: userProfile } = await supabase
-            .from('users')
-            .select('phone')
-            .eq('id', user.id)
-            .single();
-          
-          if (userProfile?.phone) {
-            // Found existing phone in database
-            setPhoneNumber(userProfile.phone);
-            setPhoneVerified(true);
-          } else {
-            // New email user, starting with 91 prefix
-            // For new email users, start with 91 prefix
-            setPhoneNumber('91');
-          }
+        // Check if user already has a phone number in the database
+        const { data: userProfile } = await supabase
+          .from('users')
+          .select('phone')
+          .eq('id', user.id)
+          .single();
+        
+        if (userProfile?.phone) {
+          // Found existing phone in database
+          setPhoneNumber(userProfile.phone);
+        } else {
+          // New user, starting with 91 prefix
+          setPhoneNumber('91');
         }
       }
     } catch (error) {
@@ -200,7 +188,7 @@ function ProfileSetup() {
         return;
       }
       
-      setUserId(user.id);
+
       
       const { error: updateError } = await supabase.auth.updateUser({
         data: { username, name, avatar_url }
@@ -219,15 +207,10 @@ function ProfileSetup() {
       if (updatedUser) {
         // Submitting profile with user data
         
-        // Update user profile first with phone number included
-        // Only pass phone if it's complete and valid
-        const phoneToPass = (phoneNumber && phoneNumber.trim() !== '' && phoneNumber !== '91' && phoneNumber.length >= 12) 
-          ? phoneNumber 
-          : null;
-          
+        // Update user profile with phone number included
         const profileResult = await upsertUserProfile({ 
           ...updatedUser, 
-          phone: phoneToPass, // Only pass valid phone numbers
+          phone: phoneNumber, // Pass the phone number as entered
           user_metadata: { ...updatedUser.user_metadata, username, name, avatar_url } 
         });
         
@@ -257,19 +240,11 @@ function ProfileSetup() {
           // Don't fail the profile setup if achievements fail
         }
         
-        // Always verify phone number for new users
-        if (!phoneVerified) {
-          Alert.alert('Profile Saved', 'Your profile has been saved! Would you like to verify your phone number?', [
-            { text: 'Skip', onPress: () => router.replace('/') },
-            { text: 'Verify Phone', onPress: () => setShowPhoneVerification(true) }
-          ]);
-        } else {
-          // Phone already verified, go directly to main app
-          Alert.alert('Success', 'Profile setup completed! Welcome to OmniMarketplace!');
-          setTimeout(() => {
-            router.replace('/');
-          }, 500);
-        }
+        // Profile setup completed successfully
+        Alert.alert('Success', 'Profile setup completed! Welcome to OmniMarketplace!');
+        setTimeout(() => {
+          router.replace('/');
+        }, 500);
       }
     } catch (error) {
       await errorHandler.handleError(error, {
@@ -281,30 +256,17 @@ function ProfileSetup() {
     }
   };
 
-  const handlePhoneVerificationSuccess = (verifiedPhone: string) => {
-    setPhoneNumber(verifiedPhone);
-    setPhoneVerified(true);
-    Alert.alert('Success', 'Phone number verified successfully! Welcome to OmniMarketplace!');
-    setTimeout(() => {
-      router.replace('/');
-    }, 500);
-  };
+
 
   const randomizeAvatar = () => {
     setAvatarSeed(getRandomSeed());
   };
 
   const getPhoneLabel = () => {
-    if (userAuthMethod === 'phone') {
-      return 'Phone Number (Verified)';
-    }
     return 'Phone Number (Required)';
   };
 
   const getPhoneHelperText = () => {
-    if (userAuthMethod === 'phone') {
-      return 'Your phone number is already verified from signup';
-    }
     return 'Enter your 10-digit mobile number (91 is automatically added)';
   };
 
@@ -447,44 +409,34 @@ function ProfileSetup() {
 
                 <View style={styles.inputContainer}>
                   <Text style={styles.label}>{getPhoneLabel()}</Text>
-                  <View style={[styles.inputWrapper, userAuthMethod === 'phone' && styles.disabledInputWrapper, phoneError && styles.inputError]}>
+                  <View style={[styles.inputWrapper, phoneError && styles.inputError]}>
                     <Phone size={18} color="#94A3B8" style={styles.inputIcon} />
-                    {userAuthMethod !== 'phone' && (
-                      <Text style={styles.prefixText}>+91</Text>
-                    )}
+                    <Text style={styles.prefixText}>+91</Text>
                     <TextInput
-                      style={[styles.input, userAuthMethod === 'phone' && styles.disabledInput]}
-                      value={userAuthMethod === 'phone' ? phoneNumber : phoneNumber.substring(2)}
+                      style={styles.input}
+                      value={phoneNumber.substring(2)}
                       onChangeText={(text) => {
-                        if (userAuthMethod !== 'phone') {
-                          // Only allow digits and limit to 10 characters
-                          const digitsOnly = text.replace(/\D/g, '').slice(0, 10);
-                          const newPhoneNumber = '91' + digitsOnly;
-                          setPhoneNumber(newPhoneNumber);
-                          
-                          // Validate phone number in real-time
-                          if (newPhoneNumber.length < 12) {
-                            setPhoneError('Please enter your complete 10-digit mobile number');
+                        // Only allow digits and limit to 10 characters
+                        const digitsOnly = text.replace(/\D/g, '').slice(0, 10);
+                        const newPhoneNumber = '91' + digitsOnly;
+                        setPhoneNumber(newPhoneNumber);
+                        
+                        // Validate phone number in real-time
+                        if (newPhoneNumber.length < 12) {
+                          setPhoneError('Please enter your complete 10-digit mobile number');
+                        } else {
+                          const validation = validatePhoneNumber(newPhoneNumber);
+                          if (!validation.isValid) {
+                            setPhoneError(validation.error || 'Invalid phone number');
                           } else {
-                            const validation = validatePhoneNumber(newPhoneNumber);
-                            if (!validation.isValid) {
-                              setPhoneError(validation.error || 'Invalid phone number');
-                            } else {
-                              setPhoneError('');
-                            }
+                            setPhoneError('');
                           }
                         }
                       }}
                       placeholder="7306519350"
                       placeholderTextColor="#94A3B8"
                       keyboardType="phone-pad"
-                      editable={userAuthMethod !== 'phone'}
                     />
-                    {userAuthMethod === 'phone' && (
-                      <View style={styles.lockIcon}>
-                        <Lock size={14} color="#94A3B8" />
-                      </View>
-                    )}
                   </View>
                   {phoneError ? (
                     <Text style={styles.errorText}>{phoneError}</Text>
@@ -516,14 +468,7 @@ function ProfileSetup() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <PhoneVerificationModal
-        visible={showPhoneVerification}
-        onClose={() => setShowPhoneVerification(false)}
-        onSuccess={handlePhoneVerificationSuccess}
-        userId={userId}
-        currentPhone={phoneNumber}
-        phoneAlreadyVerified={phoneVerified}
-      />
+
     </>
   );
 }
@@ -622,10 +567,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 2,
   },
-  disabledInputWrapper: {
-    backgroundColor: '#F1F5F9',
-    borderColor: '#E2E8F0',
-  },
   inputIcon: {
     marginRight: 8,
   },
@@ -635,13 +576,6 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     paddingVertical: 12,
     fontFamily: 'Inter-Regular',
-  },
-  disabledInput: {
-    opacity: 0.6,
-    color: '#94A3B8',
-  },
-  lockIcon: {
-    marginLeft: 6,
   },
   button: {
     flexDirection: 'row',

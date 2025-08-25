@@ -124,9 +124,9 @@ export async function deleteListing(id: string): Promise<void> {
       if (paths.length > 0) {
         const { error: storageError } = await supabase.storage.from('listings').remove(paths);
         if (storageError) {
-          console.warn('Some images could not be deleted from storage:', storageError);
+          console.error('Error deleting images from storage:', storageError);
         } else {
-          console.log('Deleted images from storage:', paths);
+          // Deleted images from storage successfully
         }
       }
     }

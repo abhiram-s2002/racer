@@ -176,9 +176,8 @@ const styles = StyleSheet.create({
   },
   coordinatesText: {
     fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    color: '#94A3B8',
     fontFamily: 'monospace',
+    color: '#94A3B8',
   },
 });
 

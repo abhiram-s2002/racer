@@ -77,7 +77,7 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
           {item.title}
         </Text>
         <Text style={styles.listingPrice}>
-          {formatPriceWithUnit(item.price, item.price_unit)}
+          {formatPriceWithUnit(item.price.toString(), item.price_unit)}
         </Text>
         <Text style={styles.listingCategory}>
           {item.category.charAt(0).toUpperCase() + item.category.slice(1).toLowerCase()}

@@ -1,6 +1,6 @@
-# 🔧 Environment Configuration Setup Guide
+# Environment Setup Guide
 
-This guide will help you set up proper environment configuration for your Racer Marketplace app across different deployment stages.
+This guide will help you set up proper environment configuration for your GeoMart app across different deployment stages.
 
 ## 📋 Overview
 

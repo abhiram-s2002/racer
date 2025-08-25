@@ -1,16 +1,16 @@
-# Terms of Service for Racer Marketplace
+# Terms of Service for GeoMart
 
 **Last Updated:** January 24, 2025
 
 ## 1. Acceptance of Terms
 
-By downloading, installing, or using the Racer Marketplace mobile application ("App"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, do not use the App.
+By downloading, installing, or using the GeoMart mobile application ("App"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, do not use the App.
 
-These Terms constitute a legally binding agreement between you and Racer Marketplace ("we," "our," or "us") regarding your use of our services.
+These Terms constitute a legally binding agreement between you and GeoMart ("we," "our," or "us") regarding your use of our services.
 
 ## 2. Description of Service
 
-Racer Marketplace is a local marketplace platform that enables users to:
+GeoMart is a local marketplace platform that enables users to:
 - Create and browse listings for items and services
 - Communicate with other users through messaging and pings
 - Share location-based information for local transactions

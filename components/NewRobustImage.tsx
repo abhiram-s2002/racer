@@ -25,9 +25,7 @@ interface NewRobustImageProps {
   height?: number;
   useCacheBusting?: boolean;
   
-  // Debug options
   title?: string;
-  debug?: boolean;
 }
 
 export const NewRobustImage: React.FC<NewRobustImageProps> = ({
@@ -47,8 +45,7 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
   width,
   height,
   useCacheBusting = true,
-  title = 'Unknown',
-  debug = false
+  title = 'Unknown'
 }) => {
   const [imageSet, setImageSet] = useState<ImageSet>({
     original: NewImageService.getFallbackImageUrl(),
@@ -135,7 +132,7 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
     setIsLoading(true);
     setHasError(false);
     setRetryAttempts(0);
-  }, [images, thumbnailImages, previewImages, imageFolderPath, size, title, debug]);
+  }, [images, thumbnailImages, previewImages, imageFolderPath, size, title]);
 
   const handleLoad = () => {
     setIsLoading(false);

@@ -94,6 +94,19 @@ function AuthScreen() {
       }
     
     if (mode === 'signup') {
+      // Check password length
+      if (password.length < 6) {
+        await errorHandler.handleError(
+          new Error('Password must be at least 6 characters long'),
+          {
+            operation: 'password_length_validation',
+            component: 'AuthScreen',
+          }
+        );
+        setLoading(false);
+        return;
+      }
+
       // Check if passwords match for signup
       if (password !== confirmPassword) {
         await errorHandler.handleError(
@@ -362,13 +375,33 @@ function AuthScreen() {
         />
         
         <TextInput
-          placeholder="Password"
+          placeholder="Password (min 6 characters)"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
-          style={styles.input}
+          style={[
+            styles.input,
+            mode === 'signup' && password.length > 0 && password.length < 6 && styles.inputError,
+            mode === 'signup' && password.length >= 6 && styles.inputSuccess
+          ]}
           placeholderTextColor="#94A3B8"
         />
+        {password.length > 0 && mode === 'signup' && (
+          <Text style={[
+            styles.passwordLengthText,
+            password.length < 6 ? styles.passwordLengthError : styles.passwordLengthSuccess
+          ]}>
+            {password.length < 6 
+              ? `✗ Password must be at least 6 characters (${password.length}/6)`
+              : `✓ Password length is good (${password.length} characters)`
+            }
+          </Text>
+        )}
+        {password.length > 0 && mode === 'login' && (
+          <Text style={styles.passwordLengthText}>
+            Password length: {password.length} characters
+          </Text>
+        )}
 
         {/* Confirmation Password Field - Only show in signup mode */}
         {mode === 'signup' && (
@@ -562,6 +595,18 @@ const styles = StyleSheet.create({
   },
   passwordMatchError: {
     color: '#EF4444',
+  },
+  passwordLengthText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    marginTop: 4,
+    paddingHorizontal: 10,
+  },
+  passwordLengthError: {
+    color: '#EF4444',
+  },
+  passwordLengthSuccess: {
+    color: '#22C55E',
   },
   inputError: {
     borderColor: '#EF4444',

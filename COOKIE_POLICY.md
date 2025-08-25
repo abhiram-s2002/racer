@@ -1,10 +1,10 @@
-# Cookie Policy for Racer Marketplace
+# Cookie Policy for GeoMart
 
 **Last Updated:** January 24, 2025
 
 ## 1. Introduction
 
-This Cookie Policy explains how Racer Marketplace ("we," "our," or "us") uses cookies and similar tracking technologies when you use our mobile application and services. This policy should be read alongside our Privacy Policy and Terms of Service.
+This Cookie Policy explains how GeoMart ("we," "our," or "us") uses cookies and similar tracking technologies when you use our mobile application and services. This policy should be read alongside our Privacy Policy and Terms of Service.
 
 ## 2. What Are Cookies and Tracking Technologies?
 

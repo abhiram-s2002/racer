@@ -60,7 +60,12 @@ function MapViewScreen() {
         return selectedCategory.includes(listing.category);
       });
       
-      setVisibleListings(filtered);
+      // Ensure no duplicate IDs in visible listings
+      const uniqueFiltered = filtered.filter((listing: any, index: number, arr: any[]) => 
+        arr.findIndex(l => l.id === listing.id) === index
+      );
+      
+      setVisibleListings(uniqueFiltered);
     } else {
       setVisibleListings([]);
     }

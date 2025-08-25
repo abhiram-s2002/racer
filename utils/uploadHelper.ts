@@ -1,4 +1,3 @@
-import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 
 /**
@@ -10,24 +9,12 @@ export class UploadHelper {
    */
   static async uriToBlob(uri: string): Promise<Blob> {
     try {
-      console.log(`Converting URI to blob: ${uri.substring(0, 50)}...`);
-      
-      if (Platform.OS === 'web') {
-        // Web platform: use fetch
-        const response = await fetch(uri);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return await response.blob();
-      } else {
-        // React Native: Use a simpler approach with fetch
-        // This should work for file:// URIs in React Native
-        const response = await fetch(uri);
-        if (!response.ok) {
-          throw new Error(`Failed to fetch file: ${response.status}`);
-        }
-        return await response.blob();
+      // React Native: Use fetch for file:// URIs
+      const response = await fetch(uri);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch file: ${response.status}`);
       }
+      return await response.blob();
     } catch (error) {
       console.error('Error converting URI to blob:', error);
       throw new Error(`Failed to convert URI to blob: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -59,13 +46,8 @@ export class UploadHelper {
    */
   static async validateUri(uri: string): Promise<boolean> {
     try {
-      if (Platform.OS === 'web') {
-        const response = await fetch(uri, { method: 'HEAD' });
-        return response.ok;
-      } else {
-        const fileInfo = await FileSystem.getInfoAsync(uri);
-        return fileInfo.exists;
-      }
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      return fileInfo.exists;
     } catch (error) {
       console.error('Error validating URI:', error);
       return false;
@@ -77,14 +59,8 @@ export class UploadHelper {
    */
   static async getFileSize(uri: string): Promise<number> {
     try {
-      if (Platform.OS === 'web') {
-        const response = await fetch(uri, { method: 'HEAD' });
-        const contentLength = response.headers.get('content-length');
-        return contentLength ? parseInt(contentLength, 10) : 0;
-      } else {
-        const fileInfo = await FileSystem.getInfoAsync(uri);
-        return (fileInfo as any).size || 0;
-      }
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      return (fileInfo as any).size || 0;
     } catch (error) {
       console.error('Error getting file size:', error);
       return 0;

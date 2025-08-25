@@ -128,7 +128,8 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
           if (messageError) {
             console.error('Error sending acceptance message:', messageError);
           } else {
-            console.log('Acceptance message sent successfully');
+            // Acceptance message sent successfully
+            onStatusChange?.(item.id, 'accepted');
           }
         } catch (messageError) {
           console.error('Error sending acceptance message:', messageError);
@@ -158,14 +159,7 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
   
   // Handle chat button press
   const handleChatPress = async () => {
-    console.log('Chat button pressed for ping:', item.id);
-    console.log('Current chatId:', chatId);
-    console.log('Ping status:', item.status);
-    console.log('User is sender:', isSender);
-    console.log('User is receiver:', isReceiver);
-    
     if (chatId) {
-      console.log('Navigating to existing chat:', chatId);
       // Navigate to existing chat in Messages tab
       try {
         router.push({
@@ -178,7 +172,6 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
         router.push('/(tabs)/messages');
       }
     } else if (item.status === 'accepted') {
-      console.log('Creating new chat from ping...');
       // Try to find or create chat
       setLoading(true);
       try {
@@ -186,7 +179,6 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
         let newChatId;
         try {
           newChatId = await ChatService.createChatFromPing(item.id);
-          console.log('Chat created via database function:', newChatId);
         } catch (dbError) {
           console.error('Database function failed, trying direct creation:', dbError);
           // Fallback: create chat directly
@@ -217,7 +209,6 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
         setLoading(false);
       }
     } else {
-      console.log('Ping is not accepted, cannot create chat');
       RNAlert.alert('Cannot Chat', 'This ping must be accepted before you can start chatting.');
     }
   };
@@ -284,13 +275,7 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
         {item.status === 'accepted' && (
           <TouchableOpacity 
             style={styles.chatButton}
-            onPress={() => {
-              console.log('Chat button pressed!');
-              console.log('User is sender:', isSender);
-              console.log('User is receiver:', isReceiver);
-              RNAlert.alert('Debug', `Chat button pressed! You are ${isSender ? 'sender' : 'receiver'}`);
-              handleChatPress();
-            }}
+            onPress={handleChatPress}
             disabled={loading}
             activeOpacity={0.7}
           >

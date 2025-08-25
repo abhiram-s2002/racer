@@ -1,10 +1,10 @@
-# Legal Compliance Summary - Racer Marketplace
+# Legal Compliance Summary - GeoMart
 
 **Last Updated:** January 24, 2025
 
 ## 📋 Overview
 
-This document provides a comprehensive overview of the legal compliance framework for Racer Marketplace, ensuring compliance with GDPR, CCPA, and other applicable data protection laws.
+This document provides a comprehensive overview of the legal compliance framework for GeoMart, ensuring compliance with GDPR, CCPA, and other applicable data protection laws.
 
 ## 📄 Legal Documents Created
 

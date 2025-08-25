@@ -1,4 +1,4 @@
-# Your Project Name
+# GeoMart
 
 A React Native Expo project with the latest system versions and dependencies.
 

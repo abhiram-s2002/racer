@@ -1,5 +1,5 @@
--- 🚨 CRITICAL SECURITY FIXES FOR RACER MARKETPLACE
--- This script fixes all security vulnerabilities found in the database linter
+-- 🚨 CRITICAL SECURITY FIXES FOR GEOMART
+-- This file contains essential security updates for your database
 
 -- =====================================================
 -- 1. ENABLE ROW LEVEL SECURITY (RLS) ON ALL TABLES

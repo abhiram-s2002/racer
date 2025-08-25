@@ -1,10 +1,10 @@
-# Privacy Policy for Racer Marketplace
+# Privacy Policy for GeoMart
 
 **Last Updated:** January 24, 2025
 
 ## 1. Introduction
 
-Welcome to Racer Marketplace ("we," "our," or "us"). We are committed to protecting your privacy and ensuring you understand how we collect, use, and safeguard your information when you use our mobile application and services.
+Welcome to GeoMart ("we," "our," or "us"). We are committed to protecting your privacy and ensuring you understand how we collect, use, and safeguard your information when you use our mobile application and services.
 
 This Privacy Policy explains:
 - What personal information we collect
@@ -126,7 +126,7 @@ If you are a California resident, you have the following rights:
 
 ### 7.3 How to Exercise Your Rights
 To exercise any of these rights, contact us at:
-- **Email**: privacy@racermarketplace.com
+- **Email**: privacy@geomart.com
 - **Phone**: [Your Support Phone Number]
 - **Address**: [Your Business Address]
 
@@ -197,17 +197,17 @@ Your continued use of the app after changes become effective constitutes accepta
 ### 13.1 General Privacy Inquiries
 For questions about this privacy policy or our data practices:
 
-**Email**: privacy@racermarketplace.com
+**Email**: privacy@geomart.com
 **Phone**: [Your Support Phone Number]
 **Address**: [Your Business Address]
 
 ### 13.2 Data Protection Officer (GDPR)
 For EU users, you can contact our Data Protection Officer at:
-**Email**: dpo@racermarketplace.com
+**Email**: dpo@geomart.com
 
 ### 13.3 California Privacy Rights (CCPA)
 For California residents exercising CCPA rights:
-**Email**: california-privacy@racermarketplace.com
+**Email**: california-privacy@geomart.com
 
 ## 14. Additional Information
 

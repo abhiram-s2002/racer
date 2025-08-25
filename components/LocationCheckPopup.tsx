@@ -23,7 +23,7 @@ export default function LocationCheckPopup({
   onClose, 
   onRetry 
 }: LocationCheckPopupProps) {
-  const [permissionStatus, setPermissionStatus] = useState<Location.PermissionStatus | null>(null);
+  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined' | null>(null);
   const [gpsEnabled, setGpsEnabled] = useState<boolean | null>(null);
   const [checking, setChecking] = useState(false);
 

@@ -4,7 +4,7 @@ import { ImageCache } from '@/utils/imageCache';
 import { apiCache } from '@/utils/apiCache';
 
 interface CacheManagerProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export function CacheManager({ children }: CacheManagerProps) {
@@ -23,12 +23,10 @@ export function CacheManager({ children }: CacheManagerProps) {
 
         // Get cache statistics
         const stats = await cacheMaintenance.getMaintenanceStats();
-        console.log('Cache statistics:', stats);
 
         // Get image cache statistics (with error handling)
         try {
           const imageStats = await ImageCache.getCacheStats();
-          console.log('Image cache statistics:', imageStats);
         } catch (imageError) {
           console.warn('Image cache stats error (non-critical):', imageError);
         }
@@ -36,7 +34,6 @@ export function CacheManager({ children }: CacheManagerProps) {
         // Get API cache statistics (with error handling)
         try {
           const apiStats = await apiCache.getCacheStats();
-          console.log('API cache statistics:', apiStats);
         } catch (apiError) {
           console.warn('API cache stats error (non-critical):', apiError);
         }
@@ -54,7 +51,7 @@ export function CacheManager({ children }: CacheManagerProps) {
     };
   }, []);
 
-  return children;
+  return children || null;
 }
 
 // Usage:

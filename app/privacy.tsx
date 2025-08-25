@@ -350,4 +350,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#94A3B8',
   },
-}); 
+});
+
+export default withErrorBoundary(PrivacyScreen);

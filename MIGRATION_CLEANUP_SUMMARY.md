@@ -4,9 +4,9 @@
 
 ## 🧹 Cleanup Overview
 
-This document summarizes the cleanup of unwanted migration files, test files, and temporary SQL scripts from the Racer Marketplace project.
+This document summarizes the cleanup of unwanted migration files, test files, and temporary SQL scripts from the GeoMart project.
 
-## 📁 Files Removed
+## �� Files Removed
 
 ### **Test Files (TEST_*.sql)**
 - `TEST_PAGINATION.sql` - Pagination testing queries

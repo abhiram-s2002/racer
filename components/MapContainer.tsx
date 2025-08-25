@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
@@ -13,9 +13,7 @@ interface MapContainerProps {
   onLocationUpdate: (latitude: number, longitude: number) => void;
 }
 
-const ASPECT_RATIO = 1;
-const LATITUDE_DELTA = 0.0922;
-const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
+
 
 function MapContainer({
   loading,
@@ -25,8 +23,6 @@ function MapContainer({
   onMarkerPress,
   onLocationUpdate
 }: MapContainerProps) {
-  const mapRef = useRef<MapView>(null);
-
   // Get user location on mount
   useEffect(() => {
     getUserLocation();
@@ -63,7 +59,6 @@ function MapContainer({
 
   return (
     <MapView
-      ref={mapRef}
       style={styles.map}
       provider={PROVIDER_GOOGLE}
       region={region}
@@ -84,8 +79,8 @@ function MapContainer({
 
       {/* Listing markers */}
       {visibleListings.map((listing) => (
+        // eslint-disable-next-line react/jsx-key
         <Marker
-          key={listing.id}
           coordinate={{
             latitude: listing.latitude || 37.78825,
             longitude: listing.longitude || -122.4324,

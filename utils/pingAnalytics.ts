@@ -21,7 +21,7 @@ export interface PingInsights {
 export async function recordPing(username: string): Promise<void> {
   try {
     await recordLocalPing(username);
-    console.log('Ping recorded locally for user:', username);
+    // Ping recorded locally for user
   } catch (error) {
     console.error('Error recording ping locally:', error);
   }

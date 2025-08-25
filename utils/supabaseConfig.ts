@@ -127,16 +127,5 @@ export const ENV_INFO = {
 
 // Log environment info in development
 if (isDevelopment) {
-  console.log('🔧 Environment Configuration:', {
-    environment: currentEnvironment,
-    supabaseUrl: SUPABASE_CONFIG.url,
-    features: {
-      debugLogging: FEATURE_FLAGS.debugLogging,
-      errorReporting: FEATURE_FLAGS.errorReporting,
-      analytics: FEATURE_FLAGS.analytics,
-      performanceMonitoring: FEATURE_FLAGS.performanceMonitoring,
-      rateLimiting: FEATURE_FLAGS.rateLimiting.enabled,
-      imageOptimization: FEATURE_FLAGS.imageOptimization.enabled,
-    },
-  });
+  // Environment configuration loaded silently in development
 } 

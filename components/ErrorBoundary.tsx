@@ -2,10 +2,15 @@ import React, { Component, ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { ErrorHandler } from '@/utils/errorHandler';
 
+// Custom ErrorInfo interface for React Native
+interface ErrorInfo {
+  componentStack: string;
+}
+
 interface Props {
-  children: ReactNode;
+  children?: ReactNode;
   fallback?: ReactNode;
-  onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  onError?: (error: Error, errorInfo: ErrorInfo) => void;
   componentName?: string;
   errorType?: 'critical' | 'recoverable' | 'network' | 'auth' | 'data';
 }
@@ -13,7 +18,7 @@ interface Props {
 interface State {
   hasError: boolean;
   error: Error | null;
-  errorInfo: React.ErrorInfo | null;
+  errorInfo: ErrorInfo | null;
   errorType: 'critical' | 'recoverable' | 'network' | 'auth' | 'data';
 }
 
@@ -52,7 +57,7 @@ export class ErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log the error
     console.error('ErrorBoundary caught an error:', error, errorInfo);
 
@@ -97,14 +102,15 @@ export class ErrorBoundary extends Component<Props, State> {
       
       // Here you would typically send the error to your error reporting service
       // For now, we'll just log it
-      console.log('Error reported by user:', this.state.error);
+      console.error('Error reported by user:', this.state.error);
     }
   };
 
   handleGoHome = () => {
     // Navigate to home screen
-    // This would need to be implemented based on your navigation setup
-    console.log('Navigating to home...');
+    // This would typically use your navigation system
+    // For now, we'll just log the action
+    console.error('Navigating to home...');
   };
 
   renderNetworkError() {
@@ -244,7 +250,7 @@ export class ErrorBoundary extends Component<Props, State> {
       }
     }
 
-    return this.props.children;
+    return this.props.children || null;
   }
 }
 
@@ -290,7 +296,7 @@ export class AsyncErrorBoundary extends Component<Props, State> {
     };
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('AsyncErrorBoundary caught an error:', error, errorInfo);
 
     this.setState({
@@ -347,7 +353,7 @@ export class AsyncErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    return this.props.children || null;
   }
 }
 
@@ -463,9 +469,11 @@ export function withErrorBoundary<P extends object>(
   fallback?: ReactNode
 ) {
   return function WrappedComponent(props: P) {
+    const wrappedComponent = <Component {...props} />;
+    
     return (
       <ErrorBoundary componentName={componentName} fallback={fallback}>
-        <Component {...props} />
+        {wrappedComponent}
       </ErrorBoundary>
     );
   };

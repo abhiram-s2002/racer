@@ -255,7 +255,18 @@ export class MarketplaceImageAnalytics {
         .delete()
         .lt('timestamp', cutoffDate.toISOString());
 
-      console.log(`Cleared analytics data older than ${daysToKeep} days`);
+      // Clear old analytics data
+      const { error: clearError } = await supabase
+        .from('image_analytics')
+        .delete()
+        .lt('created_at', cutoffDate.toISOString());
+
+      if (clearError) {
+        console.error('Error clearing old analytics data:', clearError);
+      } else {
+        // Cleared analytics data older than specified days
+      }
+
     } catch (error) {
       console.error('Failed to clear old analytics data:', error);
     }

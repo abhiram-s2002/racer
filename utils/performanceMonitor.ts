@@ -286,7 +286,7 @@ export class PerformanceMonitor {
     
     // For now, just log metrics and clear memory
     // Enable database storage when you need performance analytics
-    console.log(`📊 Performance metrics collected: ${this.metrics.length} operations`);
+    // Performance metrics collected silently
     
     // Log slow operations for debugging
     const slowOperations = this.metrics.filter(m => m.duration > 1000);
@@ -336,7 +336,7 @@ export class PerformanceMonitor {
         console.error('Flush metrics error:', error.message || error);
         this.metrics.unshift(...metricsToFlush);
       } else {
-        console.log(`Successfully flushed ${metricsToFlush.length} metrics to database`);
+        // Successfully flushed metrics to database
       }
     } catch (error) {
       console.error('Flush metrics error:', error instanceof Error ? error.message : error);
@@ -353,7 +353,7 @@ export class PerformanceMonitor {
   private startPeriodicFlush(): void {
     // Temporarily disabled to prevent database errors
     // Enable when you need performance analytics
-    console.log('📊 Performance monitoring active (console logging only)');
+    // Performance monitoring active (console logging only)
     
     // TODO: Uncomment when you need database storage
     /*

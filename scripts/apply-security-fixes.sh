@@ -3,7 +3,7 @@
 # 🚨 CRITICAL SECURITY FIXES APPLICATION SCRIPT
 # This script applies all security fixes to your Supabase database
 
-echo "🔒 Applying Critical Security Fixes to Racer Marketplace Database..."
+echo "🔒 Applying Critical Security Fixes to GeoMart Database..."
 echo ""
 
 # Check if supabase CLI is installed

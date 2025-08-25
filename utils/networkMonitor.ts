@@ -18,7 +18,7 @@ const NetInfo = {
   }),
   addEventListener: (callback: (state: NetInfoState) => void) => {
     // Mock implementation
-    console.log('NetInfo listener added (mock)');
+    // NetInfo listener added (mock)
   },
 };
 
@@ -64,11 +64,7 @@ class NetworkMonitor {
       this.startMonitoring();
     } catch (error) {
       // Network monitoring initialization failed - this is expected in some environments
-      console.log('NetworkMonitor: Initialization failed (expected in some environments)', {
-        operation: 'network_monitor_init',
-        component: 'NetworkMonitor',
-        timestamp: new Date().toISOString()
-      });
+      // NetworkMonitor: Initialization failed (expected in some environments)
       
       // Set default offline status
       this.currentStatus = {
@@ -115,11 +111,7 @@ class NetworkMonitor {
     this.currentStatus = newStatus;
     
     // Log network change
-    console.log('Network status changed:', {
-      from: previousStatus?.isConnected,
-      to: newStatus.isConnected,
-      type: newStatus.type
-    });
+    // Network status changed silently
     
     // Notify callbacks
     this.callbacks.forEach(callback => {
@@ -149,14 +141,14 @@ class NetworkMonitor {
   }
 
   private async handleOffline() {
-    console.log('NetworkMonitor: Device went offline (expected behavior)');
+    // NetworkMonitor: Device went offline (expected behavior)
     
     // This is expected behavior, not an error
     // Just log as info and continue
   }
 
   private async handleOnline() {
-    console.log('Device came online');
+    // Device came online
     
     // No connection quality testing needed
   }
@@ -215,12 +207,7 @@ class NetworkMonitor {
       return response.ok;
     } catch (error) {
       // Connection test failed - this is expected behavior, not an error
-      console.log('NetworkMonitor: Connection test failed (expected when offline)', {
-        operation: 'connection_test',
-        component: 'NetworkMonitor',
-        url,
-        timestamp: new Date().toISOString()
-      });
+      // NetworkMonitor: Connection test failed (expected when offline)
       return false;
     }
   }
@@ -233,9 +220,9 @@ class NetworkMonitor {
   // Enable/disable verbose logging (useful for development)
   public setVerboseLogging(enabled: boolean) {
     if (enabled) {
-      console.log('NetworkMonitor: Verbose logging enabled');
+      // NetworkMonitor: Verbose logging enabled
     } else {
-      console.log('NetworkMonitor: Verbose logging disabled');
+      // NetworkMonitor: Verbose logging disabled
     }
   }
 }

@@ -11,15 +11,13 @@ import { ImageCache } from './imageCache';
  */
 export async function initializeCaches(): Promise<void> {
   try {
-    console.log('Initializing cache systems...');
-    
     // Initialize image cache
     await initializeImageCache();
     
     // Initialize other caches as needed
     await initializeOtherCaches();
     
-    console.log('Cache initialization completed successfully');
+    // Cache initialization completed successfully
   } catch (error) {
     console.error('Cache initialization error:', error);
   }
@@ -32,7 +30,7 @@ async function initializeImageCache(): Promise<void> {
   try {
     // Test image cache functionality
     const stats = await ImageCache.getCacheStats();
-    console.log('Image cache stats:', stats);
+    // Image cache stats retrieved successfully
   } catch (error) {
     console.error('Image cache initialization error:', error);
     // Continue initialization even if image cache fails
@@ -53,7 +51,7 @@ async function initializeOtherCaches(): Promise<void> {
     );
     
     if (cacheKeys.length > 0) {
-      console.log(`Found ${cacheKeys.length} cache keys`);
+      // Cache keys found and processed
     }
   } catch (error) {
     console.error('Other cache initialization error:', error);
@@ -111,7 +109,7 @@ export async function getCacheStatistics(): Promise<{
  */
 export async function clearAllCaches(): Promise<void> {
   try {
-    console.log('Clearing all caches...');
+    // Clearing all caches...
     
     // Clear image cache
     await ImageCache.clearCache();
@@ -126,10 +124,10 @@ export async function clearAllCaches(): Promise<void> {
     
     if (cacheKeys.length > 0) {
       await AsyncStorage.multiRemove(cacheKeys);
-      console.log(`Cleared ${cacheKeys.length} cache entries`);
+      // Cache entries cleared successfully
     }
     
-    console.log('All caches cleared successfully');
+    // All caches cleared successfully
   } catch (error) {
     console.error('Error clearing caches:', error);
   }

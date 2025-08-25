@@ -32,7 +32,7 @@ export class ConnectionPoolMonitor {
       this.logPoolStats(stats);
     }, intervalMs);
 
-    console.log(`Connection pool monitoring started (interval: ${intervalMs}ms)`);
+    // Connection pool monitoring started
   }
 
   // Stop monitoring
@@ -42,7 +42,7 @@ export class ConnectionPoolMonitor {
       this.monitoringInterval = null;
     }
     this.isMonitoring = false;
-    console.log('Connection pool monitoring stopped');
+    // Connection pool monitoring stopped
   }
 
   // Log pool statistics
@@ -54,7 +54,7 @@ export class ConnectionPoolMonitor {
     } else if (utilizationRate > 60) {
       console.info(`ℹ️ Moderate connection pool utilization: ${utilizationRate.toFixed(1)}% (${activeConnections}/${maxConnections})`);
     } else {
-      console.debug(`✅ Healthy connection pool utilization: ${utilizationRate.toFixed(1)}% (${activeConnections}/${maxConnections})`);
+      // Healthy connection pool utilization
     }
   }
 

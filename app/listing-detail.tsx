@@ -49,7 +49,7 @@ interface SellerInfo {
   bio: string;
 }
 
-export default function ListingDetailScreen() {
+function ListingDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams();

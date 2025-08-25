@@ -8,6 +8,13 @@ const PAGE_SIZE = 10; // Reduced from 20 for faster loading and better UX
 
 import { Listing } from '@/utils/types';
 
+// Utility function to deduplicate listings by ID
+const deduplicateListings = (listings: Listing[]): Listing[] => {
+  return listings.filter((listing, index, arr) => 
+    arr.findIndex(l => l.id === listing.id) === index
+  );
+};
+
 export function useListings() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,17 +43,13 @@ export function useListings() {
 
   // Fetch listings from Supabase with geospatial queries
   const fetchListings = useCallback(async (pageNumber = 1, userLat?: number, userLon?: number) => {
-    console.log('📡 fetchListings called:', { pageNumber, userLat, userLon });
     const cacheKey = getCacheKey(pageNumber, userLat, userLon);
     
     // Check cache first (cache for 30 seconds)
     const cached = cacheRef.current.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < 30000) {
-      console.log('💾 Returning cached data for page', pageNumber);
       return cached.data;
     }
-    
-    console.log('🔄 Cache miss or expired, fetching from API for page', pageNumber);
 
     try {
       
@@ -123,56 +126,44 @@ export function useListings() {
 
   // Initial load of listings - only when location is stable
   useEffect(() => {
-    console.log('🔍 useListings useEffect triggered:', {
-      locationLoading: location.loading,
-      hasInitialData: hasInitialDataRef.current,
-      isReturningFromNavigation: isReturningFromNavigationRef.current,
-      listingsCount: listings.length,
-      cacheSize: cacheRef.current.size
-    });
     
     // Skip if location is still loading
     if (location.loading) {
-      console.log('⏳ Skipping - location still loading');
       return;
     }
     
     // SIMPLE CHECK: If we already have listings, don't fetch again
     if (listings.length > 0) {
-      console.log('🚫 Skipping - already have listings:', listings.length);
       return;
     }
     
     const cacheKey = getCacheKey(1, location.latitude || undefined, location.longitude || undefined);
-    console.log('🔑 Cache key:', cacheKey);
     
     // Check if we already have data for this location/page combination
     const hasCachedData = cacheRef.current.has(cacheKey);
-    console.log('💾 Has cached data:', hasCachedData);
     
     // Prevent duplicate fetches
     if (lastFetchRef.current === cacheKey) {
-      console.log('🚫 Skipping - duplicate fetch detected');
       return;
     }
     
-    console.log('✅ Proceeding with fetch - all checks passed');
     lastFetchRef.current = cacheKey;
 
     async function loadInitialListings() {
-      console.log('📡 Fetching initial listings...');
       const initialListings = await fetchListings(
         1, 
         location.latitude || undefined, 
         location.longitude || undefined
       );
-      console.log('📥 Received listings:', initialListings.length);
-      setListings(initialListings);
-      setHasMore(initialListings.length === PAGE_SIZE);
+      
+      // Ensure no duplicate IDs in initial listings (shouldn't happen, but safety check)
+      const uniqueInitialListings = deduplicateListings(initialListings);
+      
+      setListings(uniqueInitialListings);
+      setHasMore(uniqueInitialListings.length === PAGE_SIZE);
       setLoading(false);
       hasInitialDataRef.current = true;
       isReturningFromNavigationRef.current = false;
-      console.log('✅ Initial listings loaded and state updated');
     }
 
     loadInitialListings();
@@ -190,7 +181,18 @@ export function useListings() {
     );
     
     if (moreListings.length > 0) {
-      setListings(prev => [...prev, ...moreListings]);
+      // Deduplicate listings by ID to prevent React key warnings
+      setListings(prev => {
+        const existingIds = new Set(prev.map(listing => listing.id));
+        const uniqueNewListings = moreListings.filter((listing: Listing) => !existingIds.has(listing.id));
+        
+        if (uniqueNewListings.length === 0) {
+          setHasMore(false);
+          return prev;
+        }
+        
+        return [...prev, ...uniqueNewListings];
+      });
       setPage(nextPage);
       setHasMore(moreListings.length === PAGE_SIZE);
     } else {
@@ -201,7 +203,6 @@ export function useListings() {
   // Refresh listings (pull to refresh) - clear cache
   const refreshListings = useCallback(async () => {
     try {
-      console.log('🔄 Clearing cache for refresh');
       // Clear ALL cache to ensure fresh data
       cacheRef.current.clear();
       
@@ -214,8 +215,11 @@ export function useListings() {
         location.longitude || undefined
       );
       
-      setListings(freshListings);
-      setHasMore(freshListings.length === PAGE_SIZE);
+      // Ensure no duplicate IDs in refreshed listings
+      const uniqueFreshListings = deduplicateListings(freshListings);
+      
+      setListings(uniqueFreshListings);
+      setHasMore(uniqueFreshListings.length === PAGE_SIZE);
       return freshListings;
     } catch (error) {
       console.error('Error during refresh:', error);
@@ -231,7 +235,6 @@ export function useListings() {
     setSortByDistance(prev => !prev);
     // Only clear cache if we actually have listings to avoid unnecessary fetches
     if (listings.length > 0) {
-      console.log('🔄 Clearing cache for distance sort toggle');
       cacheRef.current.clear();
     }
   }, [listings.length]);
@@ -242,16 +245,13 @@ export function useListings() {
     setPage(1); // Reset to first page when filter changes
     // Only clear cache if we actually have listings to avoid unnecessary fetches
     if (listings.length > 0) {
-      console.log('🔄 Clearing cache for distance filter change');
       cacheRef.current.clear();
     }
   }, [listings.length]);
 
   // Mark that we're returning from navigation to prevent unnecessary refreshes
   const markReturningFromNavigation = useCallback(() => {
-    console.log('🏠 markReturningFromNavigation called');
-    console.log('💾 Current cache size:', cacheRef.current.size);
-    console.log('📊 Current listings count:', listings.length);
+    // Navigation return logic handled silently
   }, [listings.length]);
 
   return {

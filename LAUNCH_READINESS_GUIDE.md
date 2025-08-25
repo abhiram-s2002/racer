@@ -1,4 +1,4 @@
-# 🚀 Racer Marketplace - Launch Readiness Guide
+# 🚀 GeoMart - Launch Readiness Guide
 
 ## 📋 Pre-Launch Checklist
 
@@ -96,9 +96,9 @@ Add to your `eas.json` production environment:
    - Sign up for Apple Developer Program ($99/year)
 
 2. **Create App Record**
-   - App Name: "Racer Marketplace"
-   - Bundle ID: `com.racermarketplace.app`
-   - SKU: `racer-marketplace-ios`
+   - App Name: "GeoMart"
+   - Bundle ID: `com.geomart.app`
+   - SKU: `geomart-ios`
 
 ### 2.2 Google Play Console Setup
 1. **Create Google Play Console Account**
@@ -106,8 +106,8 @@ Add to your `eas.json` production environment:
    - Pay one-time $25 registration fee
 
 2. **Create App**
-   - App Name: "Racer Marketplace"
-   - Package Name: `com.racermarketplace.app`
+   - App Name: "GeoMart"
+   - Package Name: `com.geomart.app`
 
 ### 2.3 App Store Assets
 **Required for both stores:**
