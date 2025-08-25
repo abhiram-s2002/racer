@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import type { ReferralCommission } from './types';
+import type { ReferralCommission } from '@/utils/types';
 
 // ============================================================================
 // TYPES (OPTIMIZED)

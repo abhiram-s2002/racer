@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { StarRatingProps } from '../utils/types';
+import { StarRatingProps } from '@/utils/types';
 
 /**
  * Interactive 5-star rating component
@@ -73,3 +73,4 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
 });
+

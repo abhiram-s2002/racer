@@ -8,6 +8,7 @@ import {
   StyleSheet,
   ScrollView,
 } from 'react-native';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 interface FeedbackModalProps {
   visible: boolean;
@@ -117,7 +118,7 @@ const RATING_QUESTIONS = {
   }
 };
 
-export default function FeedbackModal({ visible, onClose, onSubmit }: FeedbackModalProps) {
+function FeedbackModalComponent({ visible, onClose, onSubmit }: FeedbackModalProps) {
   const [rating, setRating] = useState<number | null>(null);
   const [feedbackText, setFeedbackText] = useState('');
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -324,6 +325,8 @@ export default function FeedbackModal({ visible, onClose, onSubmit }: FeedbackMo
     </Modal>
   );
 }
+
+export default withErrorBoundary(FeedbackModalComponent, 'FeedbackModal');
 
 const styles = StyleSheet.create({
   modalOverlay: {

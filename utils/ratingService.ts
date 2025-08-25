@@ -1,39 +1,11 @@
 import { supabase } from './supabaseClient';
 import { errorHandler } from './errorHandler';
-
-// Define rating types locally since they're not exported from types
-interface UserRating {
-  id: string;
-  rater_username: string;
-  rated_username: string;
-  ping_id: string;
-  rating: number;
-  review_text?: string;
-  category: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface UserRatingStats {
-  average_rating: number;
-  total_ratings: number;
-  rating_distribution: Record<string, number>;
-}
-
-interface RatingEligibility {
-  can_rate: boolean;
-  pending_pings: Array<{
-    ping_id: string;
-    listing_title: string;
-    created_at: string;
-  }>;
-}
-
-interface RatingFormData {
-  rating: number;
-  review_text?: string;
-  category: 'overall' | 'communication' | 'responsiveness' | 'helpfulness';
-}
+import { 
+  UserRating, 
+  UserRatingStats, 
+  RatingEligibility, 
+  RatingFormData 
+} from './types';
 
 /**
  * Rating service for managing user ratings in the marketplace

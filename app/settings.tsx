@@ -39,8 +39,9 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
 import { signOut } from '@/utils/auth';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
-export default function SettingsScreen() {
+function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { settings, loading, saving, updateSetting, resetSettings, refreshSettings } = useAppSettings();
@@ -620,3 +621,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 }); 
+
+export default withErrorBoundary(SettingsScreen, 'SettingsScreen'); 

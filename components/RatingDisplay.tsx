@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import StarRating from './StarRating';
-import { RatingDisplayProps, UserRatingStats } from '../utils/types';
-import RatingService from '../utils/ratingService';
+import { RatingDisplayProps, UserRatingStats } from '@/utils/types';
+import RatingService from '@/utils/ratingService';
 
 /**
  * Displays user rating summary with stars, average, and count
@@ -179,3 +179,4 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 });
+

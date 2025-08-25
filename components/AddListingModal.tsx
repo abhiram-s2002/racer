@@ -51,6 +51,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { advancedRateLimiter } from '@/utils/advancedRateLimiter';
 
 import { Listing, Category, PriceUnit, ListingFormData } from '@/utils/types';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 // Helper function to get pricing units based on category
 const getPricingUnits = (category: string): PriceUnit[] => {
@@ -73,7 +74,7 @@ interface AddListingModalProps {
   sellerUsername: string;
 }
 
-export default function AddListingModal({ visible, onClose, preSelectedCategory, editListing, sellerUsername }: AddListingModalProps) {
+function AddListingModal({ visible, onClose, preSelectedCategory, editListing, sellerUsername }: AddListingModalProps) {
   const [formData, setFormData] = useState<{
     title: string;
     category: string;
@@ -761,6 +762,8 @@ export default function AddListingModal({ visible, onClose, preSelectedCategory,
     </Modal>
   );
 }
+
+export default withErrorBoundary(AddListingModal, 'AddListingModal');
 
 const styles = StyleSheet.create({
   container: {

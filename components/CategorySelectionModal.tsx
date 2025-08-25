@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { X, ShoppingCart, Apple, UtensilsCrossed, Wrench, Palette, Home, Car, MoreHorizontal } from 'lucide-react-native';
 import { mockCategories } from '@/utils/mockData';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 48) / 2; // Account for padding and gap
@@ -21,7 +22,7 @@ interface CategorySelectionModalProps {
   onSelectCategory: (category: string) => void;
 }
 
-export default function CategorySelectionModal({ 
+function CategorySelectionModal({ 
   visible, 
   onClose, 
   onSelectCategory 
@@ -157,3 +158,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 }); 
+
+export default withErrorBoundary(CategorySelectionModal, 'CategorySelectionModal'); 

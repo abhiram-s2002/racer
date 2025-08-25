@@ -10,9 +10,10 @@ import {
   Alert,
 } from 'react-native';
 import StarRating from './StarRating';
-import { RatingModalProps, RatingFormData, RatingCategory } from '../utils/types';
-import RatingService from '../utils/ratingService';
+import { RatingModalProps, RatingFormData, RatingCategory } from '@/utils/types';
+import RatingService from '@/utils/ratingService';
 import { useAuth } from '../hooks/useAuth';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 const RATING_CATEGORIES: { value: RatingCategory; label: string; description: string }[] = [
   {
@@ -37,7 +38,7 @@ const RATING_CATEGORIES: { value: RatingCategory; label: string; description: st
   }
 ];
 
-export default function RatingModal({ 
+function RatingModalComponent({ 
   visible, 
   ratedUsername, 
   pingId, 
@@ -236,6 +237,8 @@ export default function RatingModal({
   );
 }
 
+export default withErrorBoundary(RatingModalComponent, 'RatingModal');
+
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
@@ -376,3 +379,4 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
 });
+

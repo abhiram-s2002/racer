@@ -42,8 +42,9 @@ import {
   DollarSign,
 } from 'lucide-react-native';
 import { useBackHandler } from '@/hooks/useBackHandler';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
-export default function RewardsScreen() {
+function RewardsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
@@ -1420,3 +1421,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 });
+
+export default withErrorBoundary(RewardsScreen, 'RewardsScreen');

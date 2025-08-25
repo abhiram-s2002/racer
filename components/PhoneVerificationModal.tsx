@@ -18,6 +18,7 @@ import { BlurView } from 'expo-blur';
 import { Phone, X } from 'lucide-react-native';
 import { sendOTP, verifyOTP, updateUserPhone } from '@/utils/phoneVerification';
 import { validatePhoneNumber } from '@/utils/validation';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 const { width } = Dimensions.get('window');
 
@@ -31,7 +32,7 @@ interface PhoneVerificationModalProps {
   phoneAlreadyVerified?: boolean; // New prop to indicate if phone is already verified
 }
 
-export default function PhoneVerificationModal({
+function PhoneVerificationModal({
   visible,
   onClose,
   onSuccess,
@@ -594,3 +595,5 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
 }); 
+
+export default withErrorBoundary(PhoneVerificationModal, 'PhoneVerificationModal'); 

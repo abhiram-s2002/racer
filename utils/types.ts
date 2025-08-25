@@ -547,6 +547,92 @@ export interface MessageFormData {
   text: string;
 }
 
+// ============================================================================
+// RATING TYPES
+// ============================================================================
+
+/**
+ * User rating data
+ */
+export interface UserRating {
+  id: string;
+  rater_username: string;
+  rated_username: string;
+  ping_id: string;
+  rating: number;
+  review_text?: string;
+  category: RatingCategory;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * User rating statistics
+ */
+export interface UserRatingStats {
+  average_rating: number;
+  total_ratings: number;
+  rating_distribution: Record<string, number>;
+}
+
+/**
+ * Rating eligibility information
+ */
+export interface RatingEligibility {
+  can_rate: boolean;
+  pending_pings: Array<{
+    ping_id: string;
+    listing_title: string;
+    created_at: string;
+  }>;
+}
+
+/**
+ * Rating form data for submission
+ */
+export interface RatingFormData {
+  rating: number;
+  review_text?: string;
+  category: RatingCategory;
+}
+
+/**
+ * Rating categories
+ */
+export type RatingCategory = 'overall' | 'communication' | 'responsiveness' | 'helpfulness';
+
+/**
+ * Props for RatingDisplay component
+ */
+export interface RatingDisplayProps {
+  username: string;
+  showDetails?: boolean;
+  size?: 'small' | 'medium' | 'large';
+  showCount?: boolean;
+  showAverage?: boolean;
+}
+
+/**
+ * Props for RatingModal component
+ */
+export interface RatingModalProps {
+  visible: boolean;
+  ratedUsername: string;
+  pingId: string;
+  onSubmit: (ratingData: RatingFormData) => void;
+  onClose: () => void;
+}
+
+/**
+ * Props for StarRating component
+ */
+export interface StarRatingProps {
+  rating: number;
+  size?: 'small' | 'medium' | 'large';
+  readonly?: boolean;
+  onRatingChange?: (rating: number) => void;
+}
+
 /**
  * Search filters
  */

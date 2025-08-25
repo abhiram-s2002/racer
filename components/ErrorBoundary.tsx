@@ -7,12 +7,14 @@ interface Props {
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
   componentName?: string;
+  errorType?: 'critical' | 'recoverable' | 'network' | 'auth' | 'data';
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: React.ErrorInfo | null;
+  errorType: 'critical' | 'recoverable' | 'network' | 'auth' | 'data';
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -24,14 +26,29 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
+      errorType: 'recoverable',
     };
   }
 
-  static getDerivedStateFromError(error: Error): State {
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    // Categorize errors based on error message or type
+    let errorType: 'critical' | 'recoverable' | 'network' | 'auth' | 'data' = 'recoverable';
+    
+    if (error.message.includes('Network') || error.message.includes('fetch') || error.message.includes('connection')) {
+      errorType = 'network';
+    } else if (error.message.includes('auth') || error.message.includes('unauthorized') || error.message.includes('token')) {
+      errorType = 'auth';
+    } else if (error.message.includes('data') || error.message.includes('parse') || error.message.includes('JSON')) {
+      errorType = 'data';
+    } else if (error.message.includes('critical') || error.message.includes('fatal')) {
+      errorType = 'critical';
+    }
+
     return {
       hasError: true,
       error,
       errorInfo: null,
+      errorType,
     };
   }
 
@@ -52,6 +69,7 @@ export class ErrorBoundary extends Component<Props, State> {
       additionalData: {
         errorInfo,
         stack: error.stack,
+        errorType: this.state.errorType,
       },
     });
 
@@ -83,6 +101,127 @@ export class ErrorBoundary extends Component<Props, State> {
     }
   };
 
+  handleGoHome = () => {
+    // Navigate to home screen
+    // This would need to be implemented based on your navigation setup
+    console.log('Navigating to home...');
+  };
+
+  renderNetworkError() {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Connection Issue</Text>
+          <Text style={styles.message}>
+            It looks like you&apos;re having trouble connecting to our servers. Please check your internet connection and try again.
+          </Text>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.secondaryButton} onPress={this.handleGoHome}>
+              <Text style={styles.secondaryButtonText}>Go Home</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  renderAuthError() {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Authentication Error</Text>
+          <Text style={styles.message}>
+            There was an issue with your login session. Please try logging in again.
+          </Text>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.secondaryButton} onPress={this.handleGoHome}>
+              <Text style={styles.secondaryButtonText}>Go to Login</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  renderDataError() {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Data Loading Error</Text>
+          <Text style={styles.message}>
+            We couldn&apos;t load the requested information. This might be a temporary issue.
+          </Text>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+              <Text style={styles.retryButtonText}>Reload</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.secondaryButton} onPress={this.handleGoHome}>
+              <Text style={styles.secondaryButtonText}>Go Home</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  renderCriticalError() {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Critical Error</Text>
+          <Text style={styles.message}>
+            Something went seriously wrong. Please restart the app or contact support if the problem persists.
+          </Text>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.reportButton} onPress={this.handleReportError}>
+              <Text style={styles.reportButtonText}>Report Issue</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  renderDefaultError() {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Oops! Something went wrong</Text>
+          <Text style={styles.message}>
+            We&apos;re sorry, but something unexpected happened. Please try again.
+          </Text>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.reportButton} onPress={this.handleReportError}>
+              <Text style={styles.reportButtonText}>Report Issue</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   render() {
     if (this.state.hasError) {
       // Custom fallback UI
@@ -90,34 +229,119 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      // Default fallback UI
+      // Render specific error UI based on error type
+      switch (this.state.errorType) {
+        case 'network':
+          return this.renderNetworkError();
+        case 'auth':
+          return this.renderAuthError();
+        case 'data':
+          return this.renderDataError();
+        case 'critical':
+          return this.renderCriticalError();
+        default:
+          return this.renderDefaultError();
+      }
+    }
+
+    return this.props.children;
+  }
+}
+
+// Specialized error boundary for async operations
+export class AsyncErrorBoundary extends Component<Props, State> {
+  private errorHandler = ErrorHandler.getInstance();
+
+  constructor(props: Props) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+      errorInfo: null,
+      errorType: 'recoverable',
+    };
+  }
+
+  static getDerivedStateFromError(error: Error): Partial<State> {
+    // Enhanced error categorization for async operations
+    let errorType: 'critical' | 'recoverable' | 'network' | 'auth' | 'data' = 'recoverable';
+    
+    const errorMessage = error.message.toLowerCase();
+    
+    if (errorMessage.includes('network') || errorMessage.includes('fetch') || 
+        errorMessage.includes('connection') || errorMessage.includes('timeout')) {
+      errorType = 'network';
+    } else if (errorMessage.includes('auth') || errorMessage.includes('unauthorized') || 
+               errorMessage.includes('token') || errorMessage.includes('permission')) {
+      errorType = 'auth';
+    } else if (errorMessage.includes('data') || errorMessage.includes('parse') || 
+               errorMessage.includes('json') || errorMessage.includes('validation')) {
+      errorType = 'data';
+    } else if (errorMessage.includes('critical') || errorMessage.includes('fatal') ||
+               errorMessage.includes('crash') || errorMessage.includes('memory')) {
+      errorType = 'critical';
+    }
+
+    return {
+      hasError: true,
+      error,
+      errorInfo: null,
+      errorType,
+    };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('AsyncErrorBoundary caught an error:', error, errorInfo);
+
+    this.setState({
+      error,
+      errorInfo,
+    });
+
+    this.errorHandler.handleError(error, {
+      operation: 'async_operation',
+      component: this.props.componentName || 'Unknown',
+      additionalData: {
+        errorInfo,
+        stack: error.stack,
+        errorType: this.state.errorType,
+        isAsync: true,
+      },
+    });
+
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
+  }
+
+  handleRetry = () => {
+    this.setState({
+      hasError: false,
+      error: null,
+      errorInfo: null,
+    });
+  };
+
+  render() {
+    if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
+      // Async-specific error UI
       return (
         <View style={styles.container}>
           <View style={styles.content}>
-            <Text style={styles.title}>Oops! Something went wrong</Text>
+            <Text style={styles.title}>Operation Failed</Text>
             <Text style={styles.message}>
-              We&apos;re sorry, but something unexpected happened. Please try again.
+              The operation couldn&apos;t be completed. This might be due to a network issue or temporary server problem.
             </Text>
             
             <View style={styles.buttonContainer}>
               <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
                 <Text style={styles.retryButtonText}>Try Again</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.reportButton} onPress={this.handleReportError}>
-                <Text style={styles.reportButtonText}>Report Issue</Text>
-              </TouchableOpacity>
             </View>
-
-            {__DEV__ && this.state.error && (
-              <View style={styles.debugContainer}>
-                <Text style={styles.debugTitle}>Debug Information:</Text>
-                <Text style={styles.debugText}>{this.state.error.message}</Text>
-                {this.state.errorInfo && (
-                  <Text style={styles.debugText}>{this.state.errorInfo.componentStack}</Text>
-                )}
-              </View>
-            )}
           </View>
         </View>
       );
@@ -193,6 +417,21 @@ const styles = StyleSheet.create({
   },
   reportButtonText: {
     color: '#64748B',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+  },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: '#E2E8F0',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  secondaryButtonText: {
+    color: '#475569',
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
   },

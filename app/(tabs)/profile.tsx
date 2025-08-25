@@ -25,6 +25,7 @@ import MapView, { Marker } from 'react-native-maps';
 import { Button } from 'react-native';
 import { validatePhoneNumber, formatPhoneNumberForDisplay } from '@/utils/validation';
 import RatingDisplay from '@/components/RatingDisplay';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 
 
@@ -36,7 +37,7 @@ function getRandomSeed() {
 
 declare const console: Console;
 
-export default function ProfileScreen() {
+function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [profileData, setProfileData] = useState({
@@ -1153,3 +1154,5 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
   },
 });
+
+export default withErrorBoundary(ProfileScreen, 'ProfileScreen');

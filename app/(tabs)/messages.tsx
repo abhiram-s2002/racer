@@ -24,6 +24,7 @@ import { ExtendedChat, Message } from '@/utils/chatService';
 import { useLocalSearchParams } from 'expo-router';
 import { validateMessage, logSecurityEvent } from '@/utils/validation';
 import { advancedRateLimiter } from '@/utils/advancedRateLimiter';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 // Skeleton loader for chat list
 function ChatListSkeleton() {
@@ -127,7 +128,7 @@ function MessageStatusIndicator({ status, isOwnMessage }: { status: string; isOw
   }
 }
 
-export default function MessagesScreen() {
+function MessagesScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<ExtendedChat | null>(null); // Changed type to any for now
   const [messageText, setMessageText] = useState('');
@@ -978,3 +979,5 @@ const styles = StyleSheet.create({
     color: '#22C55E',
   },
 });
+
+export default withErrorBoundary(MessagesScreen, 'MessagesScreen');

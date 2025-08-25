@@ -30,6 +30,7 @@ import { formatPriceWithUnit } from '@/utils/formatters';
 import { Category } from '@/utils/types';
 
 import NewRobustImage from '@/components/NewRobustImage';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 
 declare const console: Console;
@@ -51,7 +52,7 @@ const openInGoogleMaps = (latitude: number, longitude: number) => {
   });
 };
 
-export default function ActivityScreen() {
+function ActivityScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'listings' | 'received' | 'sent'>('listings');
@@ -848,10 +849,9 @@ export default function ActivityScreen() {
       <RatingModal
         visible={showRatingModal}
         ratedUsername={userToRate}
+        onClose={() => setShowRatingModal(false)}
         pingId={pingIdToRate}
         onSubmit={handleRatingSubmit}
-        onClose={() => setShowRatingModal(false)}
-        title={`Rate ${userToRate} (${getRatingRole(pingIdToRate)})`}
       />
     </View>
   );
@@ -1305,3 +1305,5 @@ const styles = StyleSheet.create({
     borderTopColor: '#E2E8F0',
   },
 });
+
+export default withErrorBoundary(ActivityScreen, 'ActivityScreen');

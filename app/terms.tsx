@@ -10,8 +10,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Mail, Phone, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
-export default function TermsScreen() {
+function TermsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -303,3 +304,5 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
 }); 
+
+export default withErrorBoundary(TermsScreen, 'TermsScreen'); 

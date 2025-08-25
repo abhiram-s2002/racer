@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 interface MapContainerProps {
   loading: boolean;
@@ -16,7 +17,7 @@ const ASPECT_RATIO = 1;
 const LATITUDE_DELTA = 0.0922;
 const LONGITUDE_DELTA = LATITUDE_DELTA * ASPECT_RATIO;
 
-export default function MapContainer({
+function MapContainer({
   loading,
   visibleListings,
   userLocation,
@@ -116,3 +117,5 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
 });
+
+export default withErrorBoundary(MapContainer, 'MapContainer');

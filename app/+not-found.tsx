@@ -1,33 +1,54 @@
-import { Link, Stack } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
-export default function NotFoundScreen() {
+function NotFoundScreen() {
+  const router = useRouter();
+
   return (
-    <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <View style={styles.container}>
-        <Text style={styles.text}>This screen doesn&apos;t exist.</Text>
-        <Link href="/">
-          <Text style={styles.link}>Go to home screen!</Text>
-        </Link>
-      </View>
-    </>
+    <View style={styles.container}>
+      <Text style={styles.title}>Page Not Found</Text>
+      <Text style={styles.message}>
+        The page you&apos;re looking for doesn&apos;t exist.
+      </Text>
+      <TouchableOpacity style={styles.button} onPress={() => router.back()}>
+        <Text style={styles.buttonText}>Go Back</Text>
+      </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
+    backgroundColor: '#F8FAFC',
   },
-  text: {
-    fontSize: 20,
-    fontWeight: 600,
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#1E293B',
   },
-  link: {
-    marginTop: 15,
-    paddingVertical: 15,
+  message: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 32,
+    color: '#64748B',
+  },
+  button: {
+    backgroundColor: '#22C55E',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
+
+export default withErrorBoundary(NotFoundScreen, 'NotFoundScreen');

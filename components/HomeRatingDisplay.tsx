@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import StarRating from './StarRating';
-import { UserRatingStats } from '../utils/types';
-import RatingService from '../utils/ratingService';
+import { UserRatingStats } from '@/utils/types';
+import RatingService from '@/utils/ratingService';
 
 interface HomeRatingDisplayProps {
   username: string;
@@ -131,3 +131,4 @@ const styles = StyleSheet.create({
     color: '#94A3B8',
   },
 });
+

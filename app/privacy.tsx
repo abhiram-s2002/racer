@@ -10,8 +10,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Mail, Phone, Shield, Eye, Lock, Users } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { withErrorBoundary } from '@/components/ErrorBoundary';
 
-export default function PrivacyScreen() {
+function PrivacyScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
