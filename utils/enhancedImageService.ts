@@ -162,7 +162,7 @@ export class EnhancedImageService {
          .upload(thumbnailFilename, thumbnail.uri);
       
       if (error) {
-        console.error('Thumbnail upload error:', error);
+        // Thumbnail upload error
         return '';
       }
       
@@ -172,7 +172,7 @@ export class EnhancedImageService {
       
       return data.publicUrl;
     } catch (error) {
-      console.error('Thumbnail creation error:', error);
+      // Thumbnail creation error
       return '';
     }
   }

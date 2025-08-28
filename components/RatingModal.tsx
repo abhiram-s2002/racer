@@ -98,7 +98,7 @@ function RatingModalComponent({
         Alert.alert('Error', result.error || 'Failed to submit rating. Please try again.');
       }
     } catch (error) {
-      console.error('Error submitting rating:', error);
+      // Error submitting rating
       Alert.alert('Error', 'An unexpected error occurred. Please try again.');
     } finally {
       setSubmitting(false);

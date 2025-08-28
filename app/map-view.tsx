@@ -84,7 +84,7 @@ function MapViewScreen() {
           setShowBetaDisclaimer(false);
         }
       } catch (error) {
-        console.error('Error checking disclaimer status:', error);
+        // Error checking disclaimer status
       }
     };
     checkDisclaimerStatus();
@@ -170,7 +170,7 @@ function MapViewScreen() {
               await AsyncStorage.setItem('mapViewDisclaimerDismissed', 'true');
               setShowBetaDisclaimer(false);
             } catch (error) {
-              console.error('Error saving disclaimer status:', error);
+              // Error saving disclaimer status
               setShowBetaDisclaimer(false);
             }
           }}

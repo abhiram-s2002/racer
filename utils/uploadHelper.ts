@@ -16,7 +16,7 @@ export class UploadHelper {
       }
       return await response.blob();
     } catch (error) {
-      console.error('Error converting URI to blob:', error);
+      // Error converting URI to blob
       throw new Error(`Failed to convert URI to blob: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -49,7 +49,7 @@ export class UploadHelper {
       const fileInfo = await FileSystem.getInfoAsync(uri);
       return fileInfo.exists;
     } catch (error) {
-      console.error('Error validating URI:', error);
+      // Error validating URI
       return false;
     }
   }
@@ -62,7 +62,7 @@ export class UploadHelper {
       const fileInfo = await FileSystem.getInfoAsync(uri);
       return (fileInfo as any).size || 0;
     } catch (error) {
-      console.error('Error getting file size:', error);
+      // Error getting file size
       return 0;
     }
   }

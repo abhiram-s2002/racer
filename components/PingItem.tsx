@@ -98,7 +98,7 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
       
       return chat.id;
     } catch (error) {
-      console.error('Error creating chat directly:', error);
+              // Error creating chat directly
       throw error;
     }
   };
@@ -126,13 +126,13 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
           });
           
           if (messageError) {
-            console.error('Error sending acceptance message:', messageError);
+            // Error sending acceptance message
           } else {
             // Acceptance message sent successfully
             onStatusChange?.(item.id, 'accepted');
           }
         } catch (messageError) {
-          console.error('Error sending acceptance message:', messageError);
+          // Error sending acceptance message
         }
         
         // Show success message
@@ -150,7 +150,7 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
         onStatusChange(item.id, response);
       }
     } catch (error) {
-      console.error('Error responding to ping:', error);
+      // Error responding to ping
       RNAlert.alert('Error', 'Failed to respond to ping. Please try again.');
     } finally {
       setLoading(false);
@@ -167,7 +167,7 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
           params: { chatId: chatId }
         });
       } catch (navError) {
-        console.error('Navigation error:', navError);
+        // Navigation error
         // Fallback navigation
         router.push('/(tabs)/messages');
       }
@@ -180,7 +180,7 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
         try {
           newChatId = await ChatService.createChatFromPing(item.id);
         } catch (dbError) {
-          console.error('Database function failed, trying direct creation:', dbError);
+          // Database function failed, trying direct creation
           // Fallback: create chat directly
           newChatId = await createChatDirectly();
         }
@@ -195,7 +195,7 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
               params: { chatId: newChatId }
             });
           } catch (navError) {
-            console.error('Navigation error:', navError);
+            // Navigation error
             // Fallback navigation
             router.push('/(tabs)/messages');
           }
@@ -203,7 +203,7 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
           throw new Error('Chat creation returned null or undefined');
         }
       } catch (error) {
-        console.error('Error creating chat:', error);
+        // Error creating chat
         RNAlert.alert('Error', `Failed to open chat: ${error instanceof Error ? error.message : 'Unknown error'}`);
       } finally {
         setLoading(false);

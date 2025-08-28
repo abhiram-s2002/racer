@@ -79,7 +79,7 @@ function SettingsScreen() {
         setUserProfile(profile);
       }
     } catch (error) {
-      console.error('Error loading user profile:', error);
+      // Error loading user profile
     }
   };
 
@@ -97,7 +97,7 @@ function SettingsScreen() {
               await signOut();
               router.replace('/auth');
             } catch (error) {
-              console.error('Error during logout:', error);
+              // Error during logout
               Alert.alert('Error', 'Failed to logout');
             }
           }
@@ -126,7 +126,7 @@ function SettingsScreen() {
         router.replace('/auth');
       }
     } catch (error) {
-      console.error('Error deleting account:', error);
+      // Error deleting account
       Alert.alert('Error', 'Failed to delete account');
     } finally {
       setDeleteModalVisible(false);
@@ -148,7 +148,7 @@ function SettingsScreen() {
               await resetSettings();
               Alert.alert('Success', 'Cache cleared successfully');
             } catch (error) {
-              console.error('Error clearing cache:', error);
+              // Error clearing cache
               Alert.alert('Error', 'Failed to clear cache');
             }
           }

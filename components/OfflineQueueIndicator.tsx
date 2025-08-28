@@ -58,7 +58,7 @@ export default function OfflineQueueIndicator({
       const status = await offlineQueue.getQueueStatus();
       setQueueStatus(status);
     } catch (error) {
-      console.error('Error loading queue status:', error);
+              // Error loading queue status
     }
   };
 

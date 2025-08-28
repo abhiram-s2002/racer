@@ -33,7 +33,7 @@ export async function upsertUserProfile(authUser: any) {
   const missingFields = validateUserProfileFields({ id, username, email, name });
   if (missingFields.length > 0) {
     const msg = `Cannot upsert user profile. Missing required fields: ${missingFields.join(', ')}`;
-    console.error(msg);
+            // Error message
     // Don't show alert here as it might be expected during profile setup
     return { error: msg };
   }
@@ -49,7 +49,7 @@ export async function upsertUserProfile(authUser: any) {
       const phoneValidation = validatePhoneNumber(trimmedPhone);
       if (!phoneValidation.isValid) {
         const msg = `Invalid phone number format: ${phoneValidation.error}`;
-        console.error(msg);
+        // Error message
         return { error: msg };
       }
       phoneValue = phoneValidation.sanitizedValue || trimmedPhone;
@@ -108,8 +108,8 @@ export async function upsertUserProfile(authUser: any) {
           data: { referral_code: null }
         });
       } catch (referralError: any) {
-        console.error('Error processing referral code:', referralError);
-        console.error('Error stack:', referralError.stack);
+        // Error processing referral code
+        // Error stack
       }
     }
   } catch (upsertError) {

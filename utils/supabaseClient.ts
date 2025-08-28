@@ -188,7 +188,7 @@ export class EnhancedSupabaseClient {
       // Log performance metrics
       const duration = Date.now() - startTime;
       if (FEATURE_FLAGS.performanceMonitoring && duration > 1000) {
-        console.warn(`Slow query detected: ${context.operation} took ${duration}ms`);
+        // Slow query detected
       }
       
       if (result.error) {
@@ -241,7 +241,7 @@ export class EnhancedSupabaseClient {
       // Log performance metrics
       const duration = Date.now() - startTime;
       if (FEATURE_FLAGS.performanceMonitoring && duration > 2000) {
-        console.warn(`Slow mutation detected: ${context.operation} took ${duration}ms`);
+        // Slow mutation detected
       }
       
       if (result.error) {
@@ -321,7 +321,7 @@ if (FEATURE_FLAGS.performanceMonitoring) {
   setInterval(() => {
     const stats = enhancedSupabase.getPoolStats();
     if (stats.utilizationRate > 80) {
-      console.warn(`High connection pool utilization: ${stats.utilizationRate.toFixed(1)}%`);
+      // High connection pool utilization
     }
   }, 30000); // Check every 30 seconds
 }

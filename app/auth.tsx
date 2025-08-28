@@ -56,7 +56,7 @@ export const processReferralCode = async (code: string) => {
 
     return true;
   } catch (error) {
-    console.error('Error processing referral code:', error);
+          // Error processing referral code
     return false;
   }
 };
@@ -161,7 +161,7 @@ function AuthScreen() {
               });
               // Referral code stored in user metadata
             } catch (referralError) {
-              console.error('Failed to store referral code in metadata:', referralError);
+              // Failed to store referral code in metadata
             }
           }
           
@@ -294,7 +294,7 @@ function AuthScreen() {
         setReferralCodeValid(false);
       }
     } catch (error) {
-      console.error('Exception during referral validation:', error);
+      // Exception during referral validation
       setReferralCodeValid(false);
     } finally {
       setValidatingReferral(false);

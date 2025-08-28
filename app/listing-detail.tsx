@@ -109,7 +109,7 @@ function ListingDetailScreen() {
       setSellerListings(otherListings || []);
       
     } catch (err) {
-      console.error('Error fetching listing data:', err);
+      // Error fetching listing data
       setError(err instanceof Error ? err.message : 'Failed to load listing');
     } finally {
       setLoading(false);

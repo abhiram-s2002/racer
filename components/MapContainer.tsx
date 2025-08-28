@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE, Region } from 'react-native-maps';
+import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -44,7 +44,7 @@ function MapContainer({
       onLocationUpdate(latitude, longitude);
       
     } catch (error) {
-      console.error('Error getting user location:', error);
+      // Error getting user location
     }
   };
 
@@ -57,10 +57,12 @@ function MapContainer({
     );
   }
 
+
+
   return (
     <MapView
       style={styles.map}
-      provider={PROVIDER_GOOGLE}
+      provider={PROVIDER_DEFAULT}
       region={region}
       showsUserLocation
       showsMyLocationButton
@@ -79,8 +81,8 @@ function MapContainer({
 
       {/* Listing markers */}
       {visibleListings.map((listing) => (
-        // eslint-disable-next-line react/jsx-key
         <Marker
+          key={listing.id}
           coordinate={{
             latitude: listing.latitude || 37.78825,
             longitude: listing.longitude || -122.4324,

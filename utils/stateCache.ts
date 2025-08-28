@@ -74,7 +74,7 @@ export function useCachedState<T>(
     setState(prev => {
       const nextState = value instanceof Function ? value(prev) : value;
       cacheManager.set(cacheKey, nextState, cacheType).catch(err => {
-        console.error('Failed to cache state:', err);
+        // Failed to cache state
       });
       return nextState;
     });

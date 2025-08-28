@@ -77,7 +77,7 @@ export async function decryptText(encryptedText: string, key?: string): Promise<
     
     return new TextDecoder().decode(decrypted);
   } catch (error) {
-    console.error('Decryption failed:', error);
+          // Decryption failed
     return '';
   }
 }
@@ -274,7 +274,7 @@ export class EncryptionTest {
       const decrypted = await decryptText(encrypted);
       return originalText === decrypted;
     } catch (error) {
-      console.error('Encryption test failed:', error);
+      // Encryption test failed
       return false;
     }
   }
@@ -293,7 +293,7 @@ export class EncryptionTest {
       const decrypted = await decryptUserData(encrypted);
       return JSON.stringify(userData) === JSON.stringify(decrypted);
     } catch (error) {
-      console.error('User data encryption test failed:', error);
+      // User data encryption test failed
       return false;
     }
   }

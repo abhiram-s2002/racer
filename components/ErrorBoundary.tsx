@@ -59,7 +59,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log the error
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    // ErrorBoundary caught an error
 
     // Update state with error info
     this.setState({
@@ -102,7 +102,7 @@ export class ErrorBoundary extends Component<Props, State> {
       
       // Here you would typically send the error to your error reporting service
       // For now, we'll just log it
-      console.error('Error reported by user:', this.state.error);
+      // Error reported by user
     }
   };
 
@@ -110,7 +110,7 @@ export class ErrorBoundary extends Component<Props, State> {
     // Navigate to home screen
     // This would typically use your navigation system
     // For now, we'll just log the action
-    console.error('Navigating to home...');
+          // Navigating to home
   };
 
   renderNetworkError() {
@@ -297,7 +297,7 @@ export class AsyncErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('AsyncErrorBoundary caught an error:', error, errorInfo);
+    // AsyncErrorBoundary caught an error
 
     this.setState({
       error,

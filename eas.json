@@ -9,7 +9,8 @@
       "env": {
         "EXPO_PUBLIC_ENV": "development",
         "EXPO_PUBLIC_SUPABASE_URL": "https://vroanjodovwsyydxrmma.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyb2Fuam9kb3Z3c3l5ZHhybW1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODA4MDQsImV4cCI6MjA2ODY1NjgwNH0.cqtPBWKsjsmtv8QQuDWCffnWnSDYr6G5S5B1mv5b-Cw"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyb2Fuam9kb3Z3c3l5ZHhybW1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODA4MDQsImV4cCI6MjA2ODY1NjgwNH0.cqtPBWKsjsmtv8QQuDWCffnWnSDYr6G5S5B1mv5b-Cw",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyBXZ3iGVmhKZZx0VmGjoLKTrArmFMwZ2qY"
       },
       "ios": {
         "resourceClass": "m-medium"
@@ -23,7 +24,8 @@
       "env": {
         "EXPO_PUBLIC_ENV": "staging",
         "EXPO_PUBLIC_SUPABASE_URL": "https://vroanjodovwsyydxrmma.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyb2Fuam9kb3Z3c3l5ZHhybW1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODA4MDQsImV4cCI6MjA2ODY1NjgwNH0.cqtPBWKsjsmtv8QQuDWCffnWnSDYr6G5S5B1mv5b-Cw"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyb2Fuam9kb3Z3c3l5ZHhybW1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODA4MDQsImV4cCI6MjA2ODY1NjgwNH0.cqtPBWKsjsmtv8QQuDWCffnWnSDYr6G5S5B1mv5b-Cw",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyBXZ3iGVmhKZZx0VmGjoLKTrArmFMwZ2qY"
       },
       "ios": {
         "resourceClass": "m-medium"
@@ -36,7 +38,8 @@
       "env": {
         "EXPO_PUBLIC_ENV": "production",
         "EXPO_PUBLIC_SUPABASE_URL": "https://vroanjodovwsyydxrmma.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyb2Fuam9kb3Z3c3l5ZHhybW1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODA4MDQsImV4cCI6MjA2ODY1NjgwNH0.cqtPBWKsjsmtv8QQuDWCffnWnSDYr6G5S5B1mv5b-Cw"
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZyb2Vuam9kb3Z3c3l5ZHhybW1hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwODA4MDQsImV4cCI6MjA2ODY1NjgwNH0.cqtPBWKsjsmtv8QQuDWCffnWnSDYr6G5S5B1mv5b-Cw",
+        "EXPO_PUBLIC_GOOGLE_MAPS_API_KEY": "AIzaSyBXZ3iGVmhKZZx0VmGjoLKTrArmFMwZ2qY"
       },
       "ios": {
         "resourceClass": "m-medium"

@@ -38,7 +38,7 @@ export default function HomeRatingDisplay({
       const stats = await RatingService.getUserRatingStats(username);
       setRatingStats(stats);
     } catch (err) {
-      console.error('Error loading rating stats:', err);
+      // Error loading rating stats
     } finally {
       setLoading(false);
     }

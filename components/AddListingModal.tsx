@@ -401,7 +401,7 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
           return;
         }
       } catch (error) {
-        console.error('Image upload error:', error);
+        // Image upload error
         Alert.alert('Upload Failed', 'Failed to upload image. Please try again.');
         setIsSubmitting(false);
         return;

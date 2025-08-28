@@ -141,14 +141,7 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
   };
 
   const handleError = (error: any) => {
-    console.warn('NewRobustImage load error:', {
-      title,
-      currentImageUrl,
-      imageSet,
-      metadata,
-      error: error?.nativeEvent?.error || error,
-      retryAttempts
-    });
+    // NewRobustImage load error
 
     if (retryAttempts < retryCount) {
       // Retry with cache busting

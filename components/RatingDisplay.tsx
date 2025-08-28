@@ -32,7 +32,7 @@ export default function RatingDisplay({
       setRatingStats(stats);
     } catch (err) {
       setError('Failed to load rating');
-      console.error('Error loading rating stats:', err);
+      // Error loading rating stats
     } finally {
       setLoading(false);
     }

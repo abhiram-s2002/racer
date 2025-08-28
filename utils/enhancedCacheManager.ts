@@ -66,7 +66,7 @@ export class EnhancedCacheManager {
       this.stats.hits++;
       return entry.data;
     } catch (error) {
-      console.error('Cache get error:', error);
+      // Cache get error
       this.stats.misses++;
       return null;
     }
@@ -91,7 +91,7 @@ export class EnhancedCacheManager {
       
       await AsyncStorage.setItem(cacheKey, JSON.stringify(entry));
     } catch (error) {
-      console.error('Cache set error:', error);
+      // Cache set error
     }
   }
 
@@ -103,7 +103,7 @@ export class EnhancedCacheManager {
       const cacheKey = this.cachePrefix + this.hashKey(key);
       await AsyncStorage.removeItem(cacheKey);
     } catch (error) {
-      console.error('Cache delete error:', error);
+      // Cache delete error
     }
   }
 
@@ -116,7 +116,7 @@ export class EnhancedCacheManager {
       const cacheKeys = keys.filter(key => key.startsWith(this.cachePrefix));
       await AsyncStorage.multiRemove(cacheKeys);
     } catch (error) {
-      console.error('Cache clear error:', error);
+      // Cache clear error
     }
   }
 
@@ -147,7 +147,7 @@ export class EnhancedCacheManager {
         memoryUsage: totalSize / this.maxCacheSize * 100,
       };
     } catch (error) {
-      console.error('Cache stats error:', error);
+      // Cache stats error
       return {
         totalEntries: 0,
         totalSize: 0,
@@ -188,7 +188,7 @@ export class EnhancedCacheManager {
         await AsyncStorage.multiRemove(keysToRemove);
       }
     } catch (error) {
-      console.error('Cache size management error:', error);
+      // Cache size management error
     }
   }
 
@@ -219,7 +219,7 @@ export class EnhancedCacheManager {
         await this.set('categories', categories, 1800000); // 30 minutes
       }
     } catch (error) {
-      console.error('Preload error:', error);
+      // Preload error
     }
   }
 
@@ -293,7 +293,7 @@ export class EnhancedCacheManager {
         await AsyncStorage.multiRemove(cacheKeys);
       }
     } catch (error) {
-      console.error('Cache invalidation error:', error);
+      // Cache invalidation error
     }
   }
 
@@ -328,7 +328,7 @@ export class EnhancedCacheManager {
         this.stats.totalRequests++;
       }
     } catch (error) {
-      console.error('Batch get error:', error);
+      // Batch get error
     }
     
     return result;
@@ -352,7 +352,7 @@ export class EnhancedCacheManager {
       
       await AsyncStorage.multiSet(operations);
     } catch (error) {
-      console.error('Batch set error:', error);
+      // Batch set error
     }
   }
 }

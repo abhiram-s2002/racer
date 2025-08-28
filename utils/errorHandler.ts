@@ -233,14 +233,7 @@ export class ErrorHandler {
 
   // Log error for debugging
   private logError(error: AppError): void {
-    console.error('App Error:', {
-      type: error.type,
-      severity: error.severity,
-      message: error.message,
-      context: error.context,
-      timestamp: error.timestamp,
-      originalError: error.originalError
-    });
+    // App Error logged
 
     // Store in error log (keep last 100 errors)
     this.errorLog.push(error);

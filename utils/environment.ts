@@ -364,6 +364,6 @@ if (Environment.isDevelopment) {
   
   const validation = Environment.validate();
   if (!validation.isValid) {
-    console.warn('⚠️ Environment validation warnings:', validation.errors);
+    // Environment validation warnings
   }
 } 

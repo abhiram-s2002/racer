@@ -63,6 +63,8 @@ EXPO_PUBLIC_FIREBASE_PERFORMANCE_ID=your-firebase-performance-id
 
 # Maps
 EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+# Note: Required for react-native-maps on Android
+# iOS: Apple Maps (built-in), Android: Google Maps (requires API key)
 ```
 
 ## 🌍 Environment-Specific Configurations

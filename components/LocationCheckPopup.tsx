@@ -44,7 +44,7 @@ export default function LocationCheckPopup({
       const { status } = await Location.getForegroundPermissionsAsync();
       setPermissionStatus(status);
     } catch (error) {
-      console.error('Error checking location status:', error);
+      // Error checking location status
       setGpsEnabled(false);
       setPermissionStatus('denied');
     } finally {

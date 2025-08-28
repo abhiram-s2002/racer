@@ -15,7 +15,6 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
 import { useRewards } from '@/hooks/useRewards';
-import { awardWelcomeAchievements } from '@/utils/rewardsSupabase';
 
 import {
   Coins,
@@ -62,7 +61,6 @@ function RewardsScreen() {
     refreshing,
     refreshRewards,
     performDailyCheckin,
-    checkEasyAchievements,
     getWeeklyCheckins,
     getAchievementStats,
     getReferralStats,
@@ -85,7 +83,7 @@ function RewardsScreen() {
         await Clipboard.setString(userReferralCode.referral_code);
         Alert.alert('Copied!', 'Referral code copied to clipboard');
       } catch (error) {
-        console.error('Error copying referral code:', error);
+        // Error copying referral code
         Alert.alert('Error', 'Failed to copy referral code');
       }
     }
@@ -401,22 +399,24 @@ function RewardsScreen() {
             <Text style={styles.calendarTitle}>This Week</Text>
             <View style={styles.calendarGrid}>
               {weeklyCheckins.map((day, index) => (
-                <View key={index} style={styles.calendarDay}>
-                  <Text style={styles.calendarDayText}>{day.day}</Text>
-                  <View style={[
-                    styles.calendarDate,
-                    day.checkedIn && styles.checkedInDate,
-                    day.isToday && styles.todayDate
-                  ]}>
-                    <Text style={[
-                      styles.calendarDateText,
-                      day.checkedIn && styles.checkedInDateText,
-                      day.isToday && styles.todayDateText
+                <React.Fragment key={index}>
+                  <View style={styles.calendarDay}>
+                    <Text style={styles.calendarDayText}>{day.day}</Text>
+                    <View style={[
+                      styles.calendarDate,
+                      day.checkedIn && styles.checkedInDate,
+                      day.isToday && styles.todayDate
                     ]}>
-                      {new Date(day.date).getDate()}
-                    </Text>
+                      <Text style={[
+                        styles.calendarDateText,
+                        day.checkedIn && styles.checkedInDateText,
+                        day.isToday && styles.todayDateText
+                      ]}>
+                        {new Date(day.date).getDate()}
+                      </Text>
+                    </View>
                   </View>
-                </View>
+                </React.Fragment>
               ))}
             </View>
           </View>
@@ -618,76 +618,23 @@ function RewardsScreen() {
           </View>
         )}
 
-        {/* Bonus Section */}
-        <View style={styles.bonusSection}>
-          <View style={styles.bonusCard}>
-            <View style={styles.bonusIcon}>
-              <Gift size={24} color="#F59E0B" />
-            </View>
-            <View style={styles.bonusContent}>
-              <Text style={styles.bonusTitle}>Welcome Bonus</Text>
-              <Text style={styles.bonusDescription}>
-                New users get 50 OMNI tokens just for joining! Complete your profile to claim.
+
+
+        {/* Legal Disclaimer */}
+        <View style={styles.disclaimerSection}>
+          <View style={styles.disclaimerCard}>
+            <View style={styles.disclaimerContent}>
+              <Text style={styles.disclaimerTitle}>Important Information</Text>
+              <Text style={styles.disclaimerText}>
+                OMNI points earned through this rewards program are convertible to real equity shares in OmniMarketplace Inc. upon the company&apos;s successful exit or IPO. The conversion rate and terms are subject to the company&apos;s equity incentive plan and applicable securities laws. Past performance does not guarantee future results, and the value of shares may fluctuate.
+              </Text>
+              <Text style={styles.disclaimerLegal}>
+                This is not a securities offering. Please consult with legal and financial advisors regarding your specific situation.
               </Text>
             </View>
           </View>
         </View>
 
-        {/* Manual Welcome Achievement Award (for testing) */}
-        <View style={styles.bonusSection}>
-          <TouchableOpacity 
-            style={styles.bonusCard}
-            onPress={async () => {
-              try {
-                const success = await awardWelcomeAchievements(username);
-                if (success) {
-                  Alert.alert('Success', 'Welcome achievements awarded! Refresh to see them.');
-                  await refreshRewards();
-                } else {
-                  Alert.alert('Error', 'Failed to award welcome achievements.');
-                }
-              } catch (error) {
-                Alert.alert('Error', 'Failed to award welcome achievements.');
-              }
-            }}
-          >
-            <View style={styles.bonusIcon}>
-              <Gift size={24} color="#F59E0B" />
-            </View>
-            <View style={styles.bonusContent}>
-              <Text style={styles.bonusTitle}>Claim Welcome Achievements</Text>
-              <Text style={styles.bonusDescription}>
-                Tap to claim your welcome bonus and early adopter achievements
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {/* Manual Easy Achievement Check (for testing) */}
-        <View style={styles.bonusSection}>
-          <TouchableOpacity 
-            style={styles.bonusCard}
-            onPress={async () => {
-              try {
-                await checkEasyAchievements();
-                Alert.alert('Success', 'Easy achievements checked! Refresh to see any updates.');
-                await refreshRewards();
-              } catch (error) {
-                Alert.alert('Error', 'Failed to check easy achievements.');
-              }
-            }}
-          >
-            <View style={styles.bonusIcon}>
-              <Crown size={24} color="#3B82F6" />
-            </View>
-            <View style={styles.bonusContent}>
-              <Text style={styles.bonusTitle}>Check Easy Achievements</Text>
-              <Text style={styles.bonusDescription}>
-                Tap to check Power User and Loyal User achievements
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
       </ScrollView>
       {/* Bottom safe area padding */}
       <View style={{ height: insets.bottom }} />
@@ -1419,6 +1366,51 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontFamily: 'Inter-Medium',
     color: '#FFFFFF',
+  },
+  disclaimerSection: {
+    margin: 16,
+    marginBottom: 30,
+  },
+  disclaimerCard: {
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  disclaimerIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  disclaimerContent: {
+    flex: 1,
+  },
+  disclaimerTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  disclaimerText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#6B7280',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  disclaimerLegal: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#9CA3AF',
+    fontStyle: 'italic',
   },
 });
 

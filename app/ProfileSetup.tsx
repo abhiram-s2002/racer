@@ -287,10 +287,10 @@ function ProfileSetup() {
         // No rows returned - username is available
         setUsernameError('');
       } else {
-        console.error('Error checking username:', error);
+        // Error checking username
       }
     } catch (error) {
-      console.error('Error checking username availability:', error);
+              // Error checking username availability
     } finally {
       setIsCheckingUsername(false);
     }
