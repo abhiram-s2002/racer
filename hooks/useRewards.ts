@@ -125,7 +125,8 @@ export function useRewards(username: string) {
       // Check if already checked in today
       const alreadyCheckedIn = await hasCheckedInToday(username);
       if (alreadyCheckedIn) {
-        throw new Error('Already checked in today');
+        // Already checked in - this is not an error, just return true
+        return true;
       }
 
       // Calculate reward based on current streak

@@ -12,8 +12,8 @@ export interface ImageProcessingOptions {
 }
 
 export interface ImageUploadResult {
-  url: string;
-  thumbnailUrl?: string;
+  thumbnailUrl: string;
+  previewUrl: string;
   size: number;
   width: number;
   height: number;
@@ -87,7 +87,7 @@ export class EnhancedImageService {
     });
   }
 
-  /**
+    /**
    * Upload image with optimization
    */
   async uploadImage(
@@ -103,29 +103,16 @@ export class EnhancedImageService {
       // Generate unique filename
       const filename = this.generateFilename(path);
       
-             // Upload to Supabase Storage
-       const { data, error } = await supabase.storage
-         .from(bucket)
-         .upload(filename, processedUri);
-      
-      if (error) {
-        throw new Error(`Upload failed: ${error.message}`);
-      }
-      
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from(bucket)
-        .getPublicUrl(filename);
-      
-      // Create thumbnail
+      // Create thumbnail and preview (no original image upload)
       const thumbnailUrl = await this.createThumbnail(processedUri, bucket);
+      const previewUrl = await this.createPreview(processedUri, bucket);
       
       // Get image metadata
       const metadata = await this.getImageInfo(processedUri);
           
-          return {
-        url: urlData.publicUrl,
+      return {
         thumbnailUrl,
+        previewUrl,
         size: metadata.size,
         width: metadata.width,
         height: metadata.height,
@@ -157,9 +144,9 @@ export class EnhancedImageService {
       
       const thumbnailFilename = `thumbnails/${this.generateFilename()}`;
       
-             const { error } = await supabase.storage
-         .from(bucket)
-         .upload(thumbnailFilename, thumbnail.uri);
+      const { error } = await supabase.storage
+        .from(bucket)
+        .upload(thumbnailFilename, thumbnail.uri);
       
       if (error) {
         // Thumbnail upload error
@@ -173,6 +160,49 @@ export class EnhancedImageService {
       return data.publicUrl;
     } catch (error) {
       // Thumbnail creation error
+      return '';
+    }
+  }
+
+  /**
+   * Create preview for image
+   */
+  private async createPreview(imageUri: string, bucket: string): Promise<string> {
+    try {
+      const preview = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [
+          {
+            resize: {
+              width: 200,
+              height: 200,
+            },
+          },
+        ],
+        {
+          compress: 0.7,
+          format: ImageManipulator.SaveFormat.JPEG,
+        }
+      );
+      
+      const previewFilename = `previews/${this.generateFilename()}`;
+      
+      const { error } = await supabase.storage
+        .from(bucket)
+        .upload(previewFilename, preview.uri);
+      
+      if (error) {
+        // Preview upload error
+        return '';
+      }
+      
+      const { data } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(previewFilename);
+      
+      return data.publicUrl;
+    } catch (error) {
+      // Preview creation error
       return '';
     }
   }
@@ -238,7 +268,7 @@ export class EnhancedImageService {
     const optimizedUrl = this.getOptimizedImageUrl(originalUrl, options);
     
     // Cache the result
-    await enhancedCache.set(cacheKey, { url: optimizedUrl }, 3600000); // 1 hour
+    await enhancedCache.set(cacheKey, { url: optimizedUrl }); // 1 hour
     
     return optimizedUrl;
   }

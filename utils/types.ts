@@ -49,7 +49,6 @@ export interface Listing {
   price: number;
   price_unit: PriceUnit;
   category: Category;
-  images: string[];
   thumbnail_images: string[];
   preview_images: string[];
   image_url?: string; // Legacy field for backward compatibility

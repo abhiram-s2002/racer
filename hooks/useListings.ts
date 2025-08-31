@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import { useLocation } from './useLocation';
+import { imageCache } from '@/utils/imageCache';
 
 // Optimized page size for better performance
 const PAGE_SIZE = 10; // Reduced from 20 for faster loading and better UX
@@ -23,8 +24,8 @@ export function useListings() {
   const [sortByDistance, setSortByDistance] = useState(false); // Default to no distance sorting until location is available
   const [maxDistance, setMaxDistance] = useState<number | null>(null); // Distance filter in km
   
-  // Cache for API responses to prevent duplicate calls
-  const cacheRef = useRef<Map<string, { data: any[], timestamp: number }>>(new Map());
+  // Cache for API responses to prevent duplicate calls - no expiration
+  const cacheRef = useRef<Map<string, any[]>>(new Map());
   const lastFetchRef = useRef<string>('');
   const hasInitialDataRef = useRef<boolean>(false);
   const isReturningFromNavigationRef = useRef<boolean>(false);
@@ -45,10 +46,10 @@ export function useListings() {
   const fetchListings = useCallback(async (pageNumber = 1, userLat?: number, userLon?: number) => {
     const cacheKey = getCacheKey(pageNumber, userLat, userLon);
     
-    // Check cache first (cache for 30 seconds)
+    // Check cache first - no automatic expiration, only manual refresh
     const cached = cacheRef.current.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < 30000) {
-      return cached.data;
+    if (cached) {
+      return cached;
     }
 
     try {
@@ -57,13 +58,16 @@ export function useListings() {
       if (userLat && userLon) {
 
         
+        // Calculate the total limit needed for pagination
+        const totalLimit = pageNumber * PAGE_SIZE;
+        
         const { data, error } = await supabase
           .rpc('get_listings_with_distance', {
             user_lat: userLat,
             user_lng: userLon,
-            page_num: pageNumber,
-            page_size: PAGE_SIZE,
-            max_distance_km: maxDistance === null ? 1000 : maxDistance // Use 1000km for "Any distance"
+            max_distance_km: maxDistance === null ? 1000 : maxDistance, // Use 1000km for "Any distance"
+            category_filter: null, // No category filter for now
+            limit_count: totalLimit // Get enough data for all pages up to current page
           });
 
         if (error) {
@@ -82,20 +86,47 @@ export function useListings() {
           }
           
           const result = fallbackData || [];
+          
+          // Cache images for each listing
+          result.forEach((listing: Listing) => {
+            if (listing.id) {
+              try {
+                imageCache.setListingImages(listing.id, listing);
+              } catch (error) {
+                // Silent fail - cache errors shouldn't break the app
+              }
+            }
+          });
+          
           // Cache the result
-          cacheRef.current.set(cacheKey, { data: result, timestamp: Date.now() });
+          cacheRef.current.set(cacheKey, result);
           return result;
         }
 
-        const result = data || [];
+        const allData = data || [];
+        
+        // Slice the data for the current page
+        const startIndex = (pageNumber - 1) * PAGE_SIZE;
+        const result = allData.slice(startIndex, startIndex + PAGE_SIZE);
         
         // Got listings for page
         if (result.length > 0) {
-                      // Sample listing IDs processed
+          // Sample listing IDs processed
+          
+          // Cache images for each listing to avoid database calls in detail view
+          result.forEach((listing: Listing) => {
+            if (listing.id) {
+              try {
+                imageCache.setListingImages(listing.id, listing);
+              } catch (error) {
+                // Silent fail - cache errors shouldn't break the app
+              }
+            }
+          });
         }
 
         // Cache the result
-        cacheRef.current.set(cacheKey, { data: result, timestamp: Date.now() });
+        cacheRef.current.set(cacheKey, result);
         return result;
       } else {
         // Use direct query if no location or distance sorting disabled
@@ -112,10 +143,17 @@ export function useListings() {
           return [];
         }
 
-        const result = data || [];
-
+                const result = data || [];
+        
+        // Cache images for each listing
+        result.forEach((listing: Listing) => {
+          if (listing.id) {
+            imageCache.setListingImages(listing.id, listing);
+          }
+        });
+        
         // Cache the result
-        cacheRef.current.set(cacheKey, { data: result, timestamp: Date.now() });
+        cacheRef.current.set(cacheKey, result);
         return result;
       }
     } catch (err) {
@@ -191,6 +229,17 @@ export function useListings() {
           return prev;
         }
         
+                  // Cache images for new listings
+          uniqueNewListings.forEach((listing: Listing) => {
+            if (listing.id) {
+              try {
+                imageCache.setListingImages(listing.id, listing);
+              } catch (error) {
+                // Silent fail - cache errors shouldn't break the app
+              }
+            }
+          });
+        
         return [...prev, ...uniqueNewListings];
       });
       setPage(nextPage);
@@ -217,6 +266,17 @@ export function useListings() {
       
       // Ensure no duplicate IDs in refreshed listings
       const uniqueFreshListings = deduplicateListings(freshListings);
+      
+      // Cache images for refreshed listings
+      uniqueFreshListings.forEach((listing: Listing) => {
+        if (listing.id) {
+          try {
+            imageCache.setListingImages(listing.id, listing);
+          } catch (error) {
+            // Silent fail - cache errors shouldn't break the app
+          }
+        }
+      });
       
       setListings(uniqueFreshListings);
       setHasMore(uniqueFreshListings.length === PAGE_SIZE);

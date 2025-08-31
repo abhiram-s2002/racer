@@ -98,7 +98,7 @@ export class ActivityStorage {
         type,
         listingId: listing.id,
         listingTitle: listing.title,
-        listingImage: listing.images[0] || '',
+        listingImage: listing.thumbnail_images[0] || '',
         username,
         userName,
         userAvatar,

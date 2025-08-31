@@ -19,7 +19,6 @@ interface Listing {
   title: string;
   price: number;
   price_unit: string;
-  images: string[];
   thumbnail_images: string[];
   preview_images: string[];
   image_folder_path: string;
@@ -55,13 +54,13 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
     >
       <View style={styles.imageContainer}>
         <NewRobustImage
-          images={item.images}
           thumbnailImages={item.thumbnail_images}
           previewImages={item.preview_images}
           imageFolderPath={item.image_folder_path}
           size="thumbnail"
-          style={styles.listingImage}
-          placeholderText={item.title}
+          style={styles.carouselImage}
+          placeholderText="No Image"
+          title={item.title}
         />
         
         {/* Status badge */}
@@ -174,7 +173,7 @@ const styles = StyleSheet.create({
     height: ITEM_WIDTH * 0.8,
     backgroundColor: '#F1F5F9',
   },
-  listingImage: {
+  carouselImage: {
     width: '100%',
     height: '100%',
   },

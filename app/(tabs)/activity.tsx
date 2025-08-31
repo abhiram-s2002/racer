@@ -422,7 +422,6 @@ function ActivityScreen() {
     <View style={styles.activityCard}>
       <View style={styles.listingHeader}>
           <NewRobustImage 
-            images={item.images || (item.image ? [item.image] : undefined)}
             thumbnailImages={item.thumbnail_images}
             previewImages={item.preview_images}
             imageFolderPath={item.image_folder_path}
@@ -583,7 +582,6 @@ function ActivityScreen() {
       </View>
       <View style={styles.pingProduct}>
         <NewRobustImage 
-          images={item.images || (item.image ? [item.image] : undefined)}
           thumbnailImages={item.thumbnail_images}
           previewImages={item.preview_images}
           imageFolderPath={item.image_folder_path}

@@ -15,6 +15,8 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
 import { useRewards } from '@/hooks/useRewards';
+import { type Referral } from '@/utils/rewardsSupabase';
+import { type ReferralCommission } from '@/utils/types';
 
 import {
   Coins,
@@ -55,6 +57,7 @@ function RewardsScreen() {
     userReferralCode,
     userAchievements,
     referrals,
+    referralCommissions,
     commissionStats,
     loading: rewardsLoading,
     error: rewardsError,
@@ -104,8 +107,8 @@ function RewardsScreen() {
 
   // Handle daily check-in
   const handleDailyCheckIn = async () => {
+    // If already checked in today, just return silently - no error, no alert
     if (checkTodayCheckedIn()) {
-      Alert.alert('Already Checked In', 'You have already checked in today!');
       return;
     }
 
@@ -159,37 +162,62 @@ function RewardsScreen() {
   };
 
   // Render referral item
-  const renderReferralItem = ({ item }: { item: any }) => (
-    <View style={styles.referralItem}>
-      <View style={styles.referralAvatar}>
-        <Text style={styles.referralAvatarText}>
-          {item.referred_username.charAt(0).toUpperCase()}
-        </Text>
-      </View>
-      <View style={styles.referralDetails}>
-        <Text style={styles.referralName}>{item.referred_username}</Text>
-        <Text style={styles.referralDate}>
-          {new Date(item.created_at).toLocaleDateString()}
-        </Text>
-      </View>
-      <View style={styles.referralEarnings}>
-        <View style={[
-          styles.statusBadge,
-          item.status === 'completed' ? styles.completedBadge : styles.pendingBadge
-        ]}>
-          <Text style={[
-            styles.statusText,
-            item.status === 'completed' ? styles.completedText : styles.pendingText
-          ]}>
-            {item.status === 'completed' ? 'Completed' : 'Pending'}
+  const renderReferralItem = ({ item }: { item: Referral }) => {
+    // Calculate total activity of this referred user from commission data
+    const userCommissions = referralCommissions.filter((comm: ReferralCommission) => 
+      comm.referred_username === item.referred_username
+    );
+    
+    // Sum up all source amounts to get total user activity
+    const totalUserActivity = userCommissions.reduce((sum: number, comm: ReferralCommission) => sum + comm.source_amount, 0);
+    
+    // Calculate total commissions earned from this user
+    const totalCommissionsFromUser = userCommissions.reduce((sum: number, comm: ReferralCommission) => sum + comm.commission_amount, 0);
+    
+    return (
+      <View style={styles.referralItem}>
+        <View style={styles.referralAvatar}>
+          <Text style={styles.referralAvatarText}>
+            {item.referred_username.charAt(0).toUpperCase()}
           </Text>
         </View>
-        <Text style={styles.earningsAmount}>
-          +{item.omni_rewarded || 0} OMNI
-        </Text>
+        <View style={styles.referralDetails}>
+          <Text style={styles.referralName}>{item.referred_username}</Text>
+          <Text style={styles.referralDate}>
+            {new Date(item.created_at).toLocaleDateString()}
+          </Text>
+          {/* Show user's total activity */}
+          {totalUserActivity > 0 && (
+            <Text style={styles.userActivityText}>
+              Total Activity: {totalUserActivity} OMNI
+            </Text>
+          )}
+        </View>
+        <View style={styles.referralEarnings}>
+          <View style={[
+            styles.statusBadge,
+            item.status === 'completed' ? styles.completedBadge : styles.pendingBadge
+          ]}>
+            <Text style={[
+              styles.statusText,
+              item.status === 'completed' ? styles.completedText : styles.pendingText
+            ]}>
+              {item.status === 'completed' ? 'Completed' : 'Pending'}
+            </Text>
+          </View>
+          <Text style={styles.earningsAmount}>
+            +{item.omni_rewarded || 0} OMNI
+          </Text>
+          {/* Show commissions earned from this user */}
+          {totalCommissionsFromUser > 0 && (
+            <Text style={styles.commissionAmount}>
+              +{totalCommissionsFromUser} OMNI commissions
+            </Text>
+          )}
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   // Check if achievement has logic implemented
   const hasAchievementLogic = (achievementId: string) => {
@@ -440,14 +468,22 @@ function RewardsScreen() {
 
         {/* Referral Code Section */}
         <View style={styles.referralCodeSection}>
-          <Text style={styles.sectionTitle}>Invite Friends</Text>
+          <View style={styles.referralCodeHeader}>
+            <Text style={styles.sectionTitle}>Invite Friends</Text>
+            <TouchableOpacity style={styles.infoButton} onPress={() => Alert.alert(
+              'How Cascading Commissions Work',
+              'When you refer someone, you earn 10% of all their rewards. When they refer others, you also earn 10% of their referral commissions! This creates a growing network where each new level adds value to your existing referrals.\n\nExample:\n• You refer User B → You get 10% of their rewards\n• User B refers User C → You get 10% of User B\'s commission\n• User C refers User D → You get 10% of User B\'s commission on User C\'s commission\n\nYour network value grows exponentially!'
+            )}>
+              <Info size={16} color="#64748B" />
+            </TouchableOpacity>
+          </View>
           <View style={styles.referralCodeCard}>
             <View style={styles.codeContainer}>
               <Text style={styles.referralCode}>
                 {userReferralCode?.referral_code || generateReferralCode(username)}
               </Text>
                                                     <Text style={styles.referralCodeDescription}>
-                Share this code with friends to earn 10% of all rewards they earn + they get 100 OMNI bonus!
+                Share this code with friends to earn 10% of all rewards they earn, including their referral commissions! They get 100 OMNI bonus immediately.
               </Text>
             </View>
             <View style={styles.codeActions}>
@@ -459,6 +495,65 @@ function RewardsScreen() {
                 <Share2 size={16} color="#FFFFFF" />
                 <Text style={styles.shareButtonText}>Share</Text>
               </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* Network Analytics Section */}
+        <View style={styles.networkAnalyticsSection}>
+          <Text style={styles.sectionTitle}>Network Analytics</Text>
+          
+          {/* Network Overview Card */}
+          <View style={styles.networkOverviewCard}>
+            <View style={styles.networkOverviewHeader}>
+              <Text style={styles.networkOverviewTitle}>Your Referral Network</Text>
+              <View style={styles.networkOverviewStats}>
+                <View style={styles.networkStat}>
+                  <Text style={styles.networkStatValue}>{referrals.length}</Text>
+                  <Text style={styles.networkStatLabel}>Total Referrals</Text>
+                </View>
+                <View style={styles.networkStat}>
+                  <Text style={styles.networkStatValue}>
+                    {referrals.filter(r => r.status === 'completed').length}
+                  </Text>
+                  <Text style={styles.networkStatLabel}>Completed</Text>
+                </View>
+                <View style={styles.networkStat}>
+                  <Text style={styles.networkStatValue}>
+                    {Math.round((referrals.filter(r => r.status === 'completed').length / Math.max(referrals.length, 1)) * 100)}%
+                  </Text>
+                  <Text style={styles.networkStatLabel}>Success Rate</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Network Value Card */}
+          <View style={styles.networkValueCard}>
+            <View style={styles.networkValueHeader}>
+              <Text style={styles.networkValueTitle}>Network Value</Text>
+              <Text style={styles.networkValueSubtitle}>Total earnings from your network</Text>
+            </View>
+            <View style={styles.networkValueContent}>
+              <View style={styles.networkValueItem}>
+                <Text style={styles.networkValueLabel}>Direct Referrals</Text>
+                <Text style={styles.networkValueAmount}>
+                  +{referrals.filter(r => r.status === 'completed').reduce((sum: number, r: Referral) => sum + (r.omni_rewarded || 0), 0)} OMNI
+                </Text>
+              </View>
+              <View style={styles.networkValueItem}>
+                <Text style={styles.networkValueLabel}>Cascading Commissions</Text>
+                <Text style={styles.networkValueAmount}>
+                  +{commissionStats.totalCommissions} OMNI
+                </Text>
+              </View>
+              <View style={styles.networkValueDivider} />
+              <View style={styles.networkValueItem}>
+                <Text style={styles.networkValueLabel}>Total Network Value</Text>
+                <Text style={styles.networkValueTotal}>
+                  +{referrals.filter(r => r.status === 'completed').reduce((sum: number, r: Referral) => sum + (r.omni_rewarded || 0), 0) + commissionStats.totalCommissions} OMNI
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -495,7 +590,7 @@ function RewardsScreen() {
              <View style={styles.stepContent}>
                <Text style={styles.stepTitle}>You Earn Commissions</Text>
                                <Text style={styles.stepDescription}>
-                  You earn 10% of all rewards they earn, plus they get 100 OMNI immediately for using your code!
+                  You earn 10% of all rewards they earn, including commissions from their referrals! They get 100 OMNI immediately.
                 </Text>
              </View>
            </View>
@@ -564,16 +659,66 @@ function RewardsScreen() {
               <Text style={styles.sectionTitle}>Referral History</Text>
               <View style={styles.historyStats}>
                 <Text style={styles.historyStatsText}>
-                  {referralStats.totalReferrals} total
+                  {referrals.length} total • {referrals.filter(r => r.status === 'completed').length} completed
                 </Text>
               </View>
             </View>
+            
+            {/* Referral Summary Card */}
+            <View style={styles.referralSummaryCard}>
+              <View style={styles.referralSummaryRow}>
+                <View style={styles.referralSummaryItem}>
+                  <Text style={styles.referralSummaryLabel}>Total Network Activity</Text>
+                  <Text style={styles.referralSummaryValue}>
+                    {referralCommissions.reduce((sum, comm) => sum + comm.source_amount, 0)} OMNI
+                  </Text>
+                </View>
+                <View style={styles.referralSummaryItem}>
+                  <Text style={styles.referralSummaryLabel}>Avg. Activity per User</Text>
+                  <Text style={styles.referralSummaryValue}>
+                    {referrals.length > 0 ? Math.round(referralCommissions.reduce((sum, comm) => sum + comm.source_amount, 0) / referrals.length) : 0} OMNI
+                  </Text>
+                </View>
+              </View>
+            </View>
+            
+            {/* Enhanced Referral List */}
             <FlatList
               data={referrals}
               renderItem={renderReferralItem}
               keyExtractor={(item) => item.id}
               scrollEnabled={false}
             />
+            
+            {/* Commission Breakdown */}
+            {commissionStats.totalCommissions > 0 && (
+              <View style={styles.commissionBreakdownCard}>
+                <Text style={styles.commissionBreakdownTitle}>Commission Breakdown</Text>
+                <Text style={styles.commissionBreakdownSubtitle}>
+                  Your earnings from cascading commissions
+                </Text>
+                <View style={styles.commissionBreakdownContent}>
+                  <View style={styles.commissionBreakdownItem}>
+                    <Text style={styles.commissionBreakdownLabel}>Total Commissions</Text>
+                    <Text style={styles.commissionBreakdownAmount}>
+                      +{commissionStats.totalCommissions} OMNI
+                    </Text>
+                  </View>
+                  <View style={styles.commissionBreakdownItem}>
+                    <Text style={styles.commissionBreakdownLabel}>Network Growth</Text>
+                    <Text style={styles.commissionBreakdownValue}>
+                      {referralCommissions.length} commission transactions
+                    </Text>
+                  </View>
+                  <View style={styles.commissionBreakdownItem}>
+                    <Text style={styles.commissionBreakdownLabel}>Total Network Activity</Text>
+                    <Text style={styles.commissionBreakdownAmount}>
+                      {referralCommissions.reduce((sum, comm) => sum + comm.source_amount, 0)} OMNI
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            )}
           </View>
         )}
 
@@ -601,6 +746,8 @@ function RewardsScreen() {
                 </Text>
               </View>
             </View>
+            
+            {/* Enhanced Commission Explanation */}
             <View style={styles.commissionCard}>
               <View style={styles.commissionIcon}>
                 <DollarSign size={24} color="#10B981" />
@@ -608,10 +755,23 @@ function RewardsScreen() {
               <View style={styles.commissionContent}>
                 <Text style={styles.commissionTitle}>10% Commission Active</Text>
                 <Text style={styles.commissionDescription}>
-                  You&apos;re earning 10% of all rewards from your referrals
+                  You&apos;re earning 10% of all rewards from your referrals, including their referral commissions!
                 </Text>
                 <Text style={styles.commissionAmount}>
                   Total earned: {commissionStats.totalCommissions} OMNI
+                </Text>
+              </View>
+            </View>
+
+            {/* Cascading Commission Explanation */}
+            <View style={styles.cascadingCard}>
+              <View style={styles.cascadingIcon}>
+                <TrendingUp size={20} color="#8B5CF6" />
+              </View>
+              <View style={styles.cascadingContent}>
+                <Text style={styles.cascadingTitle}>Cascading Commissions</Text>
+                <Text style={styles.cascadingDescription}>
+                  When your referrals refer others, you earn from multiple levels automatically. Each level grows your network value!
                 </Text>
               </View>
             </View>
@@ -1273,6 +1433,225 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   commissionAmount: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: '#10B981',
+  },
+  cascadingCard: {
+    backgroundColor: '#F5F3FF',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#EDE9FE',
+    marginTop: 12,
+  },
+  cascadingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#8B5CF6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  cascadingContent: {
+    flex: 1,
+  },
+  cascadingTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#5B21B6',
+    marginBottom: 4,
+  },
+  cascadingDescription: {
+    fontSize: 13,
+    fontFamily: 'Inter-Regular',
+    color: '#7C3AED',
+    lineHeight: 18,
+  },
+  networkAnalyticsSection: {
+    margin: 16,
+    marginBottom: 24,
+  },
+  networkOverviewCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  networkOverviewHeader: {
+    marginBottom: 16,
+  },
+  networkOverviewTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    color: '#1E293B',
+    marginBottom: 12,
+  },
+  networkOverviewStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  networkStat: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  networkStatValue: {
+    fontSize: 24,
+    fontFamily: 'Inter-Bold',
+    color: '#10B981',
+    marginBottom: 4,
+  },
+  networkStatLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
+    textAlign: 'center',
+  },
+  networkValueCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  networkValueHeader: {
+    marginBottom: 16,
+  },
+  networkValueTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  networkValueSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+  },
+  networkValueContent: {
+    gap: 12,
+  },
+  networkValueItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  networkValueLabel: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
+  },
+  networkValueAmount: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#10B981',
+  },
+  networkValueDivider: {
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginVertical: 8,
+  },
+  networkValueTotal: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: '#059669',
+  },
+  commissionBreakdownCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  commissionBreakdownTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  commissionBreakdownSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+    marginBottom: 16,
+  },
+  commissionBreakdownContent: {
+    gap: 12,
+  },
+  commissionBreakdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  commissionBreakdownLabel: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
+  },
+  commissionBreakdownAmount: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    color: '#10B981',
+  },
+  commissionBreakdownValue: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
+  },
+  referralCodeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  infoButton: {
+    padding: 4,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+  },
+  userActivityText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#059669',
+    marginTop: 2,
+  },
+
+  referralSummaryCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  referralSummaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  referralSummaryItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  referralSummaryLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  referralSummaryValue: {
     fontSize: 18,
     fontFamily: 'Inter-Bold',
     color: '#10B981',

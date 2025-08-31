@@ -10,7 +10,6 @@ export interface Listing {
   price: string;
   price_unit?: string;
   category: string;
-  images: string[];
   thumbnail_images?: string[];
   preview_images?: string[];
   is_active: boolean;
@@ -318,7 +317,6 @@ export async function createListingWithExpiration(listing: Listing & {
         description_param: listing.description || '',
         price_param: parseFloat(listing.price),
         category_param: listing.category,
-        images_param: listing.images,
         thumbnail_images_param: listing.thumbnail_images || [],
         preview_images_param: listing.preview_images || [],
         latitude_param: listing.latitude || null,

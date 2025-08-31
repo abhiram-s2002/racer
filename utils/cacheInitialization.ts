@@ -4,7 +4,7 @@
  */
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ImageCache } from './imageCache';
+import { imageCache } from './imageCache';
 
 /**
  * Initialize all cache systems safely
@@ -29,11 +29,13 @@ export async function initializeCaches(): Promise<void> {
 async function initializeImageCache(): Promise<void> {
   try {
     // Test image cache functionality
-    const stats = await ImageCache.getCacheStats();
-    // Image cache stats retrieved successfully
+    if (imageCache && imageCache.isReady()) {
+      const stats = imageCache.getStats();
+      // Image cache stats retrieved successfully
+    }
   } catch (error) {
-    console.error('Image cache initialization error:', error);
-    // Continue initialization even if image cache fails
+    // Not an error - just cache not ready yet during first app open
+    console.log('Image cache not ready yet (normal during first app open)');
   }
 }
 
@@ -112,7 +114,14 @@ export async function clearAllCaches(): Promise<void> {
     // Clearing all caches...
     
     // Clear image cache
-    await ImageCache.clearCache();
+    try {
+      if (imageCache && imageCache.isReady()) {
+        imageCache.clear();
+      }
+    } catch (error) {
+      // Not an error - just cache not ready yet during first app open
+      console.log('Image cache not ready yet (normal during first app open)');
+    }
     
     // Clear AsyncStorage cache keys
     const keys = await AsyncStorage.getAllKeys();

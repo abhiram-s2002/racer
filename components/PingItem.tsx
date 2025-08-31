@@ -45,62 +45,57 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
   
   // Create chat directly (fallback method)
   const createChatDirectly = async (): Promise<string> => {
-    try {
-      // Get listing details
-      const { data: listing, error: listingError } = await supabase
-        .from('listings')
-        .select('*')
-        .eq('id', item.listing_id)
-        .single();
-      
-      if (listingError || !listing) {
-        throw new Error('Failed to get listing details');
-      }
-      
-      // Extract first image
-      const firstImage = listing.images && listing.images.length > 0 ? listing.images[0] : null;
-      
-      // Create chat
-      const { data: chat, error: chatError } = await supabase
-        .from('marketplace_chats')
-        .insert([{
-          listing_id: item.listing_id,
-          buyer_username: item.sender_username,
-          seller_username: item.receiver_username,
-          listing_title: listing.title,
-          listing_price: listing.price,
-          listing_image: firstImage,
-          last_message: item.message,
-          last_message_time: new Date().toISOString()
-        }])
-        .select()
-        .single();
-      
-      if (chatError) throw chatError;
-      
-      // Add initial messages
-      await supabase
-        .from('messages')
-        .insert([
-          {
-            chat_id: chat.id,
-            sender_username: item.sender_username,
-            text: item.message,
-            message_type: 'text'
-          },
-          {
-            chat_id: chat.id,
-            sender_username: item.receiver_username,
-            text: 'Ping accepted! You can now chat about this listing.',
-            message_type: 'system'
-          }
-        ]);
-      
-      return chat.id;
-    } catch (error) {
-              // Error creating chat directly
-      throw error;
+    // Get listing details
+    const { data: listing, error: listingError } = await supabase
+      .from('listings')
+      .select('*')
+      .eq('id', item.listing_id)
+      .single();
+    
+    if (listingError || !listing) {
+      throw new Error('Failed to get listing details');
     }
+    
+    // Extract first image
+    const firstImage = listing.thumbnail_images && listing.thumbnail_images.length > 0 ? listing.thumbnail_images[0] : null;
+    
+    // Create chat
+    const { data: chat, error: chatError } = await supabase
+      .from('marketplace_chats')
+      .insert([{
+        listing_id: item.listing_id,
+        buyer_username: item.sender_username,
+        seller_username: item.receiver_username,
+        listing_title: listing.title,
+        listing_price: listing.price,
+        listing_image: firstImage,
+        last_message: item.message,
+        last_message_time: new Date().toISOString()
+      }])
+      .select()
+      .single();
+    
+    if (chatError) throw chatError;
+    
+    // Add initial messages
+    await supabase
+      .from('messages')
+      .insert([
+        {
+          chat_id: chat.id,
+          sender_username: item.sender_username,
+          text: item.message,
+          message_type: 'text'
+        },
+        {
+          chat_id: chat.id,
+          sender_username: item.receiver_username,
+          text: 'Ping accepted! You can now chat about this listing.',
+          message_type: 'system'
+        }
+      ]);
+    
+    return chat.id;
   };
 
   // Handle ping response (accept/reject)

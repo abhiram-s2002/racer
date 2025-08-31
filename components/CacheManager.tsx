@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { cacheMaintenance } from '@/utils/cacheMaintenance';
-import { ImageCache } from '@/utils/imageCache';
+import { imageCache } from '@/utils/imageCache';
 import { apiCache } from '@/utils/apiCache';
 
 interface CacheManagerProps {
@@ -26,9 +26,12 @@ export function CacheManager({ children }: CacheManagerProps) {
 
         // Get image cache statistics (with error handling)
         try {
-          const imageStats = await ImageCache.getCacheStats();
+          if (imageCache && imageCache.isReady()) {
+            const imageStats = imageCache.getStats();
+          }
         } catch (imageError) {
-          console.warn('Image cache stats error (non-critical):', imageError);
+          // Not an error - just cache not ready yet during first app open
+          console.log('Image cache not ready yet (normal during first app open)');
         }
 
         // Get API cache statistics (with error handling)

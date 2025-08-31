@@ -97,11 +97,11 @@ export function useCachedActivities(username: string | null) {
 
     try {
       await Promise.all([
-        enhancedCache.set(getCacheKey(CACHE_KEYS.ACTIVITIES), data.activities, CACHE_DURATION),
-        enhancedCache.set(getCacheKey(CACHE_KEYS.SENT_PINGS), data.sentPings, CACHE_DURATION),
-        enhancedCache.set(getCacheKey(CACHE_KEYS.RECEIVED_PINGS), data.receivedPings, CACHE_DURATION),
-        enhancedCache.set(getCacheKey(CACHE_KEYS.MY_LISTINGS), data.myListings, CACHE_DURATION),
-        enhancedCache.set(getCacheKey(CACHE_KEYS.USER_PROFILES), data.userProfiles, CACHE_DURATION),
+        enhancedCache.set(getCacheKey(CACHE_KEYS.ACTIVITIES), data.activities),
+        enhancedCache.set(getCacheKey(CACHE_KEYS.SENT_PINGS), data.sentPings),
+        enhancedCache.set(getCacheKey(CACHE_KEYS.RECEIVED_PINGS), data.receivedPings),
+        enhancedCache.set(getCacheKey(CACHE_KEYS.MY_LISTINGS), data.myListings),
+        enhancedCache.set(getCacheKey(CACHE_KEYS.USER_PROFILES), data.userProfiles),
       ]);
     } catch (error) {
       console.error('Error saving to cache:', error);
@@ -266,7 +266,7 @@ export function useCachedActivities(username: string | null) {
         if (!listing.image && (listing.images && listing.images.length > 0)) {
           return {
             ...listing,
-            image: listing.images[0]
+            image: listing.thumbnail_images[0]
           };
         }
         return listing;

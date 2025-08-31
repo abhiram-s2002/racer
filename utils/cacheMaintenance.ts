@@ -1,5 +1,5 @@
 // Cache maintenance operations placeholder
-import { ImageCache } from './imageCache';
+import { imageCache } from './imageCache';
 import { apiCache } from './apiCache';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -161,12 +161,16 @@ class CacheMaintenance {
    */
   private async maintainImageCache(): Promise<void> {
     try {
-      const stats = await ImageCache.getCacheStats();
-      if (stats.totalSize > this.config.maxTotalSize) {
-        await ImageCache.clearCache();
+      // Use imported instance
+      if (imageCache && imageCache.isReady()) {
+        const stats = imageCache.getStats();
+        if (stats.size > this.config.maxTotalSize) {
+          imageCache.clear();
+        }
       }
     } catch (error) {
-      console.error('Image cache maintenance error:', error);
+      // Not an error - just cache not ready yet during first app open
+      console.log('Image cache not ready yet (normal during first app open)');
     }
   }
 

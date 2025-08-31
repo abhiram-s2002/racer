@@ -83,7 +83,8 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
     price: string;
     priceUnit: PriceUnit;
     description: string;
-    images: string[];
+    thumbnailImages: string[];
+    previewImages: string[];
     isActive: boolean;
     expirationDays: number;
   }>({
@@ -92,7 +93,8 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
     price: '',
     priceUnit: preSelectedCategory ? getPricingUnits(preSelectedCategory)[0] || 'per_item' : 'per_item',
     description: '',
-    images: [],
+    thumbnailImages: [],
+    previewImages: [],
     isActive: true,
     expirationDays: 30,
   });
@@ -115,14 +117,15 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
           price: editListing.price ? String(editListing.price) : '',
           priceUnit: editListing.price_unit || 'per_item',
           description: editListing.description || '',
-          images: Array.isArray(editListing.images) ? editListing.images : (editListing.images ? [editListing.images] : []),
+          thumbnailImages: Array.isArray(editListing.thumbnail_images) ? editListing.thumbnail_images : [],
+          previewImages: Array.isArray(editListing.preview_images) ? editListing.preview_images : [],
           isActive: editListing.is_active !== undefined ? editListing.is_active : true,
           expirationDays: 30, // Default expiration days
         });
         
         // Handle existing images for editing (convert to MarketplaceImage format)
-        if (editListing.images && editListing.images.length > 0) {
-          const existingImage = editListing.images[0]; // Only take first image
+        if (editListing.thumbnail_images && editListing.thumbnail_images.length > 0) {
+          const existingImage = editListing.thumbnail_images[0]; // Only take first thumbnail
           setUploadedImageUrl(existingImage);
         } else {
           setUploadedImageUrl(null);
@@ -173,7 +176,8 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
       price: '',
       priceUnit: defaultPriceUnit,
       description: '',
-      images: [],
+      thumbnailImages: [],
+      previewImages: [],
       isActive: true,
       expirationDays: 30,
     });
@@ -246,12 +250,7 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
     const encodedUsername = encodeURIComponent(sellerUsername);
     const folderPath = `${encodedUsername}/${listingId}`;
     
-    // Compress to three sizes
-    const original = await ImageManipulator.manipulateAsync(
-      pickedImageUri,
-      [{ resize: { width: 1200 } }],
-      { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG }
-    );
+    // Compress to two sizes (no original)
     const thumbnail = await ImageManipulator.manipulateAsync(
       pickedImageUri,
       [{ resize: { width: 400 } }],
@@ -292,16 +291,14 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
       return `https://vroanjodovwsyydxrmma.supabase.co/storage/v1/object/public/listings/${filename}`;
     };
     
-    // Upload all three images to organized folder
-    const [originalUrl, thumbnailUrl, previewUrl] = await Promise.all([
-      uploadToSupabase(original.uri, 'original'),
+    // Upload only thumbnail and preview images
+    const [thumbnailUrl, previewUrl] = await Promise.all([
       uploadToSupabase(thumbnail.uri, 'thumbnail'),
       uploadToSupabase(preview.uri, 'preview'),
     ]);
     
-    setUploadedImageUrl(originalUrl);
+    setUploadedImageUrl(thumbnailUrl); // Use thumbnail as main display image
     return {
-      images: originalUrl ? [originalUrl] : [],
       thumbnail_images: thumbnailUrl ? [thumbnailUrl] : [],
       preview_images: previewUrl ? [previewUrl] : [],
     };
@@ -395,7 +392,7 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
       let imageUrls;
       try {
         imageUrls = await uploadImageToSupabase();
-        if (!imageUrls.images.length) {
+        if (!imageUrls.thumbnail_images.length) {
           Alert.alert('Upload Failed', 'Failed to upload image. Please try again.');
           setIsSubmitting(false);
           return;
@@ -414,7 +411,6 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
         price: sanitizedData.price, // Keep as string to match interface
         category: sanitizedData.category,
         price_unit: formData.priceUnit,
-        images: imageUrls.images,
         thumbnail_images: imageUrls.thumbnail_images,
         preview_images: imageUrls.preview_images,
         image_folder_path: `${encodeURIComponent(sellerUsername)}/${Date.now()}`, // Add encoded folder path
@@ -449,7 +445,8 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
         price: '',
         category: '',
         priceUnit: 'per_item',
-        images: [],
+        thumbnailImages: [],
+        previewImages: [],
         isActive: true,
         expirationDays: 30,
       });

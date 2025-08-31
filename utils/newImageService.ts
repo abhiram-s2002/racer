@@ -4,7 +4,6 @@
  */
 
 export interface ImageSet {
-  original: string;
   thumbnail: string;
   preview: string;
 }
@@ -26,25 +25,23 @@ export class NewImageService {
    * Get the best image URL for a listing based on size requirements
    */
   static getBestImageUrl(
-    images: string[] | null | undefined,
     thumbnailImages: string[] | null | undefined,
     previewImages: string[] | null | undefined,
-    size: 'original' | 'thumbnail' | 'preview' = 'original'
+    size: 'thumbnail' | 'preview' = 'thumbnail'
   ): string {
     // Try to get image from the appropriate array based on size
     let imageUrl: string | null = null;
 
     switch (size) {
-      case 'original':
-        imageUrl = this.getFirstValidImage(images);
-        break;
       case 'thumbnail':
-        // ONLY use thumbnails, never fall back to other formats
-        imageUrl = this.getFirstValidImage(thumbnailImages);
+        // Prefer thumbnails, fall back to previews
+        imageUrl = this.getFirstValidImage(thumbnailImages) ||
+                   this.getFirstValidImage(previewImages);
         break;
       case 'preview':
-        // ONLY use previews, never fall back to other formats
-        imageUrl = this.getFirstValidImage(previewImages);
+        // Prefer previews, fall back to thumbnails
+        imageUrl = this.getFirstValidImage(previewImages) ||
+                   this.getFirstValidImage(thumbnailImages);
         break;
     }
 
@@ -55,12 +52,10 @@ export class NewImageService {
    * Get all image URLs for a listing
    */
   static getImageSet(
-    images: string[] | null | undefined,
     thumbnailImages: string[] | null | undefined,
     previewImages: string[] | null | undefined
   ): ImageSet {
     return {
-      original: this.getFirstValidImage(images) || this.FALLBACK_IMAGE,
       thumbnail: this.getFirstValidImage(thumbnailImages) || this.FALLBACK_IMAGE,
       preview: this.getFirstValidImage(previewImages) || this.FALLBACK_IMAGE
     };
@@ -91,7 +86,7 @@ export class NewImageService {
       folderPath,
       username,
       timestamp,
-      imageCount: parts.length >= 2 ? 3 : 0, // Should have 3 images: original, thumbnail, preview
+      imageCount: parts.length >= 2 ? 2 : 0, // Should have 2 images: thumbnail, preview
       hasImages: parts.length >= 2
     };
   }
@@ -102,7 +97,6 @@ export class NewImageService {
   static generateImageUrlsFromFolder(folderPath: string): ImageSet {
     if (!folderPath) {
       return {
-        original: this.FALLBACK_IMAGE,
         thumbnail: this.FALLBACK_IMAGE,
         preview: this.FALLBACK_IMAGE
       };
@@ -113,7 +107,6 @@ export class NewImageService {
     const baseUrl = `${this.SUPABASE_URL}/storage/v1/object/public/${this.BUCKET_NAME}/${encodedFolderPath}`;
 
     return {
-      original: `${baseUrl}/original.jpg`,
       thumbnail: `${baseUrl}/thumbnail.jpg`,
       preview: `${baseUrl}/preview.jpg`
     };
@@ -122,12 +115,12 @@ export class NewImageService {
   /**
    * Check if image URLs follow the new organized structure
    */
-  static isOrganizedStructure(images: string[] | null | undefined): boolean {
-    if (!images || images.length === 0) return false;
+  static isOrganizedStructure(thumbnailImages: string[] | null | undefined): boolean {
+    if (!thumbnailImages || thumbnailImages.length === 0) return false;
 
-    const firstImage = images[0];
+    const firstImage = thumbnailImages[0];
     return firstImage.includes('/storage/v1/object/public/listings/') && 
-           firstImage.includes('/original.jpg');
+           firstImage.includes('/thumbnail.jpg');
   }
 
   /**
@@ -136,19 +129,17 @@ export class NewImageService {
   static migrateOldImageUrls(oldImages: string[]): ImageSet {
     if (!oldImages || oldImages.length === 0) {
       return {
-        original: this.FALLBACK_IMAGE,
         thumbnail: this.FALLBACK_IMAGE,
         preview: this.FALLBACK_IMAGE
       };
     }
 
     // For old structure, use the same image for all sizes
-    const originalUrl = oldImages[0] || this.FALLBACK_IMAGE;
+    const thumbnailUrl = oldImages[0] || this.FALLBACK_IMAGE;
     
     return {
-      original: originalUrl,
-      thumbnail: originalUrl,
-      preview: originalUrl
+      thumbnail: thumbnailUrl,
+      preview: thumbnailUrl
     };
   }
 

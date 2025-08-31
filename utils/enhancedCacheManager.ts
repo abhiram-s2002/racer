@@ -35,7 +35,7 @@ export class EnhancedCacheManager {
   }
 
   /**
-   * Get cached data with automatic TTL checking
+   * Get cached data - no automatic TTL checking
    */
   async get<T>(key: string): Promise<T | null> {
     try {
@@ -49,18 +49,10 @@ export class EnhancedCacheManager {
       }
 
       const entry: CacheEntry<T> = JSON.parse(cached);
-      const now = Date.now();
-
-      // Check if expired
-      if (now - entry.timestamp > entry.ttl) {
-        await this.delete(key);
-        this.stats.misses++;
-        return null;
-      }
 
       // Update access stats
       entry.accessCount++;
-      entry.lastAccessed = now;
+      entry.lastAccessed = Date.now();
       await AsyncStorage.setItem(cacheKey, JSON.stringify(entry));
 
       this.stats.hits++;
@@ -73,15 +65,15 @@ export class EnhancedCacheManager {
   }
 
   /**
-   * Set cached data with TTL
+   * Set cached data - no TTL expiration
    */
-  async set<T>(key: string, data: T, ttl = 300000): Promise<void> {
+  async set<T>(key: string, data: T): Promise<void> {
     try {
       const cacheKey = this.cachePrefix + this.hashKey(key);
       const entry: CacheEntry<T> = {
         data,
         timestamp: Date.now(),
-        ttl,
+        ttl: 0, // No expiration
         accessCount: 0,
         lastAccessed: Date.now(),
       };
@@ -209,14 +201,14 @@ export class EnhancedCacheManager {
       if (user) {
         const profile = await this.getUserProfile(user.id);
         if (profile) {
-          await this.set(`user_profile_${user.id}`, profile, 600000); // 10 minutes
+          await this.set(`user_profile_${user.id}`, profile); // 10 minutes
         }
       }
 
       // Preload categories
       const categories = await this.getCategories();
       if (categories) {
-        await this.set('categories', categories, 1800000); // 30 minutes
+        await this.set('categories', categories); // 30 minutes
       }
     } catch (error) {
       // Preload error
@@ -239,7 +231,7 @@ export class EnhancedCacheManager {
       
       if (data && !error) {
         profile = data;
-        await this.set(cacheKey, profile, 600000); // 10 minutes
+        await this.set(cacheKey, profile); // 10 minutes
       }
     }
     
@@ -260,7 +252,7 @@ export class EnhancedCacheManager {
       
       if (data && !error) {
         categories = data.map(item => item.category);
-        await this.set('categories', categories, 1800000); // 30 minutes
+        await this.set('categories', categories); // 30 minutes
       }
     }
     
@@ -268,14 +260,14 @@ export class EnhancedCacheManager {
   }
 
   /**
-   * Cache listings with intelligent invalidation
+   * Cache listings - no automatic expiration
    */
-  async cacheListings(key: string, listings: any[], ttl = 300000) {
-    await this.set(key, listings, ttl);
+  async cacheListings(key: string, listings: any[]) {
+    await this.set(key, listings);
     
     // Also cache individual listings for quick access
     for (const listing of listings) {
-      await this.set(`listing_${listing.id}`, listing, ttl);
+      await this.set(`listing_${listing.id}`, listing);
     }
   }
 

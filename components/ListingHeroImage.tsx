@@ -37,17 +37,17 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
 
   // Handle next image
   const handleNext = useCallback(() => {
-    if (images && images.length > 1) {
-      setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    if (thumbnailImages && thumbnailImages.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % thumbnailImages.length);
     }
-  }, [images]);
+  }, [thumbnailImages]);
 
   // Handle previous image
   const handlePrevious = useCallback(() => {
-    if (images && images.length > 1) {
-      setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    if (thumbnailImages && thumbnailImages.length > 1) {
+      setCurrentImageIndex((prev) => (prev - 1 + thumbnailImages.length) % thumbnailImages.length);
     }
-  }, [images]);
+  }, [thumbnailImages]);
 
   // Handle image load
   const handleImageLoad = useCallback(() => {
@@ -60,7 +60,7 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
   }, []);
 
   // If no images, show placeholder
-  if (!images || images.length === 0) {
+  if (!thumbnailImages || thumbnailImages.length === 0) {
     return (
       <View style={styles.container}>
         <View style={styles.placeholderContainer}>
@@ -75,7 +75,6 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
       {/* Main Image */}
       <View style={styles.imageContainer}>
         <NewRobustImage
-          images={images}
           thumbnailImages={thumbnailImages}
           previewImages={previewImages}
           imageFolderPath={imageFolderPath}
@@ -99,6 +98,8 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
           </TouchableOpacity>
         )}
         
+
+        
         {/* Loading Indicator */}
         {imageLoading && (
           <View style={styles.loadingOverlay}>
@@ -108,7 +109,7 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
       </View>
 
       {/* Navigation Arrows - Only show if multiple images */}
-      {images.length > 1 && (
+      {thumbnailImages.length > 1 && (
         <>
           {/* Previous Button */}
           <TouchableOpacity
@@ -131,16 +132,16 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
           {/* Image Counter */}
           <View style={styles.imageCounter}>
             <Text style={styles.counterText}>
-              {currentImageIndex + 1} / {images.length}
+              {currentImageIndex + 1} / {thumbnailImages.length}
             </Text>
           </View>
         </>
       )}
 
       {/* Image Dots Indicator */}
-      {images.length > 1 && (
+      {thumbnailImages.length > 1 && (
         <View style={styles.dotsContainer}>
-          {images.map((_, index) => (
+          {thumbnailImages.map((_, index) => (
             <View
               key={index}
               style={[
@@ -264,6 +265,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
+  
+
 });
 
 ListingHeroImage.displayName = 'ListingHeroImage';

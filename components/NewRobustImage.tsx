@@ -3,15 +3,11 @@ import { Image, ImageStyle, View, Text, StyleSheet, ActivityIndicator } from 're
 import { NewImageService, ImageSet, ImageMetadata } from '../utils/newImageService';
 
 interface NewRobustImageProps {
-  // Image arrays from database
-  images?: string[] | null;
   thumbnailImages?: string[] | null;
   previewImages?: string[] | null;
   imageFolderPath?: string | null;
-  
-  // Display options
-  size?: 'original' | 'thumbnail' | 'preview';
-  style?: ImageStyle;
+  size?: 'thumbnail' | 'preview';
+  style?: any;
   placeholder?: React.ReactNode;
   placeholderText?: string;
   onError?: (error: any, imageSet: ImageSet, metadata: ImageMetadata) => void;
@@ -19,21 +15,17 @@ interface NewRobustImageProps {
   resizeMode?: 'cover' | 'contain' | 'stretch' | 'repeat' | 'center';
   showLoadingIndicator?: boolean;
   retryCount?: number;
-  
-  // Optimization options
   width?: number;
   height?: number;
   useCacheBusting?: boolean;
-  
   title?: string;
 }
 
 export const NewRobustImage: React.FC<NewRobustImageProps> = ({
-  images,
   thumbnailImages,
   previewImages,
   imageFolderPath,
-  size = 'original',
+  size = 'thumbnail',
   style,
   placeholder,
   placeholderText = 'No Image',
@@ -48,7 +40,6 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
   title = 'Unknown'
 }) => {
   const [imageSet, setImageSet] = useState<ImageSet>({
-    original: NewImageService.getFallbackImageUrl(),
     thumbnail: NewImageService.getFallbackImageUrl(),
     preview: NewImageService.getFallbackImageUrl()
   });
@@ -81,8 +72,8 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
     let newMetadata: ImageMetadata;
 
     // Always use the image arrays from database if available (they have the actual URLs)
-    if (images || thumbnailImages || previewImages) {
-      newImageSet = NewImageService.getImageSet(images, thumbnailImages, previewImages);
+    if (thumbnailImages || previewImages) {
+      newImageSet = NewImageService.getImageSet(thumbnailImages, previewImages);
       newMetadata = NewImageService.extractImageMetadata(imageFolderPath);
     } else if (imageFolderPath) {
       // Fallback to generating URLs from folder path if no arrays available
@@ -91,7 +82,6 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
     } else {
       // No images available
       newImageSet = {
-        original: NewImageService.getFallbackImageUrl(),
         thumbnail: NewImageService.getFallbackImageUrl(),
         preview: NewImageService.getFallbackImageUrl()
       };
@@ -109,30 +99,25 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
 
     // Set the current image URL based on size preference with fallback
     let currentUrl: string;
-    if (size === 'original') {
-      // Prefer original images, fall back to preview then thumbnail
-      currentUrl = images && images.length > 0 ? images[0] : 
-                   previewImages && previewImages.length > 0 ? previewImages[0] :
-                   thumbnailImages && thumbnailImages.length > 0 ? thumbnailImages[0] : '';
-    } else if (size === 'thumbnail') {
-      // Prefer thumbnail images, fall back to preview then original
+    if (size === 'thumbnail') {
+      // Prefer thumbnail images, fall back to preview
       currentUrl = thumbnailImages && thumbnailImages.length > 0 ? thumbnailImages[0] :
-                   previewImages && previewImages.length > 0 ? previewImages[0] :
-                   images && images.length > 0 ? images[0] : '';
+                   previewImages && previewImages.length > 0 ? previewImages[0] : '';
     } else if (size === 'preview') {
-      // Prefer preview images, fall back to thumbnail then original
+      // Prefer preview images, fall back to thumbnail
       currentUrl = previewImages && previewImages.length > 0 ? previewImages[0] :
-                   thumbnailImages && thumbnailImages.length > 0 ? thumbnailImages[0] :
-                   images && images.length > 0 ? images[0] : '';
+                   thumbnailImages && thumbnailImages.length > 0 ? thumbnailImages[0] : '';
     } else {
-      currentUrl = NewImageService.getBestImageUrl(images, thumbnailImages, previewImages, size);
+      // Ensure size is always a valid value
+      const validSize = size === 'thumbnail' || size === 'preview' ? size : 'thumbnail';
+      currentUrl = NewImageService.getBestImageUrl(thumbnailImages, previewImages, validSize);
     }
     setCurrentImageUrl(currentUrl);
 
     setIsLoading(true);
     setHasError(false);
     setRetryAttempts(0);
-  }, [images, thumbnailImages, previewImages, imageFolderPath, size, title]);
+  }, [thumbnailImages, previewImages, imageFolderPath, size, title]);
 
   const handleLoad = () => {
     setIsLoading(false);

@@ -10,6 +10,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
+import { imageCache } from '@/utils/imageCache';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -29,7 +30,6 @@ interface Listing {
   price: number;
   price_unit: string;
   category: string;
-  images: string[];
   thumbnail_images: string[];
   preview_images: string[];
   image_folder_path: string;
@@ -73,6 +73,16 @@ function ListingDetailScreen() {
       setLoading(true);
       setError(null);
       
+      // Check image cache first for instant loading
+      let cachedImages = null;
+      try {
+        if (imageCache.isReady()) {
+          cachedImages = imageCache.getListingImages(listingId);
+        }
+      } catch (error) {
+        console.warn('Failed to get cached images:', error);
+      }
+      
       // Fetch listing details
       const { data: listingData, error: listingError } = await supabase
         .from('listings')
@@ -82,6 +92,13 @@ function ListingDetailScreen() {
       
       if (listingError) throw listingError;
       if (!listingData) throw new Error('Listing not found');
+      
+      // If we have cached images, merge them with the listing data
+      if (cachedImages) {
+        listingData.thumbnail_images = cachedImages.thumbnail_images;
+        listingData.preview_images = cachedImages.preview_images;
+        listingData.image_folder_path = cachedImages.image_folder_path;
+      }
       
       setListing(listingData);
       
@@ -119,19 +136,63 @@ function ListingDetailScreen() {
   // Handle refresh
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
+    
+    // Clear image cache for this listing to get fresh images
+    if (listingId) {
+      // Note: We don't clear the cache here as it might be useful for other views
+      // The cache will auto-expire after 5 minutes anyway
+    }
+    
     await fetchListingData();
     setRefreshing(false);
-  }, [fetchListingData]);
+  }, [fetchListingData, listingId]);
 
   // Load data on mount and when listingId changes
   useEffect(() => {
+    // Check if we have cached images first
+    try {
+      if (imageCache.isReady()) {
+        const cachedImages = imageCache.getListingImages(listingId);
+        
+        if (cachedImages) {
+          // We have cached images, show them immediately
+          setListing({
+            id: listingId,
+            title: 'Loading...', // Placeholder
+            description: '',
+            price: 0,
+            price_unit: 'per_item',
+            category: 'other',
+            thumbnail_images: cachedImages.thumbnail_images,
+            preview_images: cachedImages.preview_images,
+            image_folder_path: cachedImages.image_folder_path,
+            username: '',
+            latitude: 0,
+            longitude: 0,
+            created_at: '',
+            is_active: true
+          } as Listing);
+          setLoading(false);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to check image cache:', error);
+    }
+    
+    // Always fetch fresh data from database
     fetchListingData();
-  }, [fetchListingData]);
+  }, [fetchListingData, listingId]);
 
   // Handle navigation to other listings
   const handleListingPress = useCallback((listingId: string) => {
     router.push(`/listing-detail?id=${listingId}`);
   }, [router]);
+
+
+
+
+
+
 
 
 
@@ -171,13 +232,15 @@ function ListingDetailScreen() {
       >
         {/* Hero Image Section */}
         <ListingHeroImage
-          images={listing.images}
+          images={listing.thumbnail_images} // Use thumbnail_images as fallback for images
           thumbnailImages={listing.thumbnail_images}
           previewImages={listing.preview_images}
           imageFolderPath={listing.image_folder_path}
           title={listing.title}
           onBackPress={() => router.back()}
         />
+        
+
         
 
 
@@ -261,6 +324,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Inter-Medium',
   },
+  
+
 });
 
 // Wrap with Error Boundary for better error handling

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
@@ -307,24 +307,28 @@ function HomeScreen() {
   };
 
   // Corrected filteredListings with proper types
-  const filteredListings = listings.filter((listing: any) => {
-    const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || listing.category === selectedCategory;
-    const isActive = listing.is_active !== false;
-    return matchesSearch && matchesCategory && isActive;
-  });
+  const filteredListings = useMemo(() => {
+    return listings.filter((listing: any) => {
+      const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || listing.category === selectedCategory;
+      const isActive = listing.is_active !== false;
+      return matchesSearch && matchesCategory && isActive;
+    });
+  }, [listings, searchQuery, selectedCategory]);
 
   // Convert listing format for display with proper types
-  const displayListings = filteredListings.map((listing: any) => {
-    return {
-      ...listing,
-    };
-  });
+  const displayListings = useMemo(() => {
+    return filteredListings.map((listing: any) => {
+      return {
+        ...listing,
+      };
+    });
+  }, [filteredListings]);
 
 
 
   // Handler for the message (ping) button
-  const handlePingSeller = async (listing: any) => {
+  const handlePingSeller = useCallback(async (listing: any) => {
     try {
       // Check network connectivity first
       if (!networkMonitor.isOnline()) {
@@ -376,9 +380,9 @@ function HomeScreen() {
         component: 'HomeScreen',
       });
     }
-  };
+  }, [username, errorHandler, networkMonitor, checkExistingPing, checkPingLimit]);
 
-  const handleTemplateSelect = (template: any) => {
+  const handleTemplateSelect = useCallback((template: any) => {
     if (template.isCustom) {
       // Keep current message for custom editing
       setPingMessage(pingMessage);
@@ -386,7 +390,7 @@ function HomeScreen() {
       setPingMessage(template.message);
     }
     setShowTemplateSelector(false);
-  };
+  }, [pingMessage]);
 
   // Confirm sending the ping
   const confirmSendPing = async () => {
@@ -534,10 +538,10 @@ function HomeScreen() {
 
 
 
-  const handleImageClick = (listing: any) => {
+  const handleImageClick = useCallback((listing: any) => {
     // Navigate to listing detail page instead of showing image popup
     router.push(`/listing-detail?id=${listing.id}`);
-  };
+  }, [router]);
 
   const handleToggleSortByDistance = () => {
     if (!locationAvailable) {
@@ -570,7 +574,7 @@ function HomeScreen() {
     }
   };
 
-  const renderCategory = ({ item }: { item: any }) => {
+  const renderCategory = useCallback(({ item }: { item: any }) => {
     const IconComponent = categoryIcons[item.id as keyof typeof categoryIcons] || ShoppingCart;
     const isSelected = selectedCategory === item.id;
     
@@ -590,16 +594,18 @@ function HomeScreen() {
         </Text>
       </TouchableOpacity>
     );
-  };
+  }, [selectedCategory]);
 
-  const renderListing = ({ item }: { item: any }) => {
+  const keyExtractor = useCallback((item: any) => item.id, []);
+  const categoryKeyExtractor = useCallback((item: any) => item.id, []);
+  
+  const renderListing = useCallback(({ item }: { item: any }) => {
     const seller = sellerInfoMap[item.username] || { name: 'Unknown Seller', avatar_url: '' };
     
     return (
       <View style={styles.listingCard}>
         <TouchableOpacity onPress={() => handleImageClick(item)}>
         <NewRobustImage
-          images={item.images}
           thumbnailImages={item.thumbnail_images}
           previewImages={item.preview_images}
           imageFolderPath={item.image_folder_path}
@@ -760,33 +766,33 @@ function HomeScreen() {
         </View>
       </View>
     );
-  };
+  }, [sellerInfoMap, username, existingPings, expandedDescriptions]);
 
   // Handler for the floating add button
-  const handleAddListing = () => {
+  const handleAddListing = useCallback(() => {
     setShowCategoryModal(true);
-  };
+  }, []);
 
   // Handler for the feedback button
-  const handleFeedback = () => {
+  const handleFeedback = useCallback(() => {
     setShowFeedbackModal(true);
-  };
+  }, []);
 
-  const toggleDescriptionExpansion = (listingId: string) => {
+  const toggleDescriptionExpansion = useCallback((listingId: string) => {
     setExpandedDescriptions(prev => ({
       ...prev,
       [listingId]: !prev[listingId]
     }));
-  };
+  }, []);
 
-  const getDescriptionText = (item: any) => {
+  const getDescriptionText = useCallback((item: any) => {
     if (item.description && item.description.trim()) {
       return item.description.trim();
     }
     return null;
-  };
+  }, []);
 
-  const formatTimeAgo = (dateString: string) => {
+  const formatTimeAgo = useCallback((dateString: string) => {
     if (!dateString) return 'Recently';
     
     const date = new Date(dateString);
@@ -802,9 +808,9 @@ function HomeScreen() {
     if (diffInDays < 30) return `${Math.floor(diffInDays / 7)}w ago`;
     
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  }, []);
 
-  const trackUserActivity = () => {
+  const trackUserActivity = useCallback(() => {
     if (hasShownFeedbackPrompt) return; // Don't track if already shown
     
     const newCount = userActivityCount + 1;
@@ -831,9 +837,9 @@ function HomeScreen() {
         ]
       );
     }
-  };
+  }, [hasShownFeedbackPrompt, userActivityCount]);
 
-  const handleSubmitFeedback = async (rating: number, feedback: string) => {
+  const handleSubmitFeedback = useCallback(async (rating: number, feedback: string) => {
     if (!username) {
       Alert.alert('Error', 'Please log in to submit feedback');
       return;
@@ -858,16 +864,16 @@ function HomeScreen() {
     } catch (error) {
       Alert.alert('Error', 'Failed to submit feedback. Please try again.');
     }
-  };
+  }, [username]);
 
   // Handler for category selection
-  const handleCategorySelect = (categoryId: string) => {
+  const handleCategorySelect = useCallback((categoryId: string) => {
     setSelectedCategoryForListing(categoryId as Category);
     setShowCategoryModal(false);
     setShowAddModal(true);
-  };
+  }, []);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
       // Check network connectivity first
@@ -893,7 +899,36 @@ function HomeScreen() {
     } finally {
       setRefreshing(false);
     }
-  };
+  }, [refreshListings, loadUserRatings]);
+
+  // Memoized values for FlatList props
+  const sectionTitle = useMemo(() => 
+    selectedCategory === 'all' ? 'All Listings' : `${mockCategories.find(c => c.id === selectedCategory)?.name} Listings`
+  , [selectedCategory]);
+
+  const emptyStateText = useMemo(() => 
+    searchQuery
+      ? `No results for "${searchQuery}"`
+      : 'Try changing filters or adding a new listing'
+  , [searchQuery]);
+
+  const onEndReachedHandler = useCallback(() => {
+    if (hasMore && !loading) {
+      loadMoreListings();
+    }
+  }, [hasMore, loading, loadMoreListings]);
+
+  const refreshControlComponent = useMemo(() => 
+    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#22C55E" />
+  , [refreshing, onRefresh]);
+
+  const footerComponent = useMemo(() => 
+    loading && hasMore ? (
+      <View style={styles.loadingMoreContainer}>
+        <Text style={styles.loadingMoreText}>Loading more...</Text>
+      </View>
+    ) : null
+  , [loading, hasMore]);
 
   // Note: Time limits are now checked on-demand when user clicks ping button
   // This is more efficient and reduces database calls
@@ -1129,17 +1164,21 @@ function HomeScreen() {
         <FlatList
           data={mockCategories}
           renderItem={renderCategory}
-          keyExtractor={(item) => item.id}
+          keyExtractor={categoryKeyExtractor}
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoriesContainer}
+          removeClippedSubviews={true}
+          maxToRenderPerBatch={5}
+          windowSize={5}
+          initialNumToRender={5}
         />
       </View>
 
       {/* Listings */}
       <View style={styles.listingsSection}>
         <Text style={styles.sectionTitle}>
-          {selectedCategory === 'all' ? 'All Listings' : `${mockCategories.find(c => c.id === selectedCategory)?.name} Listings`}
+          {sectionTitle}
         </Text>
         
 
@@ -1152,37 +1191,26 @@ function HomeScreen() {
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No listings found</Text>
             <Text style={styles.emptySubtext}>
-              {searchQuery
-                ? `No results for "${searchQuery}"`
-                : 'Try changing filters or adding a new listing'}
+              {emptyStateText}
             </Text>
           </View>
         ) : (
           <FlatList
             data={displayListings}
             renderItem={renderListing}
-            keyExtractor={(item, index) => `${item.id}-${index}`}
+            keyExtractor={keyExtractor}
             numColumns={2}
             contentContainerStyle={styles.listingsContainer}
             columnWrapperStyle={styles.columnWrapper}
             showsVerticalScrollIndicator={false}
-            removeClippedSubviews={false}
-            onEndReached={() => {
-              if (hasMore && !loading) {
-                loadMoreListings();
-              }
-            }}
+            removeClippedSubviews={true}
+            maxToRenderPerBatch={10}
+            windowSize={10}
+            initialNumToRender={10}
+            onEndReached={onEndReachedHandler}
             onEndReachedThreshold={0.5}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#22C55E" />
-            }
-            ListFooterComponent={
-              loading && hasMore ? (
-                <View style={styles.loadingMoreContainer}>
-                  <Text style={styles.loadingMoreText}>Loading more...</Text>
-                </View>
-              ) : null
-            }
+            refreshControl={refreshControlComponent}
+            ListFooterComponent={footerComponent}
           />
         )}
       </View>
