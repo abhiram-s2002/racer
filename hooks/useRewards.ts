@@ -130,13 +130,13 @@ export function useRewards(username: string) {
       }
 
       // Calculate reward based on current streak
-      let omniEarned = 10; // Base reward
-      if (userStreak?.current_streak && userStreak.current_streak >= 7) {
-        omniEarned = 25; // Weekly bonus
-      }
-      if (userStreak?.current_streak && userStreak.current_streak >= 30) {
-        omniEarned = 50; // Monthly bonus
-      }
+              let omniEarned = 10; // Base reward
+        if (userStreak?.current_streak && userStreak.current_streak >= 7) {
+          omniEarned = 200; // Weekly bonus
+        }
+        if (userStreak?.current_streak && userStreak.current_streak >= 30) {
+          omniEarned = 1000; // Monthly bonus
+        }
 
       const today = new Date().toISOString().split('T')[0];
       
@@ -215,14 +215,54 @@ export function useRewards(username: string) {
 
   // Check and award Power User achievement (7 consecutive days)
   const checkPowerUserAchievement = useCallback(async () => {
-    if (!username || !userStreak) return false;
+    if (!username || !dailyCheckins.length) return false;
 
     try {
       const powerUserAchievement = userAchievements.find(a => a.achievement_id === 'power_user');
-      if (powerUserAchievement && !powerUserAchievement.completed && userStreak.current_streak >= 7) {
-        const success = await updateAchievement('power_user', 7);
-        if (success) {
-          return true;
+      
+      if (powerUserAchievement && !powerUserAchievement.completed) {
+        // Sort check-ins by date and find consecutive days (same logic as Loyal User)
+        const sortedCheckins = [...dailyCheckins].sort((a, b) => 
+          new Date(a.checkin_date).getTime() - new Date(b.checkin_date).getTime()
+        );
+
+        let maxConsecutiveDays = 0;
+        let currentConsecutiveDays = 0;
+        let lastDate: Date | null = null;
+
+        for (const checkin of sortedCheckins) {
+          const checkinDate = new Date(checkin.checkin_date);
+          
+          if (lastDate) {
+            const dayDiff = Math.floor((checkinDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            if (dayDiff === 1) {
+              // Consecutive day
+              currentConsecutiveDays++;
+            } else if (dayDiff > 1) {
+              // Gap in days, reset counter
+              currentConsecutiveDays = 1;
+            }
+            // If dayDiff === 0, it's the same day, don't increment
+          } else {
+            // First check-in
+            currentConsecutiveDays = 1;
+          }
+
+          maxConsecutiveDays = Math.max(maxConsecutiveDays, currentConsecutiveDays);
+          lastDate = checkinDate;
+        }
+
+        // Update progress and check if completed
+        const newProgress = Math.min(maxConsecutiveDays, 7);
+        if (newProgress >= 7) {
+          const success = await updateAchievement('power_user', 7);
+          if (success) {
+            return true;
+          }
+        } else if (newProgress > (powerUserAchievement.progress || 0)) {
+          // Update progress even if not completed
+          await updateAchievement('power_user', newProgress);
         }
       }
       return false;
@@ -230,7 +270,7 @@ export function useRewards(username: string) {
       console.error('Error checking Power User achievement:', err);
       return false;
     }
-  }, [username, userStreak, userAchievements, updateAchievement]);
+  }, [username, dailyCheckins, userAchievements, updateAchievement]);
 
   // Check and award Loyal User achievement (30 consecutive days)
   const checkLoyalUserAchievement = useCallback(async () => {

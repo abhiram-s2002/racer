@@ -240,7 +240,8 @@ function RewardsScreen() {
       'social_butterfly',
       'referral_king',
       'first_list',
-      'listing_master'
+      'listing_master',
+      'perfect_seller'
     ];
     return implementedAchievements.includes(achievementId);
   };
@@ -468,11 +469,11 @@ function RewardsScreen() {
             </View>
             <View style={styles.rewardItem}>
               <Text style={styles.rewardLabel}>Weekly Bonus</Text>
-              <Text style={styles.rewardValue}>+25 OMNI</Text>
+              <Text style={styles.rewardValue}>+200 OMNI</Text>
             </View>
             <View style={styles.rewardItem}>
               <Text style={styles.rewardLabel}>Monthly Bonus</Text>
-              <Text style={styles.rewardValue}>+50 OMNI</Text>
+              <Text style={styles.rewardValue}>+1000 OMNI</Text>
             </View>
           </View>
         </View>

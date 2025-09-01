@@ -62,6 +62,13 @@ export class RatingService {
         return { success: false, error: 'Failed to submit rating' };
       }
 
+      // Check for Perfect Seller achievement after successful rating submission
+      try {
+        await RatingService.checkPerfectSellerAchievement(ratedUsername);
+      } catch (error) {
+        // Silently handle achievement check errors - don't break rating submission
+      }
+
       return { success: true };
     } catch (error) {
       console.error('Error submitting rating:', error);
@@ -313,6 +320,54 @@ export class RatingService {
     } catch (error) {
       console.error('Error getting users rating summary:', error);
       return {};
+    }
+  }
+
+  /**
+   * Check and award Perfect Seller achievement (10 consecutive 5-star ratings)
+   */
+  static async checkPerfectSellerAchievement(ratedUsername: string): Promise<void> {
+    try {
+      // Get user's current achievement status
+      const { data: userAchievement } = await supabase
+        .from('user_achievements')
+        .select('progress, completed')
+        .eq('username', ratedUsername)
+        .eq('achievement_id', 'perfect_seller')
+        .single();
+
+      // If already completed, skip
+      if (userAchievement?.completed) {
+        return;
+      }
+
+      // Get all ratings for this user (ordered by most recent first)
+      const { data: allRatings } = await supabase
+        .from('user_ratings')
+        .select('rating')
+        .eq('rated_username', ratedUsername)
+        .order('created_at', { ascending: false });
+
+      if (!allRatings || allRatings.length === 0) {
+        return;
+      }
+
+      // Count consecutive 5-star ratings from the most recent
+      let consecutiveFiveStars = 0;
+      for (const rating of allRatings) {
+        if (rating.rating === 5) {
+          consecutiveFiveStars++;
+        } else {
+          break; // Stop counting when we hit a non-5-star rating
+        }
+      }
+
+      // Update achievement progress (cap at 10)
+      const progress = Math.min(consecutiveFiveStars, 10);
+      const { updateUserAchievementProgressSafe } = await import('./rewardsSupabase');
+      await updateUserAchievementProgressSafe(ratedUsername, 'perfect_seller', progress);
+    } catch (error) {
+      console.error('Error in checkPerfectSellerAchievement:', error);
     }
   }
 }

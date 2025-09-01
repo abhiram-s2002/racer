@@ -1,3 +1,4 @@
+
 /* global console, setTimeout */
 import { supabase, enhancedSupabase } from './supabaseClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -238,6 +239,38 @@ export const ChatService = {
         updatedMessages[messageIndex] = data;
         await this.saveLocalMessages(chatId, updatedMessages);
       }
+      
+             // After sending a message, update Social Butterfly achievement progress
+       try {
+         const { data: { user } } = await supabase.auth.getUser();
+         
+         if (!user) return data;
+         
+         // Get user profile to get username
+         const { data: profile, error: profileError } = await supabase
+           .from('users')
+           .select('username')
+           .eq('id', user.id)
+           .single();
+         
+         if (profileError || !profile?.username) return data;
+         
+         // Fetch current progress
+         const { data: userAchievement } = await supabase
+           .from('user_achievements')
+           .select('progress')
+           .eq('username', profile.username)
+           .eq('achievement_id', 'social_butterfly')
+           .single();
+
+         const currentProgress = userAchievement?.progress || 0;
+         
+         // Import the function dynamically to avoid circular dependencies
+         const { updateUserAchievementProgressSafe } = await import('./rewardsSupabase');
+         await updateUserAchievementProgressSafe(profile.username, 'social_butterfly', currentProgress + 1);
+       } catch (error) {
+         // Silently handle achievement update errors
+       }
       
       return data;
     } catch (error) {
