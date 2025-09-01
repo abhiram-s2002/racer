@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '@/hooks/useAuth';
 import { useRewards } from '@/hooks/useRewards';
+import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { type Referral } from '@/utils/rewardsSupabase';
 import { type ReferralCommission } from '@/utils/types';
 
@@ -70,6 +71,16 @@ function RewardsScreen() {
     getUserBalance,
     checkTodayCheckedIn
   } = useRewards(username);
+
+  // Use the leaderboard hook
+  const {
+    topUsers,
+    currentUserRank,
+    lastUpdated,
+    loading: leaderboardLoading,
+    error: leaderboardError,
+    refreshLeaderboard
+  } = useLeaderboard(username);
 
   // Back handler
   useBackHandler();
@@ -499,6 +510,60 @@ function RewardsScreen() {
           </View>
         </View>
 
+        {/* Achievements Section */}
+        <View style={styles.achievementsSection}>
+          <View style={styles.achievementsHeader}>
+            <Text style={styles.sectionTitle}>Achievements</Text>
+            <View style={styles.achievementsStats}>
+              <View style={styles.achievementStat}>
+                <Text style={styles.achievementStatValue}>
+                  {achievementStats.completedAchievements}
+                </Text>
+                <Text style={styles.achievementStatLabel}>Completed</Text>
+              </View>
+              <View style={styles.achievementStat}>
+                <Text style={styles.achievementStatValue}>
+                  {achievementStats.totalAchievements}
+                </Text>
+                <Text style={styles.achievementStatLabel}>Total</Text>
+              </View>
+              <View style={styles.achievementStat}>
+                <Text style={styles.achievementStatValue}>
+                  {Math.round(achievementStats.completionRate)}%
+                </Text>
+                <Text style={styles.achievementStatLabel}>Progress</Text>
+              </View>
+            </View>
+          </View>
+
+          {rewardsLoading ? (
+            <View style={styles.loadingContainer}>
+              <Text style={styles.loadingText}>Loading achievements...</Text>
+            </View>
+          ) : rewardsError ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>Error loading achievements: {rewardsError}</Text>
+            </View>
+          ) : userAchievements.length === 0 ? (
+            <View style={styles.emptyAchievementsContainer}>
+              <Trophy size={48} color="#94A3B8" />
+              <Text style={styles.emptyAchievementsText}>No Achievements Yet</Text>
+              <Text style={styles.emptyAchievementsSubtext}>
+                Start using the app to unlock achievements and earn rewards
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={userAchievements}
+              renderItem={renderAchievement}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              style={styles.achievementsList}
+              contentContainerStyle={styles.achievementsListContent}
+            />
+          )}
+        </View>
+
         {/* Network Analytics Section */}
         <View style={styles.networkAnalyticsSection}>
           <Text style={styles.sectionTitle}>Network Analytics</Text>
@@ -594,62 +659,6 @@ function RewardsScreen() {
                 </Text>
              </View>
            </View>
-        </View>
-
-        {/* Achievements Section */}
-        <View style={styles.achievementsSection}>
-          <View style={styles.achievementsHeader}>
-            <Text style={styles.sectionTitle}>Achievements</Text>
-            <View style={styles.achievementsStats}>
-              <View style={styles.achievementStat}>
-                <Text style={styles.achievementStatValue}>
-                  {achievementStats.completedAchievements}
-                </Text>
-                <Text style={styles.achievementStatLabel}>Completed</Text>
-              </View>
-              <View style={styles.achievementStat}>
-                <Text style={styles.achievementStatValue}>
-                  {achievementStats.totalAchievements}
-                </Text>
-                <Text style={styles.achievementStatLabel}>Total</Text>
-              </View>
-              <View style={styles.achievementStat}>
-                <Text style={styles.achievementStatValue}>
-                  {Math.round(achievementStats.completionRate)}%
-                </Text>
-                <Text style={styles.achievementStatLabel}>Progress</Text>
-              </View>
-            </View>
-          </View>
-
-          {rewardsLoading ? (
-            <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Loading achievements...</Text>
-            </View>
-          ) : rewardsError ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>Error loading achievements: {rewardsError}</Text>
-            </View>
-          ) : userAchievements.length === 0 ? (
-            <View style={styles.emptyAchievementsContainer}>
-              <Trophy size={48} color="#94A3B8" />
-              <Text style={styles.emptyAchievementsText}>No Achievements Yet</Text>
-              <Text style={styles.emptyAchievementsSubtext}>
-                Start using the app to unlock achievements and earn rewards
-              </Text>
-            </View>
-          ) : (
-            <FlatList
-              data={userAchievements}
-              renderItem={renderAchievement}
-              keyExtractor={(item) => item.id}
-              scrollEnabled={false}
-              style={styles.achievementsList}
-              contentContainerStyle={styles.achievementsListContent}
-            />
-          )}
-
-
         </View>
 
         {/* Referral History */}
@@ -779,6 +788,66 @@ function RewardsScreen() {
         )}
 
 
+
+        {/* Global Leaderboard Section */}
+        <View style={styles.leaderboardSection}>
+          <View style={styles.leaderboardHeader}>
+            <Text style={styles.sectionTitle}> Global Leaderboard</Text>
+            <Text style={styles.lastUpdatedText}>{lastUpdated}</Text>
+          </View>
+          
+          {leaderboardLoading ? (
+            <View style={styles.leaderboardLoading}>
+              <Text style={styles.loadingText}>Loading leaderboard...</Text>
+            </View>
+          ) : leaderboardError ? (
+            <View style={styles.leaderboardError}>
+              <Text style={styles.errorText}>Error loading leaderboard</Text>
+            </View>
+          ) : (
+            <>
+              {/* Top 20 Users */}
+              <View style={styles.leaderboardList}>
+                {topUsers.map((user, index) => (
+                  <View key={user.username} style={styles.leaderboardItem}>
+                    <View style={styles.rankContainer}>
+                      <Text style={[
+                        styles.rankText,
+                        index < 3 ? styles.topRankText : styles.regularRankText
+                      ]}>
+                        {index + 1}
+                      </Text>
+                    </View>
+                    <View style={styles.userInfo}>
+                      <Text style={styles.usernameText}>{user.username}</Text>
+                    </View>
+                    <View style={styles.omniEarned}>
+                      <Text style={styles.omniAmount}>{user.total_omni_earned.toLocaleString()} OMNI</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+              {/* Current User Rank */}
+              {currentUserRank && (
+                <View style={styles.currentUserSection}>
+                  <View style={styles.currentUserHeader}>
+                    <Text style={styles.currentUserTitle}>Your Position</Text>
+                  </View>
+                  <View style={styles.currentUserCard}>
+                    <View style={styles.currentUserRank}>
+                      <Text style={styles.currentUserRankText}>#{currentUserRank.rank}</Text>
+                    </View>
+                    <View style={styles.currentUserInfo}>
+                      <Text style={styles.currentUserUsername}>{currentUserRank.username}</Text>
+                      <Text style={styles.currentUserOmni}>{currentUserRank.total_omni_earned.toLocaleString()} OMNI</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+            </>
+          )}
+        </View>
 
         {/* Legal Disclaimer */}
         <View style={styles.disclaimerSection}>
@@ -1566,6 +1635,120 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Inter-Bold',
     color: '#059669',
+  },
+  leaderboardSection: {
+    margin: 16,
+    marginBottom: 24,
+  },
+  leaderboardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  lastUpdatedText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+  },
+  leaderboardLoading: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  leaderboardError: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  leaderboardList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  leaderboardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  rankContainer: {
+    width: 32,
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  rankText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+  },
+  topRankText: {
+    color: '#F59E0B',
+  },
+  regularRankText: {
+    color: '#64748B',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  usernameText: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#1E293B',
+  },
+  omniEarned: {
+    alignItems: 'flex-end',
+  },
+  omniAmount: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    color: '#10B981',
+  },
+  currentUserSection: {
+    marginTop: 16,
+  },
+  currentUserHeader: {
+    marginBottom: 12,
+  },
+  currentUserTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    color: '#1E293B',
+  },
+  currentUserCard: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DCFCE7',
+  },
+  currentUserRank: {
+    marginRight: 16,
+  },
+  currentUserRankText: {
+    fontSize: 24,
+    fontFamily: 'Inter-Bold',
+    color: '#059669',
+  },
+  currentUserInfo: {
+    flex: 1,
+  },
+  currentUserUsername: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#065F46',
+    marginBottom: 4,
+  },
+  currentUserOmni: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#047857',
   },
   commissionBreakdownCard: {
     backgroundColor: '#F8FAFC',
