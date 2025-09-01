@@ -31,14 +31,13 @@ export function CacheManager({ children }: CacheManagerProps) {
           }
         } catch (imageError) {
           // Not an error - just cache not ready yet during first app open
-          console.log('Image cache not ready yet (normal during first app open)');
         }
 
         // Get API cache statistics (with error handling)
         try {
           const apiStats = await apiCache.getCacheStats();
         } catch (apiError) {
-          console.warn('API cache stats error (non-critical):', apiError);
+          // API cache stats error (non-critical)
         }
       } catch (error) {
         console.error('Cache initialization error:', error);

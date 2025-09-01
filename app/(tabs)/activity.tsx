@@ -70,7 +70,7 @@ function ActivityScreen() {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [userToRate, setUserToRate] = useState<string>('');
   const [pingIdToRate, setPingIdToRate] = useState<string>('');
-  const [pingRatings, setPingRatings] = useState<Record<string, boolean>>({});
+  const [pingRatings, setPingRatings] = useState<Record<string, { hasRated: boolean; rating: number; category: string }>>({});
 
   useEffect(() => {
     async function fetchUser() {
@@ -105,15 +105,20 @@ function ActivityScreen() {
     if (!username) return;
     
     try {
-      const ratings: Record<string, boolean> = {};
+      const ratings: Record<string, { hasRated: boolean; rating: number; category: string }> = {};
       
-      // Check which ping interactions the current user has already rated
+      // Check which specific ping interactions the current user has already rated
       for (const ping of [...sentPings, ...receivedPings]) {
         if (ping.status === 'accepted') {
           try {
-            const existingRating = await RatingService.getRatingByPingId(ping.id);
-            if (existingRating && existingRating.rater_username === username) {
-              ratings[ping.id] = true;
+            // Check if this specific ping has been rated by the current user
+            const existingRating = await RatingService.getRatingByPingId(ping.id, username);
+            if (existingRating) {
+              ratings[ping.id] = {
+                hasRated: true,
+                rating: existingRating.rating,
+                category: existingRating.category
+              };
             }
           } catch (error) {
             console.error('Error checking existing rating:', error);
@@ -138,33 +143,15 @@ function ActivityScreen() {
   };
 
   const handleRatingSubmit = async (ratingData: any) => {
-    if (!currentUsername) {
-      Alert.alert('Error', 'Please log in to submit a rating.');
-      return;
-    }
-
+    // This function is now just a callback to refresh the UI
+    // The RatingModal handles all the submission logic
     try {
-      const result = await RatingService.submitRating(
-        currentUsername,
-        userToRate,
-        pingIdToRate,
-        ratingData
-      );
-
-      if (result.success) {
-        Alert.alert('Success', 'Rating submitted successfully!');
-        // Mark this ping as rated
-        setPingRatings(prev => ({
-          ...prev,
-          [pingIdToRate]: true
-        }));
-        setShowRatingModal(false);
-      } else {
-        Alert.alert('Error', result.error || 'Failed to submit rating. Please try again.');
-      }
+      // Refresh the cached activities to get the latest ping data
+      await refresh();
+      // Also refresh the ratings data
+      await loadExistingRatings();
     } catch (error) {
-      console.error('Error submitting rating:', error);
-      Alert.alert('Error', 'An unexpected error occurred. Please try again.');
+      console.error('Error refreshing data:', error);
     }
   };
 
@@ -177,6 +164,19 @@ function ActivityScreen() {
       return eligibility.can_rate;
     } catch (error) {
       console.error('Error checking rating eligibility:', error);
+      return false;
+    }
+  };
+
+  const checkIfUserHasRated = async (pingId: string) => {
+    if (!currentUsername) return false;
+    
+    try {
+      // Check if user has already rated this specific ping
+      const existingRating = await RatingService.getRatingByPingId(pingId, currentUsername);
+      return existingRating !== null;
+    } catch (error) {
+      console.error('Error checking existing rating:', error);
       return false;
     }
   };
@@ -635,22 +635,39 @@ function ActivityScreen() {
           <Text style={styles.pingMessage}>{item.message}</Text>
           
           {/* Rating button - positioned on the right */}
-          {!pingRatings[item.id] ? (
-            <TouchableOpacity
-              style={styles.rateButton}
-              onPress={() => openRatingModal(displayUser.username, item.id)}
-            >
-              <Star size={16} color="#F59E0B" />
-              <Text style={styles.rateButtonText}>
-                {item.type === 'sent_ping' ? 'Rate Seller' : 'Rate Buyer'}
-              </Text>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.ratedIndicator}>
-              <Star size={16} color="#22C55E" fill="#22C55E" />
-              <Text style={styles.ratedText}>Rated</Text>
-            </View>
-          )}
+          {(() => {
+            // Check if user has rated THIS SPECIFIC ping (item.id)
+            const ratingData = pingRatings[item.id];
+                        return ratingData?.hasRated ? (
+              <TouchableOpacity
+                style={styles.rateButton}
+                onPress={() => openRatingModal(displayUser.username, item.id)}
+              >
+                <View style={styles.ratingDisplay}>
+                  <View style={styles.starRow}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star 
+                        key={star} 
+                        size={12} 
+                        color={star <= ratingData.rating ? "#F59E0B" : "#E2E8F0"} 
+                        fill={star <= ratingData.rating ? "#F59E0B" : "transparent"}
+                      />
+                    ))}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.rateButton}
+                onPress={() => openRatingModal(displayUser.username, item.id)}
+              >
+                <Star size={16} color="#F59E0B" />
+                <Text style={styles.rateButtonText}>
+                  {item.type === 'sent_ping' ? 'Rate Seller' : 'Rate Buyer'}
+                </Text>
+              </TouchableOpacity>
+            );
+          })()}
         </View>
       ) : (
         <Text style={styles.pingMessage}>{item.message}</Text>
@@ -692,6 +709,21 @@ function ActivityScreen() {
     } else {
       // Current user received the ping (is seller), so they're rating the buyer
       return 'Buyer';
+    }
+  };
+
+  const formatCategory = (category: string) => {
+    switch (category) {
+      case 'overall':
+        return 'Overall';
+      case 'communication':
+        return 'Communication';
+      case 'responsiveness':
+        return 'Responsiveness';
+      case 'helpfulness':
+        return 'Helpfulness';
+      default:
+        return category.charAt(0).toUpperCase() + category.slice(1);
     }
   };
 
@@ -1279,19 +1311,36 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#64748B',
   },
-  ratedIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
+
+  editRatingButton: {
     backgroundColor: '#DCFCE7',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    gap: 4,
   },
-  ratedText: {
+  editRatingText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
     color: '#16A34A',
+  },
+  ratingDisplay: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 2,
+  },
+  starRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 1,
+  },
+  ratingText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#16A34A',
+    fontWeight: '600',
+  },
+  categoryText: {
+    fontSize: 10,
+    fontFamily: 'Inter-Regular',
+    color: '#059669',
+    textTransform: 'capitalize',
   },
   messageRatingRow: {
     flexDirection: 'row',

@@ -14,6 +14,7 @@ import { RatingModalProps, RatingFormData, RatingCategory } from '@/utils/types'
 import RatingService from '@/utils/ratingService';
 import { useAuth } from '../hooks/useAuth';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
+import { supabase } from '@/utils/supabaseClient';
 
 const RATING_CATEGORIES: { value: RatingCategory; label: string; description: string }[] = [
   {
@@ -51,14 +52,47 @@ function RatingModalComponent({
   const [reviewText, setReviewText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  // Reset form when modal opens
+  // Check for existing rating and pre-fill form when modal opens
   useEffect(() => {
-    if (visible) {
+    if (visible && pingId) {
+      checkExistingRating();
+    }
+  }, [visible, pingId]);
+
+  const checkExistingRating = async () => {
+    if (!user?.username || !pingId) return;
+    
+    try {
+      // Get ALL ratings for this ping to find the one by the current user
+      const { data: allRatings, error } = await supabase
+        .from('user_ratings')
+        .select('*')
+        .eq('ping_id', pingId);
+      
+      if (error) throw error;
+      
+      // Find the rating by the CURRENT USER (if any)
+      const myRating = allRatings?.find(rating => rating.rater_username === user.username);
+      
+      if (myRating) {
+        // Pre-fill form with existing rating
+        setRating(myRating.rating);
+        setSelectedCategory(myRating.category as RatingCategory);
+        setReviewText(myRating.review_text || '');
+      } else {
+        // Reset form for new rating
+        setRating(0);
+        setSelectedCategory('overall');
+        setReviewText('');
+      }
+    } catch (error) {
+      console.error('Error checking existing rating:', error);
+      // Reset form on error
       setRating(0);
       setSelectedCategory('overall');
       setReviewText('');
     }
-  }, [visible]);
+  };
 
   const handleSubmit = async () => {
     if (!rating) {
@@ -80,20 +114,47 @@ function RatingModalComponent({
         review_text: reviewText.trim() || undefined
       };
 
-      const result = await RatingService.submitRating(
-        user.username,
-        ratedUsername,
-        pingId,
-        ratingData
-      );
+      // Check if this is an update or new rating
+      // Get ALL ratings for this ping to find the one by the current user
+      const { data: allRatings, error } = await supabase
+        .from('user_ratings')
+        .select('*')
+        .eq('ping_id', pingId);
+      
+      if (error) throw error;
+      
+      // Find the rating by the CURRENT USER (if any)
+      const myRating = allRatings?.find(rating => rating.rater_username === user.username);
+      let result;
+      
+      if (myRating) {
+        // Update existing rating
+        result = await RatingService.updateRating(
+          myRating.id,
+          user.username,
+          ratingData
+        );
+      } else {
+        // Submit new rating
+        result = await RatingService.submitRating(
+          user.username,
+          ratedUsername,
+          pingId,
+          ratingData
+        );
+      }
 
       if (result.success) {
+        const isUpdate = myRating !== undefined;
         Alert.alert(
-          'Rating Submitted', 
-          'Thank you for your feedback!',
-          [{ text: 'OK', onPress: onClose }]
+          isUpdate ? 'Rating Updated' : 'Rating Submitted', 
+          isUpdate ? 'Your rating has been updated successfully!' : 'Thank you for your feedback!',
+          [{ text: 'OK', onPress: () => {
+            onClose();
+            // Call onSubmit to refresh the parent component's data
+            onSubmit(ratingData);
+          }}]
         );
-        onSubmit(ratingData);
       } else {
         Alert.alert('Error', result.error || 'Failed to submit rating. Please try again.');
       }
@@ -124,7 +185,9 @@ function RatingModalComponent({
       <View style={styles.modalOverlay}>
         <View style={styles.ratingModal}>
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={styles.modalTitle}>Rate {ratedUsername}</Text>
+            <Text style={styles.modalTitle}>
+          {rating > 0 ? 'Edit Rating for' : 'Rate'} {ratedUsername}
+        </Text>
             <Text style={styles.modalSubtitle}>
               How was your experience with this user?
             </Text>
@@ -227,7 +290,7 @@ function RatingModalComponent({
               disabled={!rating || submitting}
             >
               <Text style={styles.submitButtonText}>
-                {submitting ? 'Submitting...' : 'Submit Rating'}
+                {submitting ? 'Submitting...' : (rating > 0 ? 'Update Rating' : 'Submit Rating')}
               </Text>
             </TouchableOpacity>
           </View>

@@ -70,7 +70,6 @@ export interface Listing {
  */
 export interface Chat {
   id: string;
-  listing_id?: string;
   participant_a: string;
   participant_b: string;
   last_message?: string;

@@ -1,4 +1,5 @@
 
+
 /* global console, setTimeout */
 import { supabase, enhancedSupabase } from './supabaseClient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,15 +13,18 @@ export { Chat, Message };
 // Extended Chat interface for UI-specific fields
 export interface ExtendedChat extends Chat {
   // Additional fields for UI
-  listing_title?: string;
-  listing_price?: number;
-  listing_image?: string;
   last_message_time?: string;
-  is_seller?: boolean;
   // New fields from database function
   other_participant?: string;
   other_participant_name?: string;
   other_participant_avatar?: string;
+  // Optional listing context (can be multiple per chat)
+  listings?: Array<{
+    id: string;
+    title: string;
+    price: number;
+    image: string;
+  }>;
 }
 
 // Extended Message interface for UI-specific fields
@@ -73,27 +77,43 @@ export const ChatService = {
   // Enhance chat data with listing information
   async enhanceChatsWithListingData(chats: Chat[]): Promise<ExtendedChat[]> {
     try {
-      const listingIds = chats.map(chat => chat.listing_id).filter(Boolean);
-      if (listingIds.length === 0) return chats;
+      // Get all chat IDs
+      const chatIds = chats.map(chat => chat.id);
+      if (chatIds.length === 0) return chats;
       
-      const { data: listings } = await supabase
-        .from('listings')
-        .select('id, title, price, images')
-        .in('id', listingIds);
+      // Get all listings associated with these chats
+      const { data: chatListings } = await supabase
+        .from('chat_listings')
+        .select(`
+          chat_id,
+          listing_id,
+          listings(id, title, price, images)
+        `)
+        .in('chat_id', chatIds);
       
-      if (!listings) return chats;
+      if (!chatListings) return chats;
       
-      const listingMap = new Map(listings.map(listing => [listing.id, listing]));
-      
-      return chats.map(chat => {
-        const listing = listingMap.get(chat.listing_id);
-        return {
-          ...chat,
-          listing_title: listing?.title || 'Unknown Listing',
-          listing_price: listing?.price || 0,
-          listing_image: listing?.images?.[0] || null,
-        };
+      // Group listings by chat_id
+      const chatListingsMap = new Map();
+      chatListings.forEach(cl => {
+        if (!chatListingsMap.has(cl.chat_id)) {
+          chatListingsMap.set(cl.chat_id, []);
+        }
+        if (cl.listings && Array.isArray(cl.listings) && cl.listings.length > 0) {
+          const listing = cl.listings[0]; // Get the first listing
+          chatListingsMap.get(cl.chat_id).push({
+            id: cl.listing_id,
+            title: listing.title || 'Unknown Listing',
+            price: listing.price || 0,
+            image: listing.images?.[0] || null,
+          });
+        }
       });
+      
+      return chats.map(chat => ({
+        ...chat,
+        listings: chatListingsMap.get(chat.id) || [],
+      }));
     } catch (error) {
       console.error('Error enhancing chat data:', error);
       return chats;

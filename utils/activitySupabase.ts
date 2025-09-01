@@ -270,7 +270,11 @@ export async function updatePingStatusNew(pingId: string, status: PingStatus, re
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('Database error updating ping status:', error);
+    throw error;
+  }
+  
   return data as Ping;
 }
 

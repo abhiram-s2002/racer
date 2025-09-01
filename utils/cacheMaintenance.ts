@@ -170,7 +170,6 @@ class CacheMaintenance {
       }
     } catch (error) {
       // Not an error - just cache not ready yet during first app open
-      console.log('Image cache not ready yet (normal during first app open)');
     }
   }
 

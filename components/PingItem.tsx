@@ -121,13 +121,13 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
           });
           
           if (messageError) {
-            // Error sending acceptance message
+            console.error('Error sending acceptance message:', messageError);
           } else {
             // Acceptance message sent successfully
             onStatusChange?.(item.id, 'accepted');
           }
         } catch (messageError) {
-          // Error sending acceptance message
+          console.error('Error sending acceptance message:', messageError);
         }
         
         // Show success message
@@ -145,6 +145,7 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
         onStatusChange(item.id, response);
       }
     } catch (error) {
+      console.error('Error responding to ping:', error);
       // Error responding to ping
       RNAlert.alert('Error', 'Failed to respond to ping. Please try again.');
     } finally {

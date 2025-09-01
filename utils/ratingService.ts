@@ -37,10 +37,21 @@ export class RatingService {
         return { success: false, error: 'You cannot rate this user at this time' };
       }
 
-      // Check if rating already exists for this ping
-      const existingRating = await this.getRatingByPingId(pingId);
-      if (existingRating) {
-        return { success: false, error: 'You have already rated this interaction' };
+      // Check if the current user has already rated this specific ping
+      // This prevents duplicate ratings by the same user for the same interaction
+      const { data: existingRatings, error: checkError } = await supabase
+        .from('user_ratings')
+        .select('*')
+        .eq('ping_id', pingId)
+        .eq('rater_username', raterUsername);
+      
+      if (checkError) {
+        console.error('Error checking existing ratings:', checkError);
+        return { success: false, error: 'Failed to check existing ratings' };
+      }
+      
+      if (existingRatings && existingRatings.length > 0) {
+        return { success: false, error: 'You have already rated this specific interaction' };
       }
 
       // Insert the rating
@@ -162,9 +173,9 @@ export class RatingService {
   ): Promise<RatingEligibility> {
     try {
       const { data, error } = await supabase
-        .rpc('can_rate_user', { 
-          rater_username: raterUsername, 
-          rated_username: ratedUsername 
+        .rpc('can_rate_user', {
+          rater_username_param: raterUsername,
+          rated_username_param: ratedUsername
         });
 
       if (error) {
@@ -188,15 +199,21 @@ export class RatingService {
   }
 
   /**
-   * Get a specific rating by ping ID
+   * Get a specific rating by ping ID for a specific user
    */
-  static async getRatingByPingId(pingId: string): Promise<UserRating | null> {
+  static async getRatingByPingId(pingId: string, raterUsername?: string): Promise<UserRating | null> {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('user_ratings')
         .select('*')
-        .eq('ping_id', pingId)
-        .single();
+        .eq('ping_id', pingId);
+      
+      // If raterUsername is provided, filter by it to get the specific user's rating
+      if (raterUsername) {
+        query = query.eq('rater_username', raterUsername);
+    }
+      
+      const { data, error } = await query.single();
 
       if (error) {
         if (error.code === 'PGRST116') {
