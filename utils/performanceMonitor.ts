@@ -46,6 +46,7 @@ export class PerformanceMonitor {
   private maxMetrics = 1000;
   private flushInterval = 30000; // 30 seconds
   private flushTimer?: number;
+  private slowThreshold = 1000; // Default slow threshold
 
   static getInstance(): PerformanceMonitor {
     if (!PerformanceMonitor.instance) {
@@ -118,7 +119,7 @@ export class PerformanceMonitor {
         await this.flushMetrics();
       }
     } catch (error) {
-      console.error('Record metric error:', error);
+      // console.error('Record metric error:', error);
     }
   }
 
@@ -160,7 +161,7 @@ export class PerformanceMonitor {
         slowQueries,
       };
     } catch (error) {
-      console.error('Get performance stats error:', error);
+      // console.error('Get performance stats error:', error);
       return {
         avgResponseTime: 0,
         totalOperations: 0,
@@ -189,7 +190,7 @@ export class PerformanceMonitor {
         app: await this.getAppHealth(),
     };
     } catch (error) {
-      console.error('Get system health error:', error);
+      // console.error('Get system health error:', error);
       return {
         database: { connections: 0, cacheHitRatio: 0, slowQueries: 0 },
         cache: { hitRate: 0, memoryUsage: 0, totalEntries: 0 },
@@ -222,7 +223,7 @@ export class PerformanceMonitor {
         slowQueries: data.slow_queries || 0,
       };
     } catch (error) {
-      console.error('Database health check error:', error);
+      // console.error('Database health check error:', error);
       return { connections: 0, cacheHitRatio: 0, slowQueries: 0 };
     }
     */
@@ -240,7 +241,7 @@ export class PerformanceMonitor {
         totalEntries: stats.totalEntries,
       };
     } catch (error) {
-      console.error('Cache health check error:', error);
+      // console.error('Cache health check error:', error);
       return { hitRate: 0, memoryUsage: 0, totalEntries: 0 };
     }
   }
@@ -256,7 +257,7 @@ export class PerformanceMonitor {
         totalRequests: stats.totalRequests,
       };
     } catch (error) {
-      console.error('Rate limit health check error:', error);
+      // console.error('Rate limit health check error:', error);
       return { blockedRequests: 0, totalRequests: 0 };
     }
   }
@@ -273,7 +274,7 @@ export class PerformanceMonitor {
         batteryLevel: 0, // Would use expo-battery
       };
     } catch (error) {
-      console.error('App health check error:', error);
+      // console.error('App health check error:', error);
       return { memoryUsage: 0, cpuUsage: 0, batteryLevel: 0 };
     }
   }
@@ -291,10 +292,10 @@ export class PerformanceMonitor {
     // Log slow operations for debugging
     const slowOperations = this.metrics.filter(m => m.duration > 1000);
     if (slowOperations.length > 0) {
-      console.warn(`🐌 Slow operations detected:`, slowOperations.map(m => ({
-        operation: m.operation,
-        duration: `${m.duration}ms`
-      })));
+      // console.warn(`🐌 Slow operations detected:`, slowOperations.map(m => ({
+      //   operation: m.operation,
+      //   duration: `${m.duration}ms`
+      // })));
     }
     
     // Clear metrics from memory
@@ -316,7 +317,7 @@ export class PerformanceMonitor {
         .limit(1);
       
       if (checkError) {
-        console.warn('Performance metrics table not available, skipping flush:', checkError.message);
+        // console.warn('Performance metrics table not available, skipping flush:', checkError.message);
         this.metrics.unshift(...metricsToFlush);
         return;
       }
@@ -333,13 +334,13 @@ export class PerformanceMonitor {
         })));
       
       if (error) {
-        console.error('Flush metrics error:', error.message || error);
+        // console.error('Flush metrics error:', error.message || error);
         this.metrics.unshift(...metricsToFlush);
       } else {
         // Successfully flushed metrics to database
       }
     } catch (error) {
-      console.error('Flush metrics error:', error instanceof Error ? error.message : error);
+      // console.error('Flush metrics error:', error instanceof Error ? error.message : error);
       if (this.metrics.length === 0 && metricsToFlush.length > 0) {
         this.metrics.unshift(...metricsToFlush);
       }
@@ -376,8 +377,10 @@ export class PerformanceMonitor {
   /**
    * Get slow operations
    */
-  async getSlowOperations(threshold = 1000): Promise<PerformanceMetric[]> {
-    return this.metrics.filter(metric => metric.duration > threshold);
+  getSlowOperations(): PerformanceMetric[] {
+    return this.metrics.filter(metric => 
+      metric.duration > this.slowThreshold
+    );
   }
 
   /**
@@ -467,10 +470,10 @@ export class PerformanceMonitor {
         .lt('timestamp', cutoffDate.toISOString());
       
       if (error) {
-        console.error('Cleanup old metrics error:', error);
+        // console.error('Cleanup old metrics error:', error);
       }
     } catch (error) {
-      console.error('Cleanup old metrics error:', error);
+      // console.error('Cleanup old metrics error:', error);
 }
   }
 }

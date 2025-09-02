@@ -7,6 +7,7 @@ export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -16,56 +17,35 @@ export function useAuth() {
         setLoading(true);
         setError(null);
 
-        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
         
         if (authError) {
-          console.error('Auth error:', authError);
-          setError(authError.message);
+          setError('Authentication error');
           return;
         }
 
-        if (!authUser) {
-          if (mounted) {
-            setUser(null);
-            setLoading(false);
+        if (user) {
+          const { data: profile, error: profileError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          if (profileError) {
+            setError('Failed to load profile');
+            return;
           }
-          return;
-        }
 
-        // Get user profile from users table
-        const { data: profile, error: profileError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', authUser.id)
-          .single();
-
-        if (profileError) {
-          console.error('Profile fetch error:', profileError);
-          setError(profileError.message);
-          return;
-        }
-
-        if (mounted) {
-          setUser({
-            id: authUser.id,
-            username: profile?.username || authUser.user_metadata?.username || '',
-            email: authUser.email || '',
-            name: profile?.name || authUser.user_metadata?.name || '',
-            avatar_url: profile?.avatar_url || authUser.user_metadata?.avatar_url,
-            isAvailable: profile?.isAvailable ?? true,
-            created_at: profile?.created_at || new Date().toISOString(),
-            updated_at: profile?.updated_at || new Date().toISOString(),
-          });
+          setUser(profile);
+          setIsAuthenticated(true);
+        } else {
+          setUser(null);
+          setIsAuthenticated(false);
         }
       } catch (err) {
-        console.error('Error fetching user:', err);
-        if (mounted) {
-          setError('Failed to fetch user data');
-        }
+        setError('Failed to get user');
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     };
 
@@ -74,11 +54,34 @@ export function useAuth() {
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        await fetchUser();
+        // Refresh user data
+        try {
+          setLoading(true);
+          setError(null);
+
+          const { data: profile, error: profileError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+
+          if (profileError) {
+            setError('Failed to load profile');
+            return;
+          }
+
+          setUser(profile);
+          setIsAuthenticated(true);
+        } catch (err) {
+          setError('Failed to get user');
+        } finally {
+          setLoading(false);
+        }
       } else if (event === 'SIGNED_OUT') {
         if (mounted) {
           setUser(null);
           setLoading(false);
+          setIsAuthenticated(false);
         }
       }
     });
@@ -96,7 +99,6 @@ export function useAuth() {
         setError(error.message);
       }
     } catch (err) {
-      console.error('Sign out error:', err);
       setError('Failed to sign out');
     }
   };
@@ -106,6 +108,6 @@ export function useAuth() {
     loading,
     error,
     signOut,
-    isAuthenticated: !!user,
+    isAuthenticated,
   };
 } 

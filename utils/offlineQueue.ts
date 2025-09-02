@@ -257,7 +257,7 @@ class OfflineQueueManager {
         case 'listing_update':
           return await this.executeListingUpdateAction(action);
         default:
-          console.warn(`Unknown action type: ${action.type}`);
+          // Unknown action type
           return false;
       }
     } catch (error) {

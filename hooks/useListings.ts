@@ -71,7 +71,6 @@ export function useListings() {
           });
 
         if (error) {
-          console.error('Error fetching listings with distance:', error);
           // Fallback to direct query on error
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('listings')
@@ -81,7 +80,6 @@ export function useListings() {
             .range((pageNumber - 1) * PAGE_SIZE, pageNumber * PAGE_SIZE - 1);
           
           if (fallbackError) {
-            console.error('Fallback error:', fallbackError);
             return [];
           }
           
@@ -139,7 +137,6 @@ export function useListings() {
           .range((pageNumber - 1) * PAGE_SIZE, pageNumber * PAGE_SIZE - 1);
 
         if (error) {
-          console.error('Error fetching listings:', error);
           return [];
         }
 
@@ -157,7 +154,6 @@ export function useListings() {
         return result;
       }
     } catch (err) {
-      console.error('Unexpected error fetching listings:', err);
       return [];
     }
   }, [sortByDistance, maxDistance, getCacheKey]);
@@ -282,7 +278,6 @@ export function useListings() {
       setHasMore(uniqueFreshListings.length === PAGE_SIZE);
       return freshListings;
     } catch (error) {
-      console.error('Error during refresh:', error);
       // Don't clear existing listings on refresh error
       return listings;
     } finally {

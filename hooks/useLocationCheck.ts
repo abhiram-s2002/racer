@@ -25,7 +25,6 @@ export function useLocationCheck() {
         hasIssues
       };
     } catch (error) {
-      console.error('Error checking location status:', error);
       setShowPopup(true); // Show popup on error
       return {
         gpsEnabled: false,

@@ -151,7 +151,6 @@ export class ImageUrlHelper {
     );
 
     if (!hasValidExtension) {
-      console.warn(`Invalid image URL (no valid extension): ${url}`);
       return this.getFallbackImageUrl();
     }
 
@@ -176,13 +175,6 @@ export class ImageUrlHelper {
    * Handle image loading errors with fallback
    */
   static handleImageError(error: any, originalUrl: string, title: string): string {
-    console.warn(`Image load error for "${title}":`, {
-      error: error?.nativeEvent?.error || error,
-      originalUrl,
-      isSupabase: this.isSupabaseUrl(originalUrl)
-    });
-
-    // Return fallback URL
     return this.getFallbackImageUrl();
   }
 

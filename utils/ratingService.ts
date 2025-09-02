@@ -22,6 +22,11 @@ export class RatingService {
     ratingData: RatingFormData
   ): Promise<{ success: boolean; error?: string; rating?: UserRating }> {
     try {
+      // Prevent self-rating
+      if (raterUsername === ratedUsername) {
+        return { success: false, error: 'You cannot rate yourself' };
+      }
+
       // Validate rating data
       if (ratingData.rating < 1 || ratingData.rating > 5) {
         return { success: false, error: 'Rating must be between 1 and 5' };
@@ -33,8 +38,10 @@ export class RatingService {
 
       // Check if user can rate
       const eligibility = await this.canRateUser(raterUsername, ratedUsername);
+      
       if (!eligibility.can_rate) {
-        return { success: false, error: 'You cannot rate this user at this time' };
+        const errorMessage = eligibility.reason || 'You cannot rate this user at this time';
+        return { success: false, error: errorMessage };
       }
 
       // Check if the current user has already rated this specific ping
@@ -179,21 +186,23 @@ export class RatingService {
         });
 
       if (error) {
-        console.error('Error checking rating eligibility:', error);
+        console.error('❌ [RatingService] Error checking rating eligibility:', error);
         return { can_rate: false, pending_pings: [] };
       }
 
       if (!data || data.length === 0) {
+        console.log('⚠️ [RatingService] No data returned from can_rate_user RPC');
         return { can_rate: false, pending_pings: [] };
       }
 
       const result = data[0];
+      
       return {
         can_rate: result.can_rate || false,
         pending_pings: result.pending_pings || []
       };
     } catch (error) {
-      console.error('Error checking rating eligibility:', error);
+      console.error('❌ [RatingService] Exception in canRateUser:', error);
       return { can_rate: false, pending_pings: [] };
     }
   }
@@ -211,7 +220,7 @@ export class RatingService {
       // If raterUsername is provided, filter by it to get the specific user's rating
       if (raterUsername) {
         query = query.eq('rater_username', raterUsername);
-    }
+      }
       
       const { data, error } = await query.single();
 
@@ -220,13 +229,13 @@ export class RatingService {
           // No rows returned
           return null;
         }
-        console.error('Error getting rating by ping ID:', error);
+        console.error('❌ [RatingService] Error getting rating by ping ID:', error);
         return null;
       }
 
       return data as UserRating;
     } catch (error) {
-      console.error('Error getting rating by ping ID:', error);
+      console.error('❌ [RatingService] Exception in getRatingByPingId:', error);
       return null;
     }
   }

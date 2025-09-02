@@ -19,7 +19,7 @@ export function useOfflineQueue() {
       const status = await offlineQueue.getQueueStatus();
       setQueueStatus(status);
     } catch (error) {
-      console.error('Error loading queue status:', error);
+      // Silent error handling
     }
   }, []);
 
@@ -29,46 +29,31 @@ export function useOfflineQueue() {
       const actions = await offlineQueue.getPendingActions();
       setPendingActions(actions);
     } catch (error) {
-      console.error('Error loading pending actions:', error);
+      // Silent error handling
     }
   }, []);
 
   // Add action to queue
   const addAction = useCallback(async (action: Omit<OfflineAction, 'id' | 'timestamp' | 'retryCount'>) => {
-    try {
-      const actionId = await offlineQueue.addAction(action);
-      await loadQueueStatus();
-      await loadPendingActions();
-      return actionId;
-    } catch (error) {
-      console.error('Error adding action to queue:', error);
-      throw error;
-    }
+    const actionId = await offlineQueue.addAction(action);
+    await loadQueueStatus();
+    await loadPendingActions();
+    return actionId;
   }, [loadQueueStatus, loadPendingActions]);
 
   // Process queue manually
   const processQueue = useCallback(async (): Promise<SyncResult> => {
-    try {
-      const result = await offlineQueue.processQueue();
-      await loadQueueStatus();
-      await loadPendingActions();
-      return result;
-    } catch (error) {
-      console.error('Error processing queue:', error);
-      throw error;
-    }
+    const result = await offlineQueue.processQueue();
+    await loadQueueStatus();
+    await loadPendingActions();
+    return result;
   }, [loadQueueStatus, loadPendingActions]);
 
   // Clear queue
   const clearQueue = useCallback(async () => {
-    try {
-      await offlineQueue.clearQueue();
-      await loadQueueStatus();
-      await loadPendingActions();
-    } catch (error) {
-      console.error('Error clearing queue:', error);
-      throw error;
-    }
+    await offlineQueue.clearQueue();
+    await loadQueueStatus();
+    await loadPendingActions();
   }, [loadQueueStatus, loadPendingActions]);
 
   // Convenience methods for common actions

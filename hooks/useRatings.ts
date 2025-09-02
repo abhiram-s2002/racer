@@ -109,7 +109,6 @@ export function useRatings(): UseRatingsReturn {
       
       return eligibility;
     } catch (err) {
-      console.error('Error checking rating eligibility:', err);
       return { can_rate: false, pending_pings: [] };
     }
   }, [eligibilityCache]);
@@ -164,7 +163,6 @@ export function useRatings(): UseRatingsReturn {
     try {
       return await RatingService.getRatingByPingId(pingId);
     } catch (err) {
-      console.error('Error getting rating by ping ID:', err);
       return null;
     }
   }, []);
@@ -231,7 +229,6 @@ export function useRatings(): UseRatingsReturn {
     try {
       return await RatingService.getUserRatings(username, page, pageSize);
     } catch (err) {
-      console.error('Error getting user ratings:', err);
       return { ratings: [], total: 0, hasMore: false };
     }
   }, []);
@@ -254,7 +251,7 @@ export function useRatings(): UseRatingsReturn {
         }));
       }
     } catch (err) {
-      console.error('Error refreshing rating stats:', err);
+      // No console.error here
     }
   }, []);
 

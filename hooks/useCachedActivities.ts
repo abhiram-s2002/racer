@@ -80,7 +80,7 @@ export function useCachedActivities(username: string | null) {
         return true;
       }
     } catch (error) {
-      console.error('Error loading from cache:', error);
+      // console.error('Error loading from cache:', error);
     }
     return false;
   }, [username, getCacheKey]);
@@ -104,7 +104,7 @@ export function useCachedActivities(username: string | null) {
         enhancedCache.set(getCacheKey(CACHE_KEYS.USER_PROFILES), data.userProfiles),
       ]);
     } catch (error) {
-      console.error('Error saving to cache:', error);
+      // console.error('Error saving to cache:', error);
     }
   }, [username, getCacheKey]);
 
@@ -239,7 +239,6 @@ export function useCachedActivities(username: string | null) {
       }));
 
     } catch (error) {
-      console.error('Error loading activities:', error);
       setState(prev => ({ ...prev, loading: false }));
     } finally {
       loadingRef.current = false;
@@ -257,7 +256,7 @@ export function useCachedActivities(username: string | null) {
         .order('created_at', { ascending: false });
           
       if (error) {
-        console.error('Error fetching listings:', error);
+        // console.error('Error fetching listings:', error);
         return [];
       }
       
@@ -272,7 +271,7 @@ export function useCachedActivities(username: string | null) {
         return listing;
       });
     } catch (err) {
-      console.error('Exception fetching listings:', err);
+      // console.error('Exception fetching listings:', err);
       return [];
     }
   };

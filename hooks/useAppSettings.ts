@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AppSettings, loadSettings, updateSetting, clearSettings } from '@/utils/appSettings';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const useAppSettings = () => {
   const [settings, setSettings] = useState<AppSettings | null>(null);
@@ -17,7 +18,7 @@ export const useAppSettings = () => {
       const loadedSettings = await loadSettings();
       setSettings(loadedSettings);
     } catch (error) {
-      console.error('Error loading settings:', error);
+      // Silent error handling
     } finally {
       setLoading(false);
     }
@@ -30,7 +31,7 @@ export const useAppSettings = () => {
       setSettings(newSettings);
       return true;
     } catch (error) {
-      console.error('Error saving settings:', error);
+      // Silent error handling
       return false;
     } finally {
       setSaving(false);
@@ -49,7 +50,7 @@ export const useAppSettings = () => {
       setSettings(prev => prev ? { ...prev, [key]: value } : null);
       return true;
     } catch (error) {
-      console.error('Error updating setting:', error);
+      // Silent error handling
       return false;
     } finally {
       setSaving(false);
@@ -62,7 +63,7 @@ export const useAppSettings = () => {
       await clearSettings();
       await loadSettingsData();
     } catch (error) {
-      console.error('Error resetting settings:', error);
+      // Silent error handling
     } finally {
       setSaving(false);
     }

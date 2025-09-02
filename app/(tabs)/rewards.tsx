@@ -110,9 +110,9 @@ function RewardsScreen() {
         await Share.share({
           message: `Join me on OmniMarketplace! Use my referral code: ${userReferralCode.referral_code} and get 100 OMNI bonus!`,
         });
-      } catch (error) {
-        console.error('Error sharing referral code:', error);
-      }
+          } catch (error) {
+      // Silent error handling
+    }
     }
   };
 

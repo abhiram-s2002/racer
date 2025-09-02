@@ -138,7 +138,6 @@ export async function createPing(ping: Omit<Ping, 'id' | 'created_at'>): Promise
     });
 
   if (error) {
-    console.error('Error creating ping:', error);
     throw error;
   }
 
@@ -209,7 +208,6 @@ export async function getSentPings(username: string): Promise<Ping[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching sent pings:', error);
     throw error;
   }
   
@@ -249,7 +247,6 @@ export async function getReceivedPings(username: string): Promise<Ping[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching received pings:', error);
     throw error;
   }
   
@@ -271,7 +268,6 @@ export async function updatePingStatusNew(pingId: string, status: PingStatus, re
     .single();
 
   if (error) {
-    console.error('Database error updating ping status:', error);
     throw error;
   }
   
@@ -357,7 +353,6 @@ export async function checkPingTimeLimit(username: string, listingId: string): P
       });
 
     if (error) {
-      console.error('Error checking ping time limit:', error);
       // Default to allowing ping if there's an error
       return {
         canPing: true,
@@ -397,7 +392,6 @@ export async function checkPingTimeLimit(username: string, listingId: string): P
       message: result?.message || 'OK'
     };
   } catch (error) {
-    console.error('Error in checkPingTimeLimit:', error);
     return {
       canPing: true,
       message: 'Unable to check ping limits'
@@ -417,13 +411,11 @@ export const checkExistingPing = async (listingId: string, senderUsername: strin
       .limit(1);
 
     if (error) {
-      console.error('Error checking existing ping:', error);
       return false;
     }
 
     return data && data.length > 0;
   } catch (error) {
-    console.error('Error checking existing ping:', error);
     return false;
   }
 }; 
@@ -436,13 +428,11 @@ export const createChatFromPing = async (pingId: string): Promise<string | null>
     });
 
     if (error) {
-      console.error('Error creating chat from ping:', error);
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Error creating chat from ping:', error);
     return null;
   }
 }; 

@@ -32,8 +32,7 @@ class ImageCache {
       // Mark as initialized
       this.isInitialized = true;
     } catch (error) {
-      console.warn('Failed to initialize image cache:', error);
-      this.isEnabled = false;
+      // Silent error handling
     }
   }
 
@@ -72,9 +71,7 @@ class ImageCache {
         image_folder_path: (listing as any).image_folder_path || '', // Cast to any for optional property
       });
     } catch (error) {
-      console.warn('Image cache set error (non-critical):', error);
-      // Disable cache if it's causing issues
-      this.setEnabled(false);
+      // Silent error handling
     }
   }
 
@@ -93,9 +90,7 @@ class ImageCache {
 
       return cached;
     } catch (error) {
-      console.warn('Image cache get error (non-critical):', error);
-      // Disable cache if it's causing issues
-      this.setEnabled(false);
+      // Silent error handling
       return null;
     }
   }
@@ -107,9 +102,7 @@ class ImageCache {
     try {
       return this.cache.has(listingId);
     } catch (error) {
-      console.warn('Image cache has error (non-critical):', error);
-      // Disable cache if it's causing issues
-      this.setEnabled(false);
+      // Silent error handling
       return false;
     }
   }
@@ -124,7 +117,7 @@ class ImageCache {
     try {
       this.cache.clear();
     } catch (error) {
-      console.warn('Image cache clear error (non-critical):', error);
+      // Silent error handling
     }
   }
 
@@ -138,7 +131,7 @@ class ImageCache {
         entries: Array.from(this.cache.keys())
       };
     } catch (error) {
-      console.warn('Image cache stats error (non-critical):', error);
+      // Silent error handling
       return { size: 0, entries: [] };
     }
   }
@@ -150,7 +143,7 @@ class ImageCache {
       this.cache.clear();
       this.isInitialized = false;
     } catch (error) {
-      console.warn('Image cache destroy error (non-critical):', error);
+      // Silent error handling
     }
   }
 }

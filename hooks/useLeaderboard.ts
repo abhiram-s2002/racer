@@ -64,7 +64,6 @@ export const useLeaderboard = (currentUsername: string) => {
       setCurrentUserRank(currentUserData);
       setLastUpdated(timestampData?.[0]?.last_updated || null);
     } catch (err) {
-      console.error('Error fetching leaderboard:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch leaderboard');
     } finally {
       setLoading(false);

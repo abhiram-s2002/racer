@@ -93,7 +93,6 @@ export function useRewards(username: string) {
       setReferralCommissions(commissions);
       setCommissionStats(stats);
     } catch (err) {
-      console.error('Error loading rewards data:', err);
       setError('Failed to load rewards data');
     } finally {
       setLoading(false);
@@ -110,7 +109,6 @@ export function useRewards(username: string) {
       setRefreshing(true);
       await loadRewardsData();
     } catch (err) {
-      console.error('Error refreshing rewards:', err);
       setError('Failed to refresh rewards');
     } finally {
       setRefreshing(false);
@@ -161,7 +159,6 @@ export function useRewards(username: string) {
 
       return true;
     } catch (err) {
-      console.error('Error performing daily check-in:', err);
       setError(err instanceof Error ? err.message : 'Failed to check in');
       return false;
     }
@@ -181,7 +178,6 @@ export function useRewards(username: string) {
       }
       return false;
     } catch (err) {
-      console.error('Error updating achievement:', err);
       setError('Failed to update achievement');
       return false;
     }
@@ -207,7 +203,6 @@ export function useRewards(username: string) {
       }
       return false;
     } catch (err) {
-      console.error('Error batch updating achievements:', err);
       setError('Failed to update achievements');
       return false;
     }
@@ -267,8 +262,7 @@ export function useRewards(username: string) {
       }
       return false;
     } catch (err) {
-      console.error('Error checking Power User achievement:', err);
-      return false;
+      // Intentionally empty - silent error handling for achievement checks
     }
   }, [username, dailyCheckins, userAchievements, updateAchievement]);
 
@@ -326,7 +320,6 @@ export function useRewards(username: string) {
       }
       return false;
     } catch (err) {
-      console.error('Error checking Loyal User achievement:', err);
       return false;
     }
   }, [username, dailyCheckins, userAchievements, updateAchievement]);
@@ -345,7 +338,7 @@ export function useRewards(username: string) {
         setUserAchievements(achievements);
       }
     } catch (err) {
-      console.error('Error checking easy achievements:', err);
+      // Intentionally empty - silent error handling for achievement checks
     }
   }, [username, checkPowerUserAchievement, checkLoyalUserAchievement]);
 

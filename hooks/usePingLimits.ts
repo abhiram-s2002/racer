@@ -53,7 +53,7 @@ export function usePingLimits(username: string | null) {
           databaseResult = await checkPingTimeLimit(username, listingId);
           setLastDatabaseCheck(Date.now());
         } catch (error) {
-          console.error('Database ping check failed, using local:', error);
+          // console.error('Database ping check failed, using local:', error);
         }
       }
 
@@ -80,7 +80,7 @@ export function usePingLimits(username: string | null) {
       return updatedInfo;
 
     } catch (error) {
-      console.error('Ping limit check error:', error);
+      // console.error('Ping limit check error:', error);
       // Default to allowing ping if there's an error
       const errorInfo = {
         canPing: true,
@@ -111,7 +111,7 @@ export function usePingLimits(username: string | null) {
       // Refresh limits
       await checkPingLimit(listingId, true);
     } catch (error) {
-      console.error('Error recording ping:', error);
+      // console.error('Error recording ping:', error);
     }
   };
 

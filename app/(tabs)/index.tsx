@@ -219,7 +219,6 @@ function HomeScreen() {
             // Mark this user as checked (even if they have no ratings)
             checkedUsers[listing.username] = true;
           } catch (error) {
-            console.error('Error getting rating for user:', listing.username, error);
             // Mark this user as checked even on error
             checkedUsers[listing.username] = true;
           }
@@ -240,7 +239,7 @@ function HomeScreen() {
         return newRatings;
       });
     } catch (error) {
-      console.error('Error loading user ratings:', error);
+      // Silent error handling
     }
   };
 
@@ -449,8 +448,15 @@ function HomeScreen() {
 
 
 
-      // Allow users to ping themselves (removed restriction)
-      // Note: Users can now ping their own listings if needed
+      // Prevent users from pinging themselves
+      if (currentUser.username === seller.username) {
+        Alert.alert(
+          'Cannot Send Ping',
+          'You cannot ping yourself.',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
 
       // Try to create ping online first
       if (isOnline) {

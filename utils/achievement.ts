@@ -8,7 +8,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
  */
 export async function updateUserAchievement(username: string, achievementId: string, increment = 1) {
   if (!username) {
-    console.warn('updateUserAchievement: No username provided');
     return;
   }
 
@@ -16,14 +15,12 @@ export async function updateUserAchievement(username: string, achievementId: str
     const key = `achievementData_${username}`;
     const raw = await AsyncStorage.getItem(key);
     if (!raw) {
-      console.warn(`updateUserAchievement: No achievement data found for user ${username}`);
       return;
     }
     
     const data = JSON.parse(raw);
     const achievement = data.achievements.find((a: any) => a.id === achievementId);
     if (!achievement) {
-      console.warn(`updateUserAchievement: Achievement ${achievementId} not found for user ${username}`);
       return;
     }
     
@@ -42,6 +39,6 @@ export async function updateUserAchievement(username: string, achievementId: str
     
     await AsyncStorage.setItem(key, JSON.stringify(data));
   } catch (error) {
-    console.error('Error updating user achievement:', error);
+    return;
   }
 } 

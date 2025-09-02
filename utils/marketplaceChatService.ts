@@ -36,8 +36,8 @@ const STORAGE_KEYS = {
 };
 
 export const MarketplaceChatService = {
-  // Get chats for current user
-  async getChats(username: string): Promise<MarketplaceChat[]> {
+  // Get chats for current user with smart loading
+  async getChats(username: string, limit?: number): Promise<MarketplaceChat[]> {
     if (!username) return [];
     
     const context: ErrorContext = {
@@ -46,6 +46,15 @@ export const MarketplaceChatService = {
       userId: username
     };
     
+    // Use smart loading if no limit specified
+    let chatLimit = limit;
+    if (!chatLimit) {
+      const totalCount = await this.getTotalChatCount(username);
+      chatLimit = this.getOptimalChatLimit(totalCount);
+    }
+    
+    console.log('🔍 [MarketplaceChatService] Loading', chatLimit, 'marketplace chats for user:', username);
+    
     const data = await enhancedSupabase.safeRPC<MarketplaceChat[]>(
       'get_marketplace_chats',
       { username_param: username },
@@ -53,13 +62,39 @@ export const MarketplaceChatService = {
       username
     );
     
-      if (data && data.length > 0) {
-        await this.saveLocalChats(username, data);
-      return data;
-      }
+    if (data && data.length > 0) {
+      // Apply limit after fetching (temporary solution)
+      const limitedData = limit ? data.slice(0, limit) : data;
+      await this.saveLocalChats(username, limitedData);
+      return limitedData;
+    }
+    
+    // Fallback to cache on error
+    return this.getLocalChats(username);
+  },
+
+  // Get total chat count for a user
+  async getTotalChatCount(username: string): Promise<number> {
+    if (!username) return 0;
+    
+    try {
+      const { data, error } = await supabase.rpc('get_total_chat_count', {
+        username_param: username
+      });
       
-      // Fallback to cache on error
-      return this.getLocalChats(username);
+      if (error) throw error;
+      return data || 0;
+    } catch (error) {
+      console.error('Error getting total chat count:', error);
+      return 0;
+    }
+  },
+
+  // Determine optimal chat limit based on total count
+  getOptimalChatLimit(totalCount: number): number {
+    if (totalCount <= 10) return totalCount;      // Load all if 10 or fewer
+    if (totalCount <= 20) return 15;              // Load 15 if 11-20
+    return 10;                                    // Load only 10 if 20+
   },
   
   // Get messages for a chat
@@ -255,19 +290,58 @@ export const MarketplaceChatService = {
     if (!chatId || !username) return 0;
     
     try {
+      // Query database for accurate unread count using read_by column
       const { count, error } = await supabase
         .from('messages')
         .select('*', { count: 'exact', head: true })
         .eq('chat_id', chatId)
-        .neq('sender_username', username)
-        .eq('status', 'sent');
-        
+        .neq('sender_username', username)  // Not own messages
+        .not('read_by', 'cs', `{${username}}`); // Not read by current user
+      
       if (error) throw error;
       
+      console.log('✅ [MarketplaceChatService] Unread count for chat:', chatId, 'count:', count);
       return count || 0;
     } catch (error) {
-      console.error('Error getting unread count:', error);
+      console.error('❌ [MarketplaceChatService] Error getting unread count:', error);
       return 0;
+    }
+  },
+
+  // Get unread counts for multiple chats in a single query (BATCH OPTIMIZATION)
+  async getUnreadCountsForAllChats(chatIds: string[], username: string): Promise<Record<string, number>> {
+    if (!chatIds.length || !username) return {};
+    
+    try {
+      // Single database query for all chats
+      const { data, error } = await supabase
+        .from('messages')
+        .select('chat_id, sender_username, read_by')
+        .in('chat_id', chatIds)
+        .neq('sender_username', username);
+      
+      if (error) throw error;
+      
+      // Calculate counts in memory
+      const counts: Record<string, number> = {};
+      chatIds.forEach(chatId => {
+        const chatMessages = data?.filter(msg => msg.chat_id === chatId) || [];
+        const unreadCount = chatMessages.filter(msg => 
+          !msg.read_by || !msg.read_by.includes(username)
+        ).length;
+        counts[chatId] = unreadCount;
+      });
+      
+      console.log('✅ [MarketplaceChatService] Batch unread count query for', chatIds.length, 'chats');
+      return counts;
+    } catch (error) {
+      console.error('❌ [MarketplaceChatService] Error in batch unread count query:', error);
+      // Fallback to individual queries
+      const counts: Record<string, number> = {};
+      for (const chatId of chatIds) {
+        counts[chatId] = await this.getUnreadCount(chatId, username);
+      }
+      return counts;
     }
   },
   

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -101,36 +101,52 @@ function ActivityScreen() {
     }
   }, [username, sentPings, receivedPings]);
 
-  const loadExistingRatings = async () => {
+  const loadExistingRatings = useCallback(async () => {
     if (!username) return;
     
     try {
       const ratings: Record<string, { hasRated: boolean; rating: number; category: string }> = {};
       
-      // Check which specific ping interactions the current user has already rated
-      for (const ping of [...sentPings, ...receivedPings]) {
+      // Deduplicate pings by ID to prevent duplicate rating checks
+      const uniquePings = new Map<string, any>();
+      
+      // Add sent pings first
+      sentPings.forEach(ping => {
         if (ping.status === 'accepted') {
-          try {
-            // Check if this specific ping has been rated by the current user
-            const existingRating = await RatingService.getRatingByPingId(ping.id, username);
-            if (existingRating) {
-              ratings[ping.id] = {
-                hasRated: true,
-                rating: existingRating.rating,
-                category: existingRating.category
-              };
-            }
-          } catch (error) {
-            console.error('Error checking existing rating:', error);
+          uniquePings.set(ping.id, ping);
+        }
+      });
+      
+      // Add received pings (will overwrite if same ID, but that's fine since they're the same ping)
+      receivedPings.forEach(ping => {
+        if (ping.status === 'accepted') {
+          uniquePings.set(ping.id, ping);
+        }
+      });
+      
+      // Check which specific ping interactions the current user has already rated
+      for (const [pingId, ping] of uniquePings) {
+        try {
+          // Check if this specific ping has been rated by the current user
+          const existingRating = await RatingService.getRatingByPingId(ping.id, username);
+          
+          if (existingRating) {
+            ratings[ping.id] = {
+              hasRated: true,
+              rating: existingRating.rating,
+              category: existingRating.category
+            };
           }
+        } catch (error) {
+          // Silent error handling for rating checks
         }
       }
       
       setPingRatings(ratings);
     } catch (error) {
-      console.error('Error loading existing ratings:', error);
+      // Silent error handling
     }
-  };
+  }, [username, sentPings, receivedPings]);
 
   // Assume you have a way to get the current user's ID
   const currentUsername = username || '';
@@ -151,7 +167,7 @@ function ActivityScreen() {
       // Also refresh the ratings data
       await loadExistingRatings();
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      // Silent error handling
     }
   };
 
@@ -163,7 +179,6 @@ function ActivityScreen() {
       const eligibility = await RatingService.canRateUser(currentUsername, username);
       return eligibility.can_rate;
     } catch (error) {
-      console.error('Error checking rating eligibility:', error);
       return false;
     }
   };
@@ -176,7 +191,6 @@ function ActivityScreen() {
       const existingRating = await RatingService.getRatingByPingId(pingId, currentUsername);
       return existingRating !== null;
     } catch (error) {
-      console.error('Error checking existing rating:', error);
       return false;
     }
   };
@@ -254,7 +268,6 @@ function ActivityScreen() {
       updateActivity(id, { is_active: newStatus });
       
     } catch (error) {
-      console.error('Error toggling listing status:', error);
       Alert.alert('Error', 'Failed to update listing status. Please try again.');
     }
   };
@@ -282,10 +295,9 @@ function ActivityScreen() {
               removeActivity(id);
 
               Alert.alert('Success', 'Listing deleted successfully!');
-            } catch (error) {
-              console.error('Error in delete process:', error);
-              Alert.alert('Error', 'Failed to delete listing. Please try again.');
-            }
+                    } catch (error) {
+          Alert.alert('Error', 'Failed to delete listing. Please try again.');
+        }
           },
         },
       ]
@@ -470,64 +482,57 @@ function ActivityScreen() {
   const renderPingItem = ({ item }: { item: Activity }) => {
     const handleChatPress = async () => {
       try {
-        // For accepted pings, get the existing chat or create a new one
-        let chatId;
+        // Since chat button only appears for accepted pings, we can directly get the chat
         
-        if (item.status === 'accepted') {
-          // Try to get existing chat first
-          const { data: existingChatId, error: getError } = await supabase.rpc('get_chat_for_ping', {
-            ping_id: item.id
-          });
-          
-          if (getError) {
-            console.error('Error getting existing chat:', getError);
-          }
-          
-          if (getError || !existingChatId) {
-            // If no existing chat or error, create one
-            const { data: newChatId, error: createError } = await supabase.rpc('create_chat_from_ping', {
-              ping_id: item.id
-            });
-            
-            if (createError) {
-              console.error('Error creating chat:', createError);
-              Alert.alert('Error', 'Unable to access chat. Please try again.');
-              return;
-            }
-            
-            chatId = newChatId;
-          } else {
-            chatId = existingChatId;
-          }
-        } else {
-          // For non-accepted pings, create a new chat
-          const { data: newChatId, error: createError } = await supabase.rpc('create_chat_from_ping', {
-            ping_id: item.id
-          });
-          
-          if (createError) {
-            console.error('Error creating chat:', createError);
-            Alert.alert('Error', 'Unable to access chat. Please try again.');
+        // First, get the ping details to find the listing_id and participants
+        const { data: pingDetails, error: pingError } = await supabase
+          .from('pings')
+          .select('listing_id, sender_username, receiver_username')
+          .eq('id', item.id)
+          .single();
+        
+        if (pingError || !pingDetails) {
+          Alert.alert('Error', 'Unable to find ping details. Please try again.');
             return;
           }
           
-          chatId = newChatId;
-        }
+        // Now query the chats table directly to find the chat
+        // Since listing_id doesn't exist, we'll find the chat by matching both participants
+        const { data: allChats, error: chatError } = await supabase
+          .from('chats')
+          .select('id, status, participant_a, participant_b');
         
-        if (!chatId) {
-          // No chat ID returned
-          Alert.alert('Error', 'Failed to create or find chat.');
+        if (chatError) {
+          Alert.alert('Error', 'Unable to access chats. Please try again.');
           return;
         }
         
-        // Navigate to messages tab with the specific chat ID
+        // Find the chat that matches both participants
+        const chatData = allChats?.find(chat => 
+          (chat.participant_a === pingDetails.sender_username && chat.participant_b === pingDetails.receiver_username) ||
+          (chat.participant_a === pingDetails.receiver_username && chat.participant_b === pingDetails.sender_username)
+        );
+        
+        const existingChatId = chatData?.id;
+        
+        if (chatError || !existingChatId) {
+          Alert.alert('Error', 'Unable to access chat. Please try again.');
+          return;
+        }
+        
+        // Navigate to existing chat
         router.push({
-          pathname: '/(tabs)/messages',
-          params: { chatId: chatId.toString() }
+          pathname: '/messages',
+          params: { chatId: existingChatId.toString() }
         });
         
       } catch (error) {
-        console.error('Error handling chat navigation:', error);
+        console.error('❌ [Activity] Error handling chat navigation:', error);
+        console.error('❌ [Activity] Full error details:', {
+          error,
+          message: error instanceof Error ? error.message : 'Unknown error',
+          stack: error instanceof Error ? error.stack : 'No stack trace'
+        });
         Alert.alert('Error', 'Unable to access chat. Please try again.');
       }
     };

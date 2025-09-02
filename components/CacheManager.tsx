@@ -40,7 +40,7 @@ export function CacheManager({ children }: CacheManagerProps) {
           // API cache stats error (non-critical)
         }
       } catch (error) {
-        console.error('Cache initialization error:', error);
+        // Silent error handling
       }
     };
 

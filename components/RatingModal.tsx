@@ -86,7 +86,6 @@ function RatingModalComponent({
         setReviewText('');
       }
     } catch (error) {
-      console.error('Error checking existing rating:', error);
       // Reset form on error
       setRating(0);
       setSelectedCategory('overall');

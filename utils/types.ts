@@ -578,6 +578,7 @@ export interface UserRatingStats {
  */
 export interface RatingEligibility {
   can_rate: boolean;
+  reason?: string; // Reason why user cannot rate
   pending_pings: Array<{
     ping_id: string;
     listing_title: string;

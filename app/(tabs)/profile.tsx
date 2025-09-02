@@ -35,8 +35,6 @@ function getRandomSeed() {
 }
 
 
-declare const console: Console;
-
 function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -127,30 +125,21 @@ function ProfileScreen() {
   }
 
   // When setting location (GPS or map), reverse geocode and store display name
-  const setLocationFromCoords = async (coords: { latitude: number, longitude: number }) => {
+  const setLocationFromCoords = async (coords: { latitude: number; longitude: number }) => {
     try {
       // Getting location for coordinates
       const [place] = await Location.reverseGeocodeAsync(coords);
-              // Reverse geocoded place
       
       const address = place
         ? [place.name, place.street, place.city, place.region, place.country].filter(Boolean).join(', ')
         : `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`;
-      
-              // Generated address
       
       setEditProfile(prev => ({
         ...prev,
         locationDisplay: address,
       }));
     } catch (error) {
-      console.error('Error in setLocationFromCoords:', error);
-      // Fallback to coordinates if reverse geocoding fails
-      const fallbackAddress = `${coords.latitude.toFixed(6)}, ${coords.longitude.toFixed(6)}`;
-      setEditProfile(prev => ({
-        ...prev,
-        locationDisplay: fallbackAddress,
-      }));
+      // Silent error handling
     }
   };
 
@@ -261,7 +250,6 @@ function ProfileScreen() {
       }
       const { error } = await supabase.from('users').upsert([upsertData]);
       if (error) {
-        console.error('Supabase upsert profile error:', error);
         Alert.alert('Error', 'Failed to save profile. Please try again.');
         return;
       }
@@ -401,7 +389,6 @@ function ProfileScreen() {
                     try {
                       // Requesting location permission
                       const { status } = await Location.requestForegroundPermissionsAsync();
-                                              // Location permission status received
                       
                       if (status !== 'granted') {
                         Alert.alert(
@@ -418,18 +405,14 @@ function ProfileScreen() {
                         return;
                       }
                       
-                                              // Getting current position
                       const location = await Location.getCurrentPositionAsync({ 
                         accuracy: Location.Accuracy.Balanced,
                         timeInterval: 10000,
                         distanceInterval: 10,
                       });
-                                              // Got location coordinates
                       
                       await setLocationFromCoords(location.coords);
-                                              // Location set successfully
                     } catch (error) {
-                      console.error('GPS error:', error);
                       Alert.alert(
                         'Location Error', 
                         'Failed to get your current location. Please check your GPS settings or try again.',
@@ -529,7 +512,6 @@ function ProfileScreen() {
                   timeInterval: 10000,
                   distanceInterval: 10,
                 });
-                                  // Got location for map
                 
                 setSelectedCoords(location.coords);
                 mapRef.current?.animateToRegion({
@@ -539,7 +521,6 @@ function ProfileScreen() {
                   longitudeDelta: 0.01,
                 });
               } catch (error) {
-                console.error('Error getting location for map:', error);
                 Alert.alert('Location Error', 'Failed to get your current location for the map.');
               }
             }}

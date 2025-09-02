@@ -14,7 +14,7 @@ import { MessageCircle, CheckCircle, XCircle } from 'lucide-react-native';
 import { formatPriceWithUnit } from '@/utils/formatters';
 import { updatePingStatusNew } from '@/utils/activitySupabase';
 import { useRouter } from 'expo-router';
-import { ChatService } from '@/utils/chatService';
+
 import { supabase } from '@/utils/supabaseClient';
 
 interface PingItemProps {
@@ -43,166 +43,126 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
     }
   };
   
-  // Create chat directly (fallback method)
-  const createChatDirectly = async (): Promise<string> => {
-    // Get listing details
-    const { data: listing, error: listingError } = await supabase
-      .from('listings')
-      .select('*')
-      .eq('id', item.listing_id)
-      .single();
-    
-    if (listingError || !listing) {
-      throw new Error('Failed to get listing details');
-    }
-    
-    // Extract first image
-    const firstImage = listing.thumbnail_images && listing.thumbnail_images.length > 0 ? listing.thumbnail_images[0] : null;
-    
-    // Create chat
-    const { data: chat, error: chatError } = await supabase
-      .from('marketplace_chats')
-      .insert([{
-        listing_id: item.listing_id,
-        buyer_username: item.sender_username,
-        seller_username: item.receiver_username,
-        listing_title: listing.title,
-        listing_price: listing.price,
-        listing_image: firstImage,
-        last_message: item.message,
-        last_message_time: new Date().toISOString()
-      }])
-      .select()
-      .single();
-    
-    if (chatError) throw chatError;
-    
-    // Add initial messages
-    await supabase
-      .from('messages')
-      .insert([
-        {
-          chat_id: chat.id,
-          sender_username: item.sender_username,
-          text: item.message,
-          message_type: 'text'
-        },
-        {
-          chat_id: chat.id,
-          sender_username: item.receiver_username,
-          text: 'Ping accepted! You can now chat about this listing.',
-          message_type: 'system'
-        }
-      ]);
-    
-    return chat.id;
-  };
+
 
   // Handle ping response (accept/reject)
   const handlePingResponse = async (response: 'accepted' | 'rejected') => {
-    if (!item.id) return;
-    
-    setLoading(true);
     try {
       // Update ping status
       await updatePingStatusNew(item.id, response);
       
-      // Create chat if accepted
       if (response === 'accepted') {
-        const newChatId = await ChatService.createChatFromPing(item.id);
-        setChatId(newChatId);
-        
-        // Send acceptance message to the chat
+        // Create chat for accepted ping
         try {
-          const { error: messageError } = await supabase.rpc('send_chat_message', {
-            chat_id_param: newChatId,
-            sender_username_param: username,
-            message_text: 'Ping accepted! You can now chat about this listing.'
-          });
-          
-          if (messageError) {
-            console.error('Error sending acceptance message:', messageError);
-          } else {
-            // Acceptance message sent successfully
-            onStatusChange?.(item.id, 'accepted');
+          // Check if chat already exists for this ping
+          const { data: existingChats, error: checkError } = await supabase
+            .from('chats')
+            .select('id')
+            .or(`participant_a.eq.${item.sender_username},participant_a.eq.${item.receiver_username}`)
+            .or(`participant_b.eq.${item.sender_username},participant_b.eq.${item.receiver_username}`)
+            .eq('listing_id', item.listing_id);
+
+          if (checkError) {
+            // Continue with chat creation even if check fails
           }
-        } catch (messageError) {
-          console.error('Error sending acceptance message:', messageError);
+
+          const existingChatId = existingChats?.[0]?.id;
+
+          if (!existingChatId) {
+            // Create new chat
+            const { data: newChat, error: createError } = await supabase
+              .from('chats')
+              .insert({
+                listing_id: item.listing_id,
+                participant_a: item.sender_username,
+                participant_b: item.receiver_username,
+                status: 'active'
+              })
+              .select('id')
+              .single();
+
+            if (createError) {
+              RNAlert.alert('Error', 'Failed to create chat. Please try again.');
+              return;
+            }
+
+            const newChatId = newChat.id;
+            setChatId(newChatId);
+
+            // Send acceptance message to the chat
+            try {
+              const { error: messageError } = await supabase.rpc('send_chat_message', {
+                chat_id_param: newChatId,
+                sender_username_param: username,
+                message_text: 'Ping accepted! You can now chat about this listing.'
+              });
+
+              if (messageError) {
+                // Continue even if message fails
+              }
+            } catch (messageError) {
+              // Continue even if message fails
+            }
+          }
+
+          // Call parent callback to update UI
+          onStatusChange?.(item.id, response);
+        } catch (chatError) {
+          // Continue even if chat creation fails
         }
-        
-        // Show success message
-        RNAlert.alert(
-          'Ping Accepted',
-          'A chat has been created for this ping. You can now message the buyer directly.',
-          [
-            { text: 'OK' }
-          ]
-        );
       }
-      
-      // Call parent callback
-      if (onStatusChange) {
-        onStatusChange(item.id, response);
-      }
+
+      // Call parent callback to update UI
+      onStatusChange?.(item.id, response);
     } catch (error) {
-      console.error('Error responding to ping:', error);
-      // Error responding to ping
       RNAlert.alert('Error', 'Failed to respond to ping. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
   
-  // Handle chat button press
+    // Handle chat button press
   const handleChatPress = async () => {
     if (chatId) {
-      // Navigate to existing chat in Messages tab
+      // Chat already exists - just navigate to it
       try {
         router.push({
-          pathname: '/(tabs)/messages',
+          pathname: '/messages',
           params: { chatId: chatId }
         });
       } catch (navError) {
         // Navigation error
         // Fallback navigation
-        router.push('/(tabs)/messages');
+        router.push('/messages');
       }
     } else if (item.status === 'accepted') {
-      // Try to find or create chat
-      setLoading(true);
+      // Ping is accepted but no chat ID - this shouldn't happen normally
+      // Try to get the existing chat by querying directly
       try {
-        // First try the database function
-        let newChatId;
-        try {
-          newChatId = await ChatService.createChatFromPing(item.id);
-        } catch (dbError) {
-          // Database function failed, trying direct creation
-          // Fallback: create chat directly
-          newChatId = await createChatDirectly();
+        
+        const { data: allChats, error: chatError } = await supabase
+          .from('chats')
+          .select('id, status, participant_a, participant_b');
+        
+        if (chatError) {
+          return;
         }
         
-        if (newChatId) {
-          setChatId(newChatId);
-          
-          // Navigate to the chat
-          try {
-            router.push({
-              pathname: '/(tabs)/messages',
-              params: { chatId: newChatId }
-            });
-          } catch (navError) {
-            // Navigation error
-            // Fallback navigation
-            router.push('/(tabs)/messages');
-          }
+        // Find the chat that matches both participants
+        const chatData = allChats?.find(chat => 
+          (chat.participant_a === item.sender_username && chat.participant_b === item.receiver_username) ||
+          (chat.participant_a === item.receiver_username && chat.participant_b === item.sender_username)
+        );
+        
+        if (chatData?.id) {
+          setChatId(chatData.id);
+          router.push({
+            pathname: '/messages',
+            params: { chatId: chatData.id }
+          });
         } else {
-          throw new Error('Chat creation returned null or undefined');
+          RNAlert.alert('Chat Not Found', 'Chat was not created properly. Please try again.');
         }
       } catch (error) {
-        // Error creating chat
-        RNAlert.alert('Error', `Failed to open chat: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      } finally {
-        setLoading(false);
+        RNAlert.alert('Error', 'Chat not available. Please try again.');
       }
     } else {
       RNAlert.alert('Cannot Chat', 'This ping must be accepted before you can start chatting.');

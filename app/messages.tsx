@@ -1,5 +1,5 @@
 /* global setTimeout */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import { useLocalSearchParams } from 'expo-router';
 import { validateMessage, logSecurityEvent } from '@/utils/validation';
 import { advancedRateLimiter } from '@/utils/advancedRateLimiter';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
+import LoadMoreMessagesButton from '@/components/LoadMoreMessagesButton';
 
 // Skeleton loader for chat list
 function ChatListSkeleton() {
@@ -155,19 +156,49 @@ function MessagesScreen() {
   const { 
     chats, 
     loading: chatsLoading, 
-    markChatAsRead, 
-    unreadCounts, 
     error,
-    loadChats 
+    refreshChats 
   } = useChats(username || '');
 
   const { 
     messages, 
+    allMessages,
     loading: messagesLoading, 
-    sendMessage 
+    hasMoreMessages,
+    messageLimit,
+    sendMessage,
+    loadMoreMessages
   } = useMessages(selectedChat?.id || null, username || '');
 
+  // Force refresh chats when component mounts to clear cache (ONLY ONCE)
+  useEffect(() => {
+    if (username) {
+      refreshChats(); // Force refresh to clear cache
+    }
+  }, [username]); // Remove refreshChats dependency to prevent loops
+
   const params = useLocalSearchParams();
+
+  // Debug logging for component render
+  // console.log('🔍 [MessagesScreen] Component rendered with params:', {
+  //   chatId: params?.chatId,
+  //   pendingChatId,
+  //   username,
+  //   chatsCount: chats?.length || 0, // Safe access with fallback
+  //   selectedChatId: selectedChat?.id
+  // });
+
+  // Debug logging for state synchronization
+  useEffect(() => {
+    // console.log('🔍 [MessagesScreen] State update:', {
+    //   username,
+    //   chatsCount: chats?.length || 0,
+    //   chatsLoading,
+    //   pendingChatId,
+    //   selectedChatId: selectedChat?.id,
+    //   chatsArray: chats?.map(c => ({ id: c.id, participants: [c.participant_a, c.participant_b] })) || []
+    // });
+  }, [username, chats?.length, chatsLoading, pendingChatId, selectedChat]);
 
   // Helper function to get chat status color
   const getChatStatusColor = (status: string) => {
@@ -193,24 +224,30 @@ function MessagesScreen() {
 
   // When chats load, if pendingChatId is set, select the chat
   useEffect(() => {
-    if (pendingChatId && chats.length > 0) {
+    if (pendingChatId && chats && chats.length > 0) {
       const chat = chats.find(c => c.id === pendingChatId);
       if (chat) {
         setSelectedChat(chat);
         setPendingChatId(null);
       } else {
-        // If chat not found, try to refresh the chats list
-        loadChats();
+        // If chat not found, try to refresh the chats list (but not if already loading)
+        if (!chatsLoading) {
+          refreshChats();
+        }
       }
     }
-  }, [pendingChatId, chats, loadChats]);
+  }, [pendingChatId, chats, refreshChats, chatsLoading]);
 
   // Additional effect to handle case where chat was just created
   useEffect(() => {
-    if (pendingChatId && !chatsLoading && chats.length === 0) {
-      loadChats();
+    if (pendingChatId && !chatsLoading && chats && chats.length === 0) {
+      // Load chats with smart limit to prevent loading too many
+      // But only if we're not already loading
+      if (!chatsLoading) {
+        refreshChats();
+      }
     }
-  }, [pendingChatId, chatsLoading, chats.length, loadChats]);
+  }, [pendingChatId, chatsLoading, chats?.length, refreshChats]);
 
   // Fetch user profiles for chat participants
   useEffect(() => {
@@ -246,13 +283,13 @@ function MessagesScreen() {
     fetchUserProfiles();
   }, [chats]);
 
-  const filteredChats = chats.filter(chat => {
+  const filteredChats = chats?.filter(chat => {
     const otherUser = chat.participant_a === username ? chat.participant_b : chat.participant_a;
     const otherUserName = userProfiles[otherUser]?.name || otherUser;
     
     const searchLower = searchQuery.toLowerCase();
     return otherUserName.toLowerCase().includes(searchLower);
-  });
+  }) || [];
 
   // Handle back button for chat view
   useEffect(() => {
@@ -295,14 +332,15 @@ function MessagesScreen() {
   useEffect(() => {
     if (selectedChat && messages.length > 0) {
       // Mark chat as read when opening
-      markChatAsRead(selectedChat.id);
+      // Note: This functionality is now handled by the ChatService.markAsRead
+      // when messages are loaded in useMessages hook
       
       // Scroll to bottom when new messages arrive
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     }
-  }, [selectedChat, messages, markChatAsRead]);
+  }, [selectedChat, messages]);
 
   const handleSendMessage = async () => {
     if (!messageText.trim() || !selectedChat) return;
@@ -320,8 +358,7 @@ function MessagesScreen() {
           return;
         }
       } catch (error) {
-        console.error('Rate limit check error:', error);
-        // Continue with message if rate limit check fails
+        // Silent error handling
       }
     }
 
@@ -363,7 +400,7 @@ function MessagesScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await loadChats();
+    await refreshChats();
     setRefreshing(false);
   };
 
@@ -399,11 +436,7 @@ function MessagesScreen() {
             <Text style={styles.chatLastMessage} numberOfLines={1}>
               {item.last_message || 'No messages yet'}
             </Text>
-            {unreadCounts[item.id] > 0 && (
-              <View style={styles.unreadBadge}>
-                <Text style={styles.unreadCount}>{unreadCounts[item.id]}</Text>
-              </View>
-            )}
+            {/* Unread count functionality removed - will be re-implemented in Week 2 */}
           </View>
           
 
@@ -525,17 +558,28 @@ function MessagesScreen() {
             <Text style={styles.emptySubtext}>Start the conversation by sending a message!</Text>
           </View>
         ) : (
-          <FlatList
-            ref={flatListRef}
-            data={messages}
-            renderItem={renderMessage}
-            keyExtractor={(item) => item.id}
-            style={styles.messagesList}
-            contentContainerStyle={styles.messagesContainer}
-            showsVerticalScrollIndicator={false}
-            onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-            keyboardShouldPersistTaps="handled"
-          />
+          <>
+            {/* Load More Messages Button */}
+            <LoadMoreMessagesButton
+              onPress={loadMoreMessages}
+              hasMore={hasMoreMessages}
+              loading={messagesLoading}
+              messageCount={messages.length}
+              totalCount={allMessages?.length || 0}
+            />
+            
+            <FlatList
+              ref={flatListRef}
+              data={messages}
+              renderItem={renderMessage}
+              keyExtractor={(item) => item.id}
+              style={styles.messagesList}
+              contentContainerStyle={styles.messagesContainer}
+              showsVerticalScrollIndicator={false}
+              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+              keyboardShouldPersistTaps="handled"
+            />
+          </>
         )}
 
         {/* Message Input */}

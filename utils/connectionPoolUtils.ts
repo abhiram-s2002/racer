@@ -11,6 +11,7 @@ export class ConnectionPoolMonitor {
   private static instance: ConnectionPoolMonitor;
   private monitoringInterval: any = null;
   private isMonitoring = false;
+  private checkInterval = 30000; // Default interval in milliseconds
 
   static getInstance(): ConnectionPoolMonitor {
     if (!ConnectionPoolMonitor.instance) {
@@ -19,20 +20,16 @@ export class ConnectionPoolMonitor {
     return ConnectionPoolMonitor.instance;
   }
 
-  // Start monitoring connection pool
-  startMonitoring(intervalMs = 30000): void {
+  // Start monitoring
+  startMonitoring(): void {
     if (this.isMonitoring) {
-      console.warn('Connection pool monitoring is already active');
       return;
     }
 
     this.isMonitoring = true;
     this.monitoringInterval = setInterval(() => {
-      const stats = enhancedSupabase.getPoolStats();
-      this.logPoolStats(stats);
-    }, intervalMs);
-
-    // Connection pool monitoring started
+      this.checkPoolHealth();
+    }, this.checkInterval);
   }
 
   // Stop monitoring
@@ -50,9 +47,9 @@ export class ConnectionPoolMonitor {
     const { activeConnections, maxConnections, utilizationRate } = stats;
     
     if (utilizationRate > 80) {
-      console.warn(`⚠️ High connection pool utilization: ${utilizationRate.toFixed(1)}% (${activeConnections}/${maxConnections})`);
+      // console.warn(`⚠️ High connection pool utilization: ${utilizationRate.toFixed(1)}% (${activeConnections}/${maxConnections})`);
     } else if (utilizationRate > 60) {
-      console.info(`ℹ️ Moderate connection pool utilization: ${utilizationRate.toFixed(1)}% (${activeConnections}/${maxConnections})`);
+      // console.info(`ℹ️ Moderate connection pool utilization: ${utilizationRate.toFixed(1)}% (${activeConnections}/${maxConnections})`);
     } else {
       // Healthy connection pool utilization
     }
@@ -61,6 +58,11 @@ export class ConnectionPoolMonitor {
   // Get current pool status
   getPoolStatus(): any {
     return enhancedSupabase.getPoolStats();
+  }
+
+  private checkPoolHealth(): void {
+    const stats = enhancedSupabase.getPoolStats();
+    this.logPoolStats(stats);
   }
 }
 
