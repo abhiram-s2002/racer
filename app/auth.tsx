@@ -318,13 +318,16 @@ function AuthScreen() {
 
   // If in forgot password mode, show password reset UI
   if (forgotPasswordMode) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Reset Password</Text>
-          <Text style={styles.subtitle}>
-            Enter your email to receive password reset instructions
-          </Text>
+      return (
+    <View style={styles.container}>
+      <View style={styles.card}>
+        <View style={styles.brandContainer}>
+          <Text style={styles.brandName}>GeoMart</Text>
+        </View>
+        <Text style={styles.title}>Reset Password</Text>
+        <Text style={styles.subtitle}>
+          Enter your email to receive password reset instructions
+        </Text>
           
           <TextInput
             placeholder="Email Address"
@@ -333,7 +336,7 @@ function AuthScreen() {
             autoCapitalize="none"
             keyboardType="email-address"
             style={styles.input}
-            placeholderTextColor="#94A3B8"
+            placeholderTextColor="#767676"
           />
 
           <TouchableOpacity
@@ -361,7 +364,10 @@ function AuthScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.card}>
-        <Text style={styles.title}>{mode === 'login' ? 'Login' : 'Sign Up'}</Text>
+        <View style={styles.brandContainer}>
+          <Text style={styles.brandName}>GeoMart</Text>
+        </View>
+        <Text style={styles.title}>{mode === 'login' ? 'Sign in' : 'Create account'}</Text>
         
         {/* Input Fields */}
         <TextInput
@@ -371,7 +377,7 @@ function AuthScreen() {
           autoCapitalize="none"
           keyboardType="email-address"
           style={styles.input}
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor="#767676"
         />
         
         <TextInput
@@ -384,7 +390,7 @@ function AuthScreen() {
             mode === 'signup' && password.length > 0 && password.length < 6 && styles.inputError,
             mode === 'signup' && password.length >= 6 && styles.inputSuccess
           ]}
-          placeholderTextColor="#94A3B8"
+          placeholderTextColor="#767676"
         />
         {password.length > 0 && mode === 'signup' && (
           <Text style={[
@@ -416,7 +422,7 @@ function AuthScreen() {
                 confirmPassword && password !== confirmPassword && styles.inputError,
                 confirmPassword && password === confirmPassword && styles.inputSuccess
               ]}
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor="#767676"
             />
             {confirmPassword && (
               <Text style={[
@@ -439,7 +445,7 @@ function AuthScreen() {
                 onChangeText={setReferralCode}
                 autoCapitalize="characters"
                 style={[styles.input, styles.referralCodeInput]}
-                placeholderTextColor="#94A3B8"
+                placeholderTextColor="#767676"
               />
               {referralCode.trim() && (
                 <TouchableOpacity 
@@ -511,65 +517,81 @@ export default withErrorBoundary(AuthScreen, 'AuthScreen');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F7F7F7',
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
   },
   card: {
-    width: 320,
+    width: '100%',
+    maxWidth: 400,
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 28,
+    borderRadius: 4,
+    padding: 24,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#DDDDDD',
+  },
+  brandContainer: {
     alignItems: 'center',
+    marginBottom: 16,
+  },
+  brandName: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#22C55E',
+    letterSpacing: 1,
   },
   title: {
-    fontSize: 28,
-    fontFamily: 'Inter-Bold',
-    color: '#1E293B',
-    marginBottom: 24,
+    fontSize: 24,
+    fontWeight: '400',
+    color: '#0F1111',
+    marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
-    fontFamily: 'Inter-Regular',
-    color: '#64748B',
+    fontSize: 13,
+    color: '#555555',
     textAlign: 'center',
-    marginBottom: 24,
-    lineHeight: 22,
+    marginBottom: 20,
+    lineHeight: 18,
   },
   input: {
     width: '100%',
-    fontSize: 16,
-    fontFamily: 'Inter-Regular',
-    color: '#1E293B',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    marginBottom: 16,
+    fontSize: 13,
+    color: '#0F1111',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 3,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#A6A6A6',
+    height: 31,
   },
   button: {
     width: '100%',
     backgroundColor: '#22C55E',
-    paddingVertical: 14,
-    borderRadius: 8,
+    paddingVertical: 8,
+    borderRadius: 3,
     alignItems: 'center',
-    marginTop: 4,
-    marginBottom: 10,
+    marginTop: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#1E7E34',
   },
   buttonDisabled: {
     backgroundColor: '#A7F3D0',
+    borderColor: '#86EFAC',
   },
   buttonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontSize: 13,
+    fontWeight: '400',
   },
   switchButton: {
     marginTop: 2,
@@ -577,18 +599,17 @@ const styles = StyleSheet.create({
   },
   switchButtonText: {
     color: '#22C55E',
-    fontSize: 15,
-    fontFamily: 'Inter-Medium',
+    fontSize: 13,
+    fontWeight: '400',
   },
   confirmPasswordContainer: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   passwordMatchText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
+    fontSize: 12,
     marginTop: 4,
-    paddingHorizontal: 10,
+    paddingHorizontal: 2,
   },
   passwordMatchSuccess: {
     color: '#22C55E',
@@ -598,9 +619,8 @@ const styles = StyleSheet.create({
   },
   passwordLengthText: {
     fontSize: 12,
-    fontFamily: 'Inter-Regular',
     marginTop: 4,
-    paddingHorizontal: 10,
+    paddingHorizontal: 2,
   },
   passwordLengthError: {
     color: '#EF4444',
@@ -610,11 +630,11 @@ const styles = StyleSheet.create({
   },
   inputError: {
     borderColor: '#EF4444',
-    borderWidth: 2,
+    borderWidth: 1,
   },
   inputSuccess: {
     borderColor: '#22C55E',
-    borderWidth: 2,
+    borderWidth: 1,
   },
   forgotPasswordButton: {
     marginTop: 8,
@@ -622,14 +642,13 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   forgotPasswordText: {
-    color: '#64748B',
-    fontSize: 15,
-    fontFamily: 'Inter-Medium',
-    textDecorationLine: 'underline',
+    color: '#22C55E',
+    fontSize: 13,
+    fontWeight: '400',
   },
   referralCodeContainer: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: 14,
   },
   referralCodeRow: {
     flexDirection: 'row',
@@ -640,29 +659,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   validateButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: '#22C55E',
     paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    paddingVertical: 6,
+    borderRadius: 3,
     minWidth: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
   validateButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontFamily: 'Inter-Bold',
+    fontSize: 13,
+    fontWeight: '400',
   },
   referralCodeText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: '#10B981',
-    marginTop: 8,
-    paddingHorizontal: 10,
+    fontSize: 12,
+    color: '#22C55E',
+    marginTop: 6,
+    paddingHorizontal: 2,
     textAlign: 'center',
   },
   validCodeText: {
-    color: '#10B981',
+    color: '#22C55E',
   },
   invalidCodeText: {
     color: '#EF4444',
