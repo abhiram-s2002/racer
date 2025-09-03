@@ -41,8 +41,24 @@ export async function upsertUserProfile(authUser: any) {
   // Handle phone number validation and formatting
   let phoneValue = null;
   
-  // Clean and validate phone number
-  if (phone) {
+  // First, check if user already exists in database and preserve existing phone
+  try {
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('phone')
+      .eq('id', id)
+      .single();
+    
+    if (existingUser?.phone) {
+      // Preserve existing phone number from database
+      phoneValue = existingUser.phone;
+    }
+  } catch (error) {
+    // User doesn't exist yet, continue with phone validation
+  }
+  
+  // Only update phone if we have a new phone from auth user and no existing phone
+  if (!phoneValue && phone) {
     const trimmedPhone = phone.trim();
     if (trimmedPhone !== '') {
       // Validate phone number format before inserting
@@ -54,9 +70,7 @@ export async function upsertUserProfile(authUser: any) {
       }
       phoneValue = phoneValidation.sanitizedValue || trimmedPhone;
     }
-    // If phone is empty string or whitespace, phoneValue remains null
   }
-  // If phone is null/undefined, phoneValue remains null
   
   // Check network connectivity before database operation
   if (!networkMonitor.isOnline()) {
