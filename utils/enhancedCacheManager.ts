@@ -240,20 +240,19 @@ export class EnhancedCacheManager {
 
   /**
    * Get categories with caching
+   * Note: Supabase analytics removed - using static categories
    */
   async getCategories() {
     let categories = await this.get('categories');
     
     if (!categories) {
-      const { data, error } = await supabase
-        .from('listing_analytics')
-        .select('category')
-        .order('total_listings', { ascending: false });
-      
-      if (data && !error) {
-        categories = data.map(item => item.category);
-        await this.set('categories', categories); // 30 minutes
-      }
+      // Use static categories since analytics table was removed
+      categories = [
+        'Electronics', 'Clothing', 'Home & Garden', 'Sports', 'Books',
+        'Automotive', 'Health & Beauty', 'Toys & Games', 'Food & Beverage',
+        'Office Supplies', 'Pet Supplies', 'Jewelry', 'Art & Crafts'
+      ];
+      await this.set('categories', categories); // No TTL expiration
     }
     
     return categories;

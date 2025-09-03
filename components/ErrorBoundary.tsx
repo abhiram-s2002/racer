@@ -1,6 +1,7 @@
 import React, { Component, ReactNode } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { ErrorHandler } from '@/utils/errorHandler';
+import { captureException } from '@/utils/sentryConfig';
 
 // Custom ErrorInfo interface for React Native
 interface ErrorInfo {
@@ -71,6 +72,13 @@ export class ErrorBoundary extends Component<Props, State> {
     this.setState({
       error,
       errorInfo,
+    });
+
+    // Send to Sentry
+    captureException(error, {
+      component: this.props.componentName || 'Unknown',
+      errorType: this.props.errorType || 'critical',
+      componentStack: errorInfo.componentStack,
     });
 
     // Handle error through ErrorHandler

@@ -16,8 +16,7 @@ interface EnvironmentVariables {
   
   // Monitoring & Analytics
   EXPO_PUBLIC_SENTRY_DSN?: string;
-  EXPO_PUBLIC_FIREBASE_ANALYTICS_ID?: string;
-  EXPO_PUBLIC_FIREBASE_PERFORMANCE_ID?: string;
+  EXPO_PUBLIC_GOOGLE_ANALYTICS_ID?: string;
   
   // Image & Storage
   EXPO_PUBLIC_IMAGE_CDN_URL?: string;
@@ -103,12 +102,8 @@ export class Environment {
     return getEnvVar('EXPO_PUBLIC_SENTRY_DSN');
   }
   
-  static get firebaseAnalyticsId(): string | undefined {
-    return getEnvVar('EXPO_PUBLIC_FIREBASE_ANALYTICS_ID');
-  }
-  
-  static get firebasePerformanceId(): string | undefined {
-    return getEnvVar('EXPO_PUBLIC_FIREBASE_PERFORMANCE_ID');
+  static get googleAnalyticsId(): string | undefined {
+    return getEnvVar('EXPO_PUBLIC_GOOGLE_ANALYTICS_ID');
   }
   
   // Image & Storage
@@ -259,12 +254,8 @@ export class Environment {
     return !!this.sentryDsn && this.enableErrorReporting;
   }
   
-  static get hasFirebaseAnalytics(): boolean {
-    return !!this.firebaseAnalyticsId && this.enableAnalytics;
-  }
-  
-  static get hasFirebasePerformance(): boolean {
-    return !!this.firebasePerformanceId && this.enablePerformanceMonitoring;
+  static get hasGoogleAnalytics(): boolean {
+    return !!this.googleAnalyticsId && this.enableAnalytics;
   }
   
   static get hasGoogleMaps(): boolean {
@@ -302,8 +293,8 @@ export class Environment {
         errors.push('EXPO_PUBLIC_SENTRY_DSN is recommended for production');
       }
       
-      if (!this.firebaseAnalyticsId) {
-        errors.push('EXPO_PUBLIC_FIREBASE_ANALYTICS_ID is recommended for production');
+      if (!this.googleAnalyticsId) {
+        errors.push('EXPO_PUBLIC_GOOGLE_ANALYTICS_ID is recommended for production');
       }
     }
     
@@ -320,8 +311,7 @@ export class Environment {
       appVersion: this.appVersion,
       supabaseUrl: this.supabaseUrl,
       hasSentry: this.hasSentry,
-      hasFirebaseAnalytics: this.hasFirebaseAnalytics,
-      hasFirebasePerformance: this.hasFirebasePerformance,
+      hasGoogleAnalytics: this.hasGoogleAnalytics,
       hasGoogleMaps: this.hasGoogleMaps,
       hasMapbox: this.hasMapbox,
       hasStripe: this.hasStripe,

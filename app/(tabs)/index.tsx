@@ -47,6 +47,7 @@ import { Category } from '@/utils/types';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
+import { trackScreenView, trackSearch, trackFilterUsed, trackListingView } from '@/utils/googleAnalytics';
 import { useLocationCheck } from '@/hooks/useLocationCheck';
 import LocationCheckPopup from '@/components/LocationCheckPopup';
 import RatingService from '@/utils/ratingService';
@@ -256,6 +257,9 @@ function HomeScreen() {
   // Mark when returning from navigation to prevent unnecessary refreshes
   useFocusEffect(
     React.useCallback(() => {
+      // Track screen view
+      trackScreenView('Home Screen');
+      
       // This runs when the screen comes into focus (returning from other screens)
       if (listings.length > 0) {
         markReturningFromNavigation();
@@ -545,11 +549,16 @@ function HomeScreen() {
 
 
   const handleImageClick = useCallback((listing: any) => {
+    // Track listing view
+    trackListingView(listing.id, listing.category, listing.price);
+    
     // Navigate to listing detail page instead of showing image popup
     router.push(`/listing-detail?id=${listing.id}`);
   }, [router]);
 
   const handleToggleSortByDistance = () => {
+    trackFilterUsed('distance', 'toggle');
+    
     if (!locationAvailable) {
       // Location not available, show alert with options
       Alert.alert(
@@ -1145,7 +1154,12 @@ function HomeScreen() {
             placeholder="Search for product or service"
             placeholderTextColor="#94A3B8"
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={(text) => {
+              setSearchQuery(text);
+              if (text.length > 2) {
+                trackSearch(text, filteredListings.length);
+              }
+            }}
           />
         </View>
         <TouchableOpacity 

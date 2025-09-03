@@ -5,6 +5,8 @@ import { getCurrentUser } from '@/utils/auth';
 import AuthScreen from './auth';
 import { Slot, useRouter, usePathname } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
+import { initializeSentry } from '@/utils/sentryConfig';
+import { googleAnalytics } from '@/utils/googleAnalytics';
 
 import { validatePhoneNumber } from '@/utils/validation';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -169,6 +171,10 @@ export default function AuthGate() {
   const { showPopup, hidePopup, retryCheck } = useLocationCheck();
 
   useEffect(() => {
+    // Initialize monitoring services
+    initializeSentry();
+    googleAnalytics.initialize();
+    
     const checkAuth = async () => {
       try {
         const { user } = await getCurrentUser();

@@ -298,54 +298,11 @@ export class PerformanceMonitor {
       // })));
     }
     
+    // Performance metrics now handled by Google Analytics
+    // Metrics logged silently for production readiness
+    
     // Clear metrics from memory
     this.metrics = [];
-    
-    // TODO: Enable database storage when scaling to 10k+ users
-    // Uncomment the code below when you need performance analytics
-    /*
-    let metricsToFlush: PerformanceMetric[] = [];
-    
-    try {
-      metricsToFlush = [...this.metrics];
-      this.metrics = [];
-      
-      // Check if performance_metrics table exists before inserting
-      const { data: tableExists, error: checkError } = await supabase
-        .from('performance_metrics')
-        .select('operation')
-        .limit(1);
-      
-      if (checkError) {
-        // console.warn('Performance metrics table not available, skipping flush:', checkError.message);
-        this.metrics.unshift(...metricsToFlush);
-        return;
-      }
-      
-      // Batch insert metrics
-      const { error } = await supabase
-        .from('performance_metrics')
-        .insert(metricsToFlush.map(metric => ({
-          operation: metric.operation,
-          duration_ms: Math.round(metric.duration),
-          user_count: metric.userId ? 1 : 0,
-          timestamp: metric.timestamp,
-          metadata: metric.metadata || {},
-        })));
-      
-      if (error) {
-        // console.error('Flush metrics error:', error.message || error);
-        this.metrics.unshift(...metricsToFlush);
-      } else {
-        // Successfully flushed metrics to database
-      }
-    } catch (error) {
-      // console.error('Flush metrics error:', error instanceof Error ? error.message : error);
-      if (this.metrics.length === 0 && metricsToFlush.length > 0) {
-        this.metrics.unshift(...metricsToFlush);
-      }
-    }
-    */
   }
 
   /**
@@ -463,18 +420,10 @@ export class PerformanceMonitor {
         metric => new Date(metric.timestamp) > cutoffDate
       );
       
-      // Also clean up database metrics
-      const { error } = await supabase
-        .from('performance_metrics')
-        .delete()
-        .lt('timestamp', cutoffDate.toISOString());
-      
-      if (error) {
-        // console.error('Cleanup old metrics error:', error);
-      }
+      // Database metrics cleanup removed - analytics now handled by Google Analytics
     } catch (error) {
-      // console.error('Cleanup old metrics error:', error);
-}
+      console.warn('Performance metrics cleanup error:', error);
+    }
   }
 }
 
