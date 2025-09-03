@@ -157,20 +157,16 @@ export function useRequests() {
     // Check if we should refresh based on last refresh time
     const needsRefresh = await shouldRefresh();
     
-    try {
-      const newRequests = await fetchRequests(1, userLat, userLon, category, needsRefresh, userLocationData);
-      
-      setRequests(newRequests);
-      setCurrentPage(1);
-      setHasMore(newRequests.length === INITIAL_PAGE_SIZE);
-      setLastRefresh(Date.now());
-      
-      // Update last refresh time if we actually fetched fresh data
-      if (needsRefresh) {
-        await updateLastRefresh();
-      }
-    } catch (loadError) {
-      throw loadError;
+    const newRequests = await fetchRequests(1, userLat, userLon, category, needsRefresh, userLocationData);
+    
+    setRequests(newRequests);
+    setCurrentPage(1);
+    setHasMore(newRequests.length === INITIAL_PAGE_SIZE);
+    setLastRefresh(Date.now());
+    
+    // Update last refresh time if we actually fetched fresh data
+    if (needsRefresh) {
+      await updateLastRefresh();
     }
   }, [fetchRequests, shouldRefresh, updateLastRefresh]);
 
