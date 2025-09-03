@@ -67,19 +67,14 @@ export default function RequestsScreen() {
   // Load initial data when component mounts
   useEffect(() => {
     const initializeData = async () => {
-      console.log('🚀 [DEBUG] Initializing requests screen...');
-      
       try {
         await updateLocation();
-        console.log('📍 [DEBUG] Location updated:', { latitude, longitude });
         
         // Try to get cached location data first
         const cachedLocation = await RequestLocationUtils.getCachedLocation();
-        console.log('🗂️ [DEBUG] Cached location:', cachedLocation);
         
         if (cachedLocation) {
           setUserLocationData(cachedLocation);
-          console.log('🎯 [DEBUG] Loading with cached location data');
           await loadInitialData(
             latitude || undefined, 
             longitude || undefined, 
@@ -91,13 +86,10 @@ export default function RequestsScreen() {
             }
           );
         } else {
-          console.log('🌍 [DEBUG] Loading without cached location data');
           await loadInitialData(latitude || undefined, longitude || undefined, selectedCategory || undefined);
         }
-        
-        console.log('✅ [DEBUG] Initialization completed');
       } catch (initError) {
-        console.log('💥 [DEBUG] Initialization error:', initError);
+        // Handle initialization error silently
       }
     };
     
@@ -460,10 +452,6 @@ export default function RequestsScreen() {
   );
 
   if (error) {
-    console.log('🚨 [DEBUG] Requests screen showing error:', error);
-    console.log('🚨 [DEBUG] Error type:', typeof error);
-    console.log('🚨 [DEBUG] Current state:', { loading, hasMore, requestsCount: requests.length });
-    
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>

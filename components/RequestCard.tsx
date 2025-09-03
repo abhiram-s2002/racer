@@ -47,6 +47,27 @@ export function RequestCard({ request, onPress, onSave, onContact, onCall }: Req
     return 'Budget not specified';
   };
 
+  const formatLocation = () => {
+    // Try to use the parsed location hierarchy first
+    if (request.location_name) {
+      let location = request.location_name;
+      if (request.location_district && request.location_district !== request.location_name) {
+        location += `, ${request.location_district}`;
+      }
+      if (request.location_state && request.location_state !== request.location_district) {
+        location += `, ${request.location_state}`;
+      }
+      return location;
+    }
+    
+    // Fallback to the original location field
+    if (request.location) {
+      return request.location;
+    }
+    
+    return 'Location not specified';
+  };
+
   const getUrgencyColor = () => {
     switch (request.urgency) {
       case 'urgent': return '#EF4444';
@@ -66,17 +87,19 @@ export function RequestCard({ request, onPress, onSave, onContact, onCall }: Req
 
         {/* Content */}
         <View style={styles.content}>
-          {/* Title and Urgency */}
+          {/* Title */}
           <View style={styles.titleRow}>
             <Text style={styles.title} numberOfLines={2}>
               {request.title}
             </Text>
-            {request.urgency === 'urgent' && (
-              <View style={[styles.urgencyBadge, { backgroundColor: getUrgencyColor() }]}>
-                <Text style={styles.urgencyText}>URGENT</Text>
-              </View>
-            )}
           </View>
+
+          {/* Urgency Badge */}
+          {request.urgency === 'urgent' && (
+            <View style={[styles.urgencyBadge, { backgroundColor: getUrgencyColor() }]}>
+              <Text style={styles.urgencyText}>URGENT</Text>
+            </View>
+          )}
 
           {/* Description */}
           {request.description && (
@@ -85,25 +108,31 @@ export function RequestCard({ request, onPress, onSave, onContact, onCall }: Req
             </Text>
           )}
 
-          {/* Budget */}
-          <Text style={styles.budget}>{formatBudget()}</Text>
+          {/* Budget and Time */}
+          <View style={styles.budgetRow}>
+            <Text style={styles.budget}>{formatBudget()}</Text>
+            <View style={styles.timeContainer}>
+              <Clock size={12} color="#64748B" />
+              <Text style={styles.timeText}>{formatTimeAgo(request.updated_at)}</Text>
+            </View>
+          </View>
 
-          {/* Location and Time */}
+          {/* Location */}
           <View style={styles.metaRow}>
-            {request.distance_km && (
-              <View style={styles.metaItem}>
-                <MapPin size={14} color="#64748B" />
-                <Text style={styles.metaText}>
-                  {request.distance_km < 1 
-                    ? `${Math.round(request.distance_km * 1000)}m away`
-                    : `${request.distance_km.toFixed(1)} km away`
-                  }
-                </Text>
-              </View>
-            )}
             <View style={styles.metaItem}>
-              <Clock size={14} color="#64748B" />
-              <Text style={styles.metaText}>{formatTimeAgo(request.updated_at)}</Text>
+              <MapPin size={14} color="#64748B" />
+              <Text style={styles.metaText}>
+                {formatLocation()}
+                {request.distance_km && (
+                  <Text style={styles.distanceText}>
+                    {' • '}
+                    {request.distance_km < 1 
+                      ? `${Math.round(request.distance_km * 1000)}m away`
+                      : `${request.distance_km.toFixed(1)} km away`
+                    }
+                  </Text>
+                )}
+              </Text>
             </View>
           </View>
         </View>
@@ -154,7 +183,7 @@ const styles = StyleSheet.create({
   },
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
   },
@@ -164,6 +193,15 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     flex: 1,
     marginRight: 8,
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timeText: {
+    fontSize: 12,
+    color: '#64748B',
+    marginLeft: 4,
   },
   urgencyBadge: {
     paddingHorizontal: 8,
@@ -181,11 +219,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     lineHeight: 20,
   },
+  budgetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   budget: {
     fontSize: 16,
     fontWeight: '600',
     color: '#22C55E',
-    marginBottom: 12,
   },
   metaRow: {
     flexDirection: 'row',
@@ -201,6 +244,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#64748B',
     marginLeft: 4,
+  },
+  distanceText: {
+    fontSize: 12,
+    color: '#22C55E',
+    fontWeight: '500',
   },
   actionButtons: {
     flexDirection: 'row',

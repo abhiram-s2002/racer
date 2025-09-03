@@ -79,21 +79,12 @@ export function useRequests() {
   ) => {
     const cacheKey = getCacheKey(userLat, userLon, category);
     
-    console.log('🔍 [DEBUG] fetchRequests called with:', {
-      pageNumber,
-      userLat,
-      userLon,
-      category,
-      forceRefresh,
-      userLocationData,
-      cacheKey
-    });
+
     
     // Check cache first (unless force refresh)
     if (!forceRefresh) {
       const cached = await enhancedCache.get<Request[]>(cacheKey);
       if (cached) {
-        console.log('✅ [DEBUG] Using cached data, count:', cached.length);
         return cached;
       }
     }
@@ -102,14 +93,7 @@ export function useRequests() {
       setLoading(true);
       setError(null);
 
-      console.log('🚀 [DEBUG] Attempting hierarchical query with params:', {
-        user_state: userLocationData?.location_state || null,
-        user_district: userLocationData?.location_district || null,
-        user_city: userLocationData?.location_name || null,
-        category_filter: category || null,
-        limit_count: getTotalItemsForPage(pageNumber),
-        offset_count: pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE
-      });
+
 
       // Use hierarchical location sorting for better performance and lower costs
       const { data, error } = await supabase
@@ -123,9 +107,6 @@ export function useRequests() {
         });
 
       if (error) {
-        console.log('❌ [DEBUG] Hierarchical query failed:', error);
-        console.log('🔄 [DEBUG] Falling back to simple query...');
-        
         // Error fetching requests with hierarchical sorting
         // Fallback to simple query
         const { data: fallbackData, error: fallbackError } = await supabase
@@ -138,30 +119,20 @@ export function useRequests() {
           );
         
         if (fallbackError) {
-          console.log('❌ [DEBUG] Fallback query also failed:', fallbackError);
           throw fallbackError;
         }
-        
-        console.log('✅ [DEBUG] Fallback query succeeded, count:', fallbackData?.length || 0);
         const result = fallbackData || [];
         // Cache the result using enhanced cache manager
         await enhancedCache.set(cacheKey, result);
         return result;
       }
 
-      console.log('✅ [DEBUG] Hierarchical query succeeded, count:', data?.length || 0);
+
       const result = data || [];
       // Cache the result using enhanced cache manager
       await enhancedCache.set(cacheKey, result);
       return result;
     } catch (err) {
-      console.log('💥 [DEBUG] fetchRequests error:', err);
-      console.log('💥 [DEBUG] Error details:', {
-        message: err instanceof Error ? err.message : 'Unknown error',
-        stack: err instanceof Error ? err.stack : undefined,
-        name: err instanceof Error ? err.name : undefined
-      });
-      
       // Error fetching requests
       setError(err instanceof Error ? err.message : 'Failed to fetch requests');
       return [];
@@ -177,47 +148,28 @@ export function useRequests() {
     category?: string,
     userLocationData?: { location_state?: string; location_district?: string; location_name?: string }
   ) => {
-    console.log('🔄 [DEBUG] loadInitialData called with:', {
-      userLat,
-      userLon,
-      category,
-      userLocationData,
-      isInitialized: isInitializedRef.current
-    });
-    
     if (isInitializedRef.current) {
-      console.log('⏭️ [DEBUG] Already initialized, skipping');
       return;
     }
     
     isInitializedRef.current = true;
-    console.log('🏁 [DEBUG] Marked as initialized');
     
     // Check if we should refresh based on last refresh time
     const needsRefresh = await shouldRefresh();
-    console.log('🔄 [DEBUG] Needs refresh:', needsRefresh);
     
     try {
       const newRequests = await fetchRequests(1, userLat, userLon, category, needsRefresh, userLocationData);
-      console.log('📊 [DEBUG] Loaded requests:', newRequests.length);
       
       setRequests(newRequests);
       setCurrentPage(1);
       setHasMore(newRequests.length === INITIAL_PAGE_SIZE);
       setLastRefresh(Date.now());
       
-      console.log('✅ [DEBUG] State updated:', {
-        requestsCount: newRequests.length,
-        hasMore: newRequests.length === INITIAL_PAGE_SIZE
-      });
-      
       // Update last refresh time if we actually fetched fresh data
       if (needsRefresh) {
         await updateLastRefresh();
-        console.log('⏰ [DEBUG] Last refresh time updated');
       }
     } catch (loadError) {
-      console.log('💥 [DEBUG] loadInitialData error:', loadError);
       throw loadError;
     }
   }, [fetchRequests, shouldRefresh, updateLastRefresh]);
