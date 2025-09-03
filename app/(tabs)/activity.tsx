@@ -332,7 +332,7 @@ function ActivityScreen() {
         .eq('id', pingId);
       
       if (error) {
-        console.error('Error updating ping status:', error);
+        // Error updating ping status
         Alert.alert('Error', 'Failed to update ping status. Please try again.');
         return;
       }
@@ -346,7 +346,7 @@ function ActivityScreen() {
           });
           
           if (chatError) {
-            console.error('Error creating chat from ping:', chatError);
+            // Error creating chat from ping
           } else {
             // Chat created successfully
             
@@ -358,11 +358,11 @@ function ActivityScreen() {
             });
             
             if (messageError) {
-              console.error('Error sending acceptance message:', messageError);
+              // Error sending acceptance message
             }
           }
         } catch (chatError) {
-          console.error('Error in chat creation process:', chatError);
+          // Error in chat creation process
         }
       }
       
@@ -394,7 +394,7 @@ function ActivityScreen() {
                 .eq('id', pingId);
               
               if (error) {
-                console.error('Error deleting ping:', error);
+                // Error deleting ping
                 Alert.alert('Error', 'Failed to delete ping. Please try again.');
                 return;
               }
@@ -404,7 +404,7 @@ function ActivityScreen() {
               
               Alert.alert('Success', 'Ping deleted successfully!');
             } catch (error) {
-              console.error('Error deleting ping:', error);
+              // Error deleting ping
               Alert.alert('Error', 'Failed to delete ping. Please try again.');
             }
           }
@@ -419,7 +419,7 @@ function ActivityScreen() {
     try {
       await refresh();
     } catch (error) {
-      console.error('Error refreshing activities:', error);
+      // Error refreshing activities
     } finally {
       setRefreshing(false);
     }
@@ -530,7 +530,7 @@ function ActivityScreen() {
         );
         
       } catch (error) {
-        console.error('❌ [Activity] Error opening WhatsApp:', error);
+        // Error opening WhatsApp
         Alert.alert('Error', 'Failed to open WhatsApp. Please try again.');
       }
     };

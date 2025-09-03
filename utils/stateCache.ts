@@ -73,7 +73,7 @@ export function useCachedState<T>(
   const setStateAndCache = useCallback((value: T | ((prev: T) => T)) => {
     setState(prev => {
       const nextState = value instanceof Function ? value(prev) : value;
-      cacheManager.set(cacheKey, nextState, cacheType).catch(err => {
+      cacheManager.set(cacheKey, nextState, cacheType).catch((err: Error) => {
         // Failed to cache state
       });
       return nextState;

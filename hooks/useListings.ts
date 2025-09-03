@@ -4,8 +4,22 @@ import { supabase } from '@/utils/supabaseClient';
 import { useLocation } from './useLocation';
 import { imageCache } from '@/utils/imageCache';
 
-// Optimized page size for better performance
-const PAGE_SIZE = 10; // Reduced from 20 for faster loading and better UX
+// Smart pagination for better UX and performance
+const INITIAL_PAGE_SIZE = 12; // Initial load for good UX
+const SUBSEQUENT_PAGE_SIZE = 6; // Subsequent loads for efficiency
+
+// Helper function to get the correct page size
+const getPageSize = (pageNumber: number) => {
+  return pageNumber === 1 ? INITIAL_PAGE_SIZE : SUBSEQUENT_PAGE_SIZE;
+};
+
+// Helper function to calculate total items needed for a page
+const getTotalItemsForPage = (pageNumber: number) => {
+  if (pageNumber === 1) {
+    return INITIAL_PAGE_SIZE;
+  }
+  return INITIAL_PAGE_SIZE + (pageNumber - 1) * SUBSEQUENT_PAGE_SIZE;
+};
 
 import { Listing } from '@/utils/types';
 
@@ -25,7 +39,7 @@ export function useListings() {
   const [maxDistance, setMaxDistance] = useState<number | null>(null); // Distance filter in km
   
   // Cache for API responses to prevent duplicate calls - no expiration
-  const cacheRef = useRef<Map<string, any[]>>(new Map());
+  const cacheRef = useRef<Map<string, { data: any[]; timestamp: number }>>(new Map());
   const lastFetchRef = useRef<string>('');
   const hasInitialDataRef = useRef<boolean>(false);
   const isReturningFromNavigationRef = useRef<boolean>(false);
@@ -46,11 +60,15 @@ export function useListings() {
   const fetchListings = useCallback(async (pageNumber = 1, userLat?: number, userLon?: number) => {
     const cacheKey = getCacheKey(pageNumber, userLat, userLon);
     
-    // Check cache first - no automatic expiration, only manual refresh
-    const cached = cacheRef.current.get(cacheKey);
-    if (cached) {
-      return cached;
+      // Check cache first - extended cache duration to reduce database queries
+  const cached = cacheRef.current.get(cacheKey);
+  if (cached) {
+    // Check if cache is still valid (extend cache duration to 2 hours)
+    const cacheAge = Date.now() - (cached.timestamp || 0);
+    if (cacheAge < 3 * 60 * 60 * 1000) { // 3 hours
+      return cached.data;
     }
+  }
 
     try {
       
@@ -59,7 +77,7 @@ export function useListings() {
 
         
         // Calculate the total limit needed for pagination
-        const totalLimit = pageNumber * PAGE_SIZE;
+        const totalLimit = getTotalItemsForPage(pageNumber);
         
         const { data, error } = await supabase
           .rpc('get_listings_with_distance', {
@@ -74,10 +92,13 @@ export function useListings() {
           // Fallback to direct query on error
           const { data: fallbackData, error: fallbackError } = await supabase
             .from('listings')
-            .select('*')
+            .select('id, username, title, description, price, price_unit, category, thumbnail_images, preview_images, image_folder_path, latitude, longitude, created_at, updated_at, is_active')
             .eq('is_active', true)
             .order('created_at', { ascending: false })
-            .range((pageNumber - 1) * PAGE_SIZE, pageNumber * PAGE_SIZE - 1);
+            .range(
+              pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE,
+              getTotalItemsForPage(pageNumber) - 1
+            );
           
           if (fallbackError) {
             return [];
@@ -96,16 +117,17 @@ export function useListings() {
             }
           });
           
-          // Cache the result
-          cacheRef.current.set(cacheKey, result);
+          // Cache the result with timestamp
+          cacheRef.current.set(cacheKey, { data: result, timestamp: Date.now() });
           return result;
         }
 
         const allData = data || [];
         
         // Slice the data for the current page
-        const startIndex = (pageNumber - 1) * PAGE_SIZE;
-        const result = allData.slice(startIndex, startIndex + PAGE_SIZE);
+        const startIndex = pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE;
+        const pageSize = getPageSize(pageNumber);
+        const result = allData.slice(startIndex, startIndex + pageSize);
         
         // Got listings for page
         if (result.length > 0) {
@@ -123,18 +145,21 @@ export function useListings() {
           });
         }
 
-        // Cache the result
-        cacheRef.current.set(cacheKey, result);
+        // Cache the result with timestamp
+        cacheRef.current.set(cacheKey, { data: result, timestamp: Date.now() });
         return result;
       } else {
         // Use direct query if no location or distance sorting disabled
 
         const { data, error } = await supabase
           .from('listings')
-          .select('*')
+          .select('id, username, title, description, price, price_unit, category, thumbnail_images, preview_images, image_folder_path, latitude, longitude, created_at, updated_at, is_active')
           .eq('is_active', true)
           .order('created_at', { ascending: false })
-          .range((pageNumber - 1) * PAGE_SIZE, pageNumber * PAGE_SIZE - 1);
+          .range(
+            pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE,
+            getTotalItemsForPage(pageNumber) - 1
+          );
 
         if (error) {
           return [];
@@ -149,8 +174,8 @@ export function useListings() {
           }
         });
         
-        // Cache the result
-        cacheRef.current.set(cacheKey, result);
+        // Cache the result with timestamp
+        cacheRef.current.set(cacheKey, { data: result, timestamp: Date.now() });
         return result;
       }
     } catch (err) {
@@ -194,7 +219,7 @@ export function useListings() {
       const uniqueInitialListings = deduplicateListings(initialListings);
       
       setListings(uniqueInitialListings);
-      setHasMore(uniqueInitialListings.length === PAGE_SIZE);
+      setHasMore(uniqueInitialListings.length === INITIAL_PAGE_SIZE);
       setLoading(false);
       hasInitialDataRef.current = true;
       isReturningFromNavigationRef.current = false;
@@ -239,7 +264,7 @@ export function useListings() {
         return [...prev, ...uniqueNewListings];
       });
       setPage(nextPage);
-      setHasMore(moreListings.length === PAGE_SIZE);
+      setHasMore(moreListings.length === SUBSEQUENT_PAGE_SIZE);
     } else {
       setHasMore(false);
     }
@@ -275,7 +300,7 @@ export function useListings() {
       });
       
       setListings(uniqueFreshListings);
-      setHasMore(uniqueFreshListings.length === PAGE_SIZE);
+      setHasMore(uniqueFreshListings.length === INITIAL_PAGE_SIZE);
       return freshListings;
     } catch (error) {
       // Don't clear existing listings on refresh error

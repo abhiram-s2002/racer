@@ -1,6 +1,87 @@
 import React, { useState, useEffect } from 'react';
 import { Image, ImageStyle, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { NewImageService, ImageSet, ImageMetadata } from '../utils/newImageService';
+import { enhancedImageService } from '../utils/enhancedImageService';
+
+// Define the missing interfaces
+export interface ImageSet {
+  thumbnail: string;
+  preview: string;
+}
+
+export interface ImageMetadata {
+  folderPath: string;
+  username: string;
+  timestamp: string;
+  imageCount: number;
+  hasImages: boolean;
+}
+
+// Create a simple image service wrapper to match the expected interface
+class NewImageService {
+  static getFallbackImageUrl(): string {
+    return 'https://via.placeholder.com/300x300?text=No+Image';
+  }
+
+  static getImageSet(thumbnailImages?: string[] | null, previewImages?: string[] | null): ImageSet {
+    return {
+      thumbnail: thumbnailImages && thumbnailImages.length > 0 ? thumbnailImages[0] : this.getFallbackImageUrl(),
+      preview: previewImages && previewImages.length > 0 ? previewImages[0] : this.getFallbackImageUrl()
+    };
+  }
+
+  static extractImageMetadata(imageFolderPath?: string | null): ImageMetadata {
+    if (!imageFolderPath) {
+      return {
+        folderPath: '',
+        username: '',
+        timestamp: '',
+        imageCount: 0,
+        hasImages: false
+      };
+    }
+
+    // Extract metadata from folder path
+    const parts = imageFolderPath.split('/');
+    const username = parts[1] || '';
+    const timestamp = parts[2] || '';
+    
+    return {
+      folderPath: imageFolderPath,
+      username,
+      timestamp,
+      imageCount: 1, // Assuming 1 image per listing
+      hasImages: true
+    };
+  }
+
+  static generateImageUrlsFromFolder(imageFolderPath: string): ImageSet {
+    const baseUrl = 'https://your-supabase-url.supabase.co/storage/v1/object/public/images';
+    return {
+      thumbnail: `${baseUrl}/${imageFolderPath}/thumbnail.jpg`,
+      preview: `${baseUrl}/${imageFolderPath}/preview.jpg`
+    };
+  }
+
+  static getBestImageUrl(thumbnailImages?: string[] | null, previewImages?: string[] | null, size: 'thumbnail' | 'preview' = 'thumbnail'): string {
+    if (size === 'thumbnail') {
+      return thumbnailImages && thumbnailImages.length > 0 ? thumbnailImages[0] : 
+             previewImages && previewImages.length > 0 ? previewImages[0] : 
+             this.getFallbackImageUrl();
+    } else {
+      return previewImages && previewImages.length > 0 ? previewImages[0] : 
+             thumbnailImages && thumbnailImages.length > 0 ? thumbnailImages[0] : 
+             this.getFallbackImageUrl();
+    }
+  }
+
+  static getImageSource(url: string, options: { useCacheBusting?: boolean } = {}): { uri: string } {
+    if (options.useCacheBusting) {
+      const separator = url.includes('?') ? '&' : '?';
+      return { uri: `${url}${separator}t=${Date.now()}` };
+    }
+    return { uri: url };
+  }
+}
 
 interface NewRobustImageProps {
   thumbnailImages?: string[] | null;

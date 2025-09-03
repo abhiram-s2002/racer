@@ -5,13 +5,14 @@ import { getCurrentUser } from '@/utils/auth';
 import AuthScreen from './auth';
 import { Slot, useRouter, usePathname } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
-import { CacheManager } from '@/components/CacheManager';
+
 import { validatePhoneNumber } from '@/utils/validation';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
 import { useLocationCheck } from '@/hooks/useLocationCheck';
 import LocationCheckPopup from '@/components/LocationCheckPopup';
+
 
 function validateUserProfileFields({ id, username, email, name }: { id: string; username: string; email: string; name: string }) {
   const missing = [];
@@ -206,6 +207,8 @@ export default function AuthGate() {
     checkAuth();
   }, []); // Remove pathname dependency to prevent loops
 
+
+
   // Location check is now handled by popup system
   // No need for complex navigation logic
 
@@ -257,16 +260,14 @@ export default function AuthGate() {
 
   return (
     <ErrorBoundary componentName="AuthGate">
-      <CacheManager>
-        <Slot />
-        
-        {/* Location Check Popup */}
-        <LocationCheckPopup
-          visible={showPopup && authenticated}
-          onClose={hidePopup}
-          onRetry={retryCheck}
-        />
-      </CacheManager>
+      <Slot />
+      
+      {/* Location Check Popup */}
+      <LocationCheckPopup
+        visible={showPopup && authenticated}
+        onClose={hidePopup}
+        onRetry={retryCheck}
+      />
     </ErrorBoundary>
   );
 }

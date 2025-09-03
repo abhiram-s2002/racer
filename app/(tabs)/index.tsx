@@ -37,7 +37,7 @@ import { createPing, checkExistingPing } from '@/utils/activitySupabase';
 
 import { formatDistance } from '@/utils/distance';
 import { LocationUtils } from '@/utils/locationUtils';
-import OfflineQueueIndicator from '@/components/OfflineQueueIndicator';
+// OfflineQueueIndicator removed - no UI monitoring needed
 
 import NewRobustImage from '@/components/NewRobustImage';
 
@@ -942,7 +942,7 @@ function HomeScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Offline Queue Indicator */}
-      <OfflineQueueIndicator />
+      {/* OfflineQueueIndicator removed - no UI monitoring needed */}
       
       {/* Add Listing Modal */}
       <AddListingModal 

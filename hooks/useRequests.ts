@@ -1,9 +1,29 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import { Request, RequestCategory, RequestsState } from '@/utils/types';
+import { enhancedCache } from '@/utils/enhancedCacheManager';
 
-const PAGE_SIZE = 10;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+const INITIAL_PAGE_SIZE = 12; // Initial load for good UX
+const SUBSEQUENT_PAGE_SIZE = 6; // Subsequent loads for efficiency
+const CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours cache - Extended to reduce database queries
+const CACHE_KEYS = {
+  REQUESTS: 'requests_data',
+  LAST_REFRESH: 'requests_last_refresh',
+  CACHE_STATUS: 'requests_cache_status'
+};
+
+// Helper function to get the correct page size
+const getPageSize = (pageNumber: number) => {
+  return pageNumber === 1 ? INITIAL_PAGE_SIZE : SUBSEQUENT_PAGE_SIZE;
+};
+
+// Helper function to calculate total items needed for a page
+const getTotalItemsForPage = (pageNumber: number) => {
+  if (pageNumber === 1) {
+    return INITIAL_PAGE_SIZE;
+  }
+  return INITIAL_PAGE_SIZE + (pageNumber - 1) * SUBSEQUENT_PAGE_SIZE;
+};
 
 export function useRequests() {
   const [requests, setRequests] = useState<Request[]>([]);
@@ -13,23 +33,40 @@ export function useRequests() {
   const [currentPage, setCurrentPage] = useState(1);
   const [lastRefresh, setLastRefresh] = useState(0);
   
-  // Cache for requests data
-  const cacheRef = useRef(new Map<string, { data: Request[]; timestamp: number }>());
+  // State management
   const isInitializedRef = useRef(false);
+  const lastRefreshRef = useRef<number>(0);
 
   const getCacheKey = (userLat?: number, userLon?: number, category?: string) => {
     const roundedLat = userLat ? Math.round(userLat * 100) / 100 : 0;
     const roundedLon = userLon ? Math.round(userLon * 100) / 100 : 0;
-    return `requests-${roundedLat}-${roundedLon}-${category || 'all'}`;
+    return `${CACHE_KEYS.REQUESTS}_${roundedLat}-${roundedLon}-${category || 'all'}`;
   };
 
-  const isCacheValid = (cacheKey: string): boolean => {
-    const cached = cacheRef.current.get(cacheKey);
-    if (!cached) return false;
-    
-    const now = Date.now();
-    return (now - cached.timestamp) < CACHE_DURATION;
-  };
+  // Check if we should refresh based on last refresh time
+  const shouldRefresh = useCallback(async (): Promise<boolean> => {
+    try {
+      const lastRefresh = await enhancedCache.get<number>(CACHE_KEYS.LAST_REFRESH);
+      if (!lastRefresh) return true; // First time, should refresh
+      
+      const now = Date.now();
+      return (now - lastRefresh) > CACHE_DURATION;
+    } catch (error) {
+      // Error checking refresh status
+      return true; // On error, refresh to be safe
+    }
+  }, []);
+
+  // Update last refresh time
+  const updateLastRefresh = useCallback(async () => {
+    try {
+      const now = Date.now();
+      await enhancedCache.set(CACHE_KEYS.LAST_REFRESH, now);
+      lastRefreshRef.current = now;
+    } catch (error) {
+      // Error updating last refresh time
+    }
+  }, []);
 
   // Fetch requests from Supabase with hierarchical location sorting (cost-optimized)
   const fetchRequests = useCallback(async (
@@ -42,17 +79,37 @@ export function useRequests() {
   ) => {
     const cacheKey = getCacheKey(userLat, userLon, category);
     
+    console.log('🔍 [DEBUG] fetchRequests called with:', {
+      pageNumber,
+      userLat,
+      userLon,
+      category,
+      forceRefresh,
+      userLocationData,
+      cacheKey
+    });
+    
     // Check cache first (unless force refresh)
-    if (!forceRefresh && isCacheValid(cacheKey)) {
-      const cached = cacheRef.current.get(cacheKey);
+    if (!forceRefresh) {
+      const cached = await enhancedCache.get<Request[]>(cacheKey);
       if (cached) {
-        return cached.data;
+        console.log('✅ [DEBUG] Using cached data, count:', cached.length);
+        return cached;
       }
     }
 
     try {
       setLoading(true);
       setError(null);
+
+      console.log('🚀 [DEBUG] Attempting hierarchical query with params:', {
+        user_state: userLocationData?.location_state || null,
+        user_district: userLocationData?.location_district || null,
+        user_city: userLocationData?.location_name || null,
+        category_filter: category || null,
+        limit_count: getTotalItemsForPage(pageNumber),
+        offset_count: pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE
+      });
 
       // Use hierarchical location sorting for better performance and lower costs
       const { data, error } = await supabase
@@ -61,35 +118,51 @@ export function useRequests() {
           user_district: userLocationData?.location_district || null,
           user_city: userLocationData?.location_name || null,
           category_filter: category || null,
-          limit_count: pageNumber * PAGE_SIZE,
-          offset_count: (pageNumber - 1) * PAGE_SIZE
+          limit_count: getTotalItemsForPage(pageNumber),
+          offset_count: pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE
         });
 
       if (error) {
-        console.error('Error fetching requests with hierarchical sorting:', error);
+        console.log('❌ [DEBUG] Hierarchical query failed:', error);
+        console.log('🔄 [DEBUG] Falling back to simple query...');
+        
+        // Error fetching requests with hierarchical sorting
         // Fallback to simple query
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('requests')
-          .select('*')
+          .select('id, requester_username, title, description, category, latitude, longitude, created_at, updated_at, expires_at')
           .order('updated_at', { ascending: false })
-          .range((pageNumber - 1) * PAGE_SIZE, pageNumber * PAGE_SIZE - 1);
+          .range(
+            pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE,
+            getTotalItemsForPage(pageNumber) - 1
+          );
         
         if (fallbackError) {
+          console.log('❌ [DEBUG] Fallback query also failed:', fallbackError);
           throw fallbackError;
         }
         
+        console.log('✅ [DEBUG] Fallback query succeeded, count:', fallbackData?.length || 0);
         const result = fallbackData || [];
-        // Cache the result
-        cacheRef.current.set(cacheKey, { data: result, timestamp: Date.now() });
+        // Cache the result using enhanced cache manager
+        await enhancedCache.set(cacheKey, result);
         return result;
       }
 
+      console.log('✅ [DEBUG] Hierarchical query succeeded, count:', data?.length || 0);
       const result = data || [];
-      // Cache the result
-      cacheRef.current.set(cacheKey, { data: result, timestamp: Date.now() });
+      // Cache the result using enhanced cache manager
+      await enhancedCache.set(cacheKey, result);
       return result;
     } catch (err) {
-      console.error('Error fetching requests:', err);
+      console.log('💥 [DEBUG] fetchRequests error:', err);
+      console.log('💥 [DEBUG] Error details:', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+        name: err instanceof Error ? err.name : undefined
+      });
+      
+      // Error fetching requests
       setError(err instanceof Error ? err.message : 'Failed to fetch requests');
       return [];
     } finally {
@@ -97,22 +170,57 @@ export function useRequests() {
     }
   }, []);
 
-  // Load initial data (only once when entering app)
+  // Load initial data (only once when entering app or when cache expires)
   const loadInitialData = useCallback(async (
     userLat?: number, 
     userLon?: number, 
     category?: string,
     userLocationData?: { location_state?: string; location_district?: string; location_name?: string }
   ) => {
-    if (isInitializedRef.current) return;
+    console.log('🔄 [DEBUG] loadInitialData called with:', {
+      userLat,
+      userLon,
+      category,
+      userLocationData,
+      isInitialized: isInitializedRef.current
+    });
+    
+    if (isInitializedRef.current) {
+      console.log('⏭️ [DEBUG] Already initialized, skipping');
+      return;
+    }
     
     isInitializedRef.current = true;
-    const newRequests = await fetchRequests(1, userLat, userLon, category, false, userLocationData);
-    setRequests(newRequests);
-    setCurrentPage(1);
-    setHasMore(newRequests.length === PAGE_SIZE);
-    setLastRefresh(Date.now());
-  }, [fetchRequests]);
+    console.log('🏁 [DEBUG] Marked as initialized');
+    
+    // Check if we should refresh based on last refresh time
+    const needsRefresh = await shouldRefresh();
+    console.log('🔄 [DEBUG] Needs refresh:', needsRefresh);
+    
+    try {
+      const newRequests = await fetchRequests(1, userLat, userLon, category, needsRefresh, userLocationData);
+      console.log('📊 [DEBUG] Loaded requests:', newRequests.length);
+      
+      setRequests(newRequests);
+      setCurrentPage(1);
+      setHasMore(newRequests.length === INITIAL_PAGE_SIZE);
+      setLastRefresh(Date.now());
+      
+      console.log('✅ [DEBUG] State updated:', {
+        requestsCount: newRequests.length,
+        hasMore: newRequests.length === INITIAL_PAGE_SIZE
+      });
+      
+      // Update last refresh time if we actually fetched fresh data
+      if (needsRefresh) {
+        await updateLastRefresh();
+        console.log('⏰ [DEBUG] Last refresh time updated');
+      }
+    } catch (loadError) {
+      console.log('💥 [DEBUG] loadInitialData error:', loadError);
+      throw loadError;
+    }
+  }, [fetchRequests, shouldRefresh, updateLastRefresh]);
 
   // Load more requests (for pagination)
   const loadMore = useCallback(async (
@@ -126,15 +234,20 @@ export function useRequests() {
     const nextPage = currentPage + 1;
     const newRequests = await fetchRequests(nextPage, userLat, userLon, category, false, userLocationData);
     
-    if (newRequests.length === 0) {
+    // For subsequent pages, we need to slice the results to get only the new items
+    const startIndex = currentPage === 1 ? INITIAL_PAGE_SIZE : 0;
+    const pageResults = newRequests.slice(startIndex, startIndex + SUBSEQUENT_PAGE_SIZE);
+    
+    if (pageResults.length === 0) {
       setHasMore(false);
     } else {
-      setRequests(prev => [...prev, ...newRequests]);
+      setRequests(prev => [...prev, ...pageResults]);
       setCurrentPage(nextPage);
+      setHasMore(pageResults.length === SUBSEQUENT_PAGE_SIZE);
     }
   }, [loading, hasMore, currentPage, fetchRequests]);
 
-  // Manual refresh (clears cache and fetches fresh data)
+  // Manual refresh (clears cache and fetches fresh data) - only called on pull-to-refresh
   const refresh = useCallback(async (
     userLat?: number, 
     userLon?: number, 
@@ -143,7 +256,7 @@ export function useRequests() {
   ) => {
     // Clear cache for this specific query
     const cacheKey = getCacheKey(userLat, userLon, category);
-    cacheRef.current.delete(cacheKey);
+    await enhancedCache.delete(cacheKey);
     
     setRequests([]);
     setCurrentPage(1);
@@ -152,9 +265,12 @@ export function useRequests() {
 
     const newRequests = await fetchRequests(1, userLat, userLon, category, true, userLocationData);
     setRequests(newRequests);
-    setHasMore(newRequests.length === PAGE_SIZE);
+    setHasMore(newRequests.length === INITIAL_PAGE_SIZE);
     setLastRefresh(Date.now());
-  }, [fetchRequests]);
+    
+    // Update last refresh time
+    await updateLastRefresh();
+  }, [fetchRequests, updateLastRefresh]);
 
   // Create a new request
   const createRequest = useCallback(async (requestData: Partial<Request>) => {
@@ -173,12 +289,12 @@ export function useRequests() {
       }
 
       // Clear all caches to refresh data
-      cacheRef.current.clear();
+      await enhancedCache.invalidateRelated('requests_');
       isInitializedRef.current = false;
       
       return data;
     } catch (err) {
-      console.error('Error creating request:', err);
+      // Error creating request
       setError(err instanceof Error ? err.message : 'Failed to create request');
       throw err;
     } finally {
@@ -204,12 +320,12 @@ export function useRequests() {
       }
 
       // Clear all caches to refresh data
-      cacheRef.current.clear();
+      await enhancedCache.invalidateRelated('requests_');
       isInitializedRef.current = false;
 
       return data;
     } catch (err) {
-      console.error('Error updating request:', err);
+      // Error updating request
       setError(err instanceof Error ? err.message : 'Failed to update request');
       throw err;
     } finally {
@@ -233,13 +349,13 @@ export function useRequests() {
       }
 
       // Clear all caches to refresh data
-      cacheRef.current.clear();
+      await enhancedCache.invalidateRelated('requests_');
       isInitializedRef.current = false;
 
       // Remove from local state
       setRequests(prev => prev.filter(req => req.id !== requestId));
     } catch (err) {
-      console.error('Error deleting request:', err);
+      // Error deleting request
       setError(err instanceof Error ? err.message : 'Failed to delete request');
       throw err;
     } finally {
@@ -261,15 +377,15 @@ export function useRequests() {
 
       return data || [];
     } catch (err) {
-      console.error('Error fetching user requests:', err);
+      // Error fetching user requests
       setError(err instanceof Error ? err.message : 'Failed to fetch user requests');
       return [];
     }
   }, []);
 
   // Clear cache (useful for logout or app reset)
-  const clearCache = useCallback(() => {
-    cacheRef.current.clear();
+  const clearCache = useCallback(async () => {
+    await enhancedCache.invalidateRelated('requests_');
     isInitializedRef.current = false;
     setRequests([]);
     setCurrentPage(1);
@@ -279,17 +395,25 @@ export function useRequests() {
   }, []);
 
   // Get cache status
-  const getCacheStatus = useCallback((userLat?: number, userLon?: number, category?: string) => {
+  const getCacheStatus = useCallback(async (userLat?: number, userLon?: number, category?: string) => {
     const cacheKey = getCacheKey(userLat, userLon, category);
-    const cached = cacheRef.current.get(cacheKey);
+    const cached = await enhancedCache.get<Request[]>(cacheKey);
     
-    if (!cached) return { isValid: false, age: 0 };
+    if (!cached) return { isValid: false, age: 0, source: 'none' };
     
-    const age = Date.now() - cached.timestamp;
+    // Get cache entry details from enhanced cache
+    const cacheStats = await enhancedCache.getStats();
     return { 
-      isValid: age < CACHE_DURATION, 
-      age: Math.floor(age / 1000) // age in seconds
+      isValid: true, 
+      age: 0, // Enhanced cache doesn't expose individual entry timestamps
+      source: 'enhanced_cache',
+      hitRate: cacheStats.hitRate
     };
+  }, []);
+
+  // Get last refresh time
+  const getLastRefreshTime = useCallback(() => {
+    return lastRefreshRef.current;
   }, []);
 
   return {
@@ -312,9 +436,9 @@ export function useRequests() {
     
     // Utilities
     getCacheStatus,
+    getLastRefreshTime,
     
     // Computed state
-    isInitialized: isInitializedRef.current,
-    cacheSize: cacheRef.current.size
+    isInitialized: isInitializedRef.current
   };
 }

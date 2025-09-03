@@ -15,7 +15,7 @@ interface CachedActivitiesState {
   lastFetch: number | null;
 }
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+const CACHE_DURATION = 15 * 60 * 1000; // 15 minutes cache
 const CACHE_KEYS = {
   ACTIVITIES: 'cached_activities',
   SENT_PINGS: 'cached_sent_pings',
@@ -250,7 +250,7 @@ export function useCachedActivities(username: string | null) {
     try {
       const { data: listings, error } = await supabase
         .from('listings')
-        .select('*, images, thumbnail_images, preview_images, image_folder_path, image_metadata')
+        .select('id, title, description, price, price_unit, category, thumbnail_images, preview_images, image_folder_path, latitude, longitude, created_at, updated_at, is_active')
         .eq('username', username)
         .order('updated_at', { ascending: false })
         .order('created_at', { ascending: false });

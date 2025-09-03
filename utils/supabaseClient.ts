@@ -57,7 +57,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
   realtime: {
     params: {
-      eventsPerSecond: poolConfig.eventsPerSecond,
+      eventsPerSecond: 0, // Disable real-time completely
+      heartbeatIntervalMs: 0, // Disable heartbeat
+      reconnectAfterMs: 0, // Disable reconnection
     },
   },
 });
@@ -111,7 +113,9 @@ class ConnectionPoolManager {
       },
       realtime: {
         params: {
-          eventsPerSecond: poolConfig.eventsPerSecond,
+          eventsPerSecond: 0, // Disable real-time completely
+          heartbeatIntervalMs: 0, // Disable heartbeat
+          reconnectAfterMs: 0, // Disable reconnection
         },
       },
     });

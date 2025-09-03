@@ -7,7 +7,7 @@ export const MARKETPLACE_IMAGE_CONFIG = {
   // ============================================================================
   // UPLOAD LIMITS & VALIDATION
   // ============================================================================
-  MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
+  MAX_FILE_SIZE: 5 * 1024 * 1024, // 5MB - Reduced to minimize storage costs
   MAX_IMAGE_DIMENSION: 4096, // 4K max
   MIN_IMAGE_DIMENSION: 200, // 200px min
   SUPPORTED_FORMATS: ['image/jpeg', 'image/png', 'image/webp', 'image/heic'],
@@ -19,21 +19,21 @@ export const MARKETPLACE_IMAGE_CONFIG = {
   // ============================================================================
   COMPRESSION: {
     LISTING: {
-      QUALITY: 0.85,
-      MAX_WIDTH: 1920,
-      MAX_HEIGHT: 1080,
+      QUALITY: 0.7, // Reduced from 0.85 for smaller file sizes
+      MAX_WIDTH: 1200, // Reduced from 1920
+      MAX_HEIGHT: 800, // Reduced from 1080
       FORMAT: 'jpeg' as const,
     },
     THUMBNAIL: {
-      QUALITY: 0.8,
-      MAX_WIDTH: 400,
-      MAX_HEIGHT: 400,
+      QUALITY: 0.6, // Reduced from 0.8
+      MAX_WIDTH: 300, // Reduced from 400
+      MAX_HEIGHT: 300, // Reduced from 400
       FORMAT: 'jpeg' as const,
     },
     PREVIEW: {
-      QUALITY: 0.75,
-      MAX_WIDTH: 800,
-      MAX_HEIGHT: 600,
+      QUALITY: 0.6, // Reduced from 0.75
+      MAX_WIDTH: 600, // Reduced from 800
+      MAX_HEIGHT: 450, // Reduced from 600
       FORMAT: 'jpeg' as const,
     },
     AVATAR: {

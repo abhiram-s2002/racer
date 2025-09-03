@@ -1,5 +1,6 @@
 import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { formatDistance } from './distance';
 
 // Location interfaces
 export interface Coordinates {
@@ -66,15 +67,10 @@ export class LocationUtils {
     return R * c; // Distance in meters
   }
 
-  // Format distance for display
+  // Format distance for display (delegates to distance.ts utility)
   static formatDistance(meters: number): string {
-    if (meters < 1000) {
-      return `${Math.round(meters)}m`;
-    } else if (meters < 10000) {
-      return `${(meters / 1000).toFixed(1)}km`;
-    } else {
-      return `${Math.round(meters / 1000)}km`;
-    }
+    const distanceKm = meters / 1000;
+    return formatDistance(distanceKm);
   }
 
   // Get user's current location with caching

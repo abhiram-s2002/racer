@@ -1,264 +1,375 @@
+/**
+ * Cache Manager for State Management
+ * Handles caching with TTL, encryption, and persistence
+ */
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { SecureStorage } from './encryption';
 
-interface CacheConfig {
-  ttl: number; // Time to live in seconds
-  encrypted?: boolean; // Whether to encrypt the cached data
-}
+export type CacheType = 'API' | 'USER' | 'SYSTEM';
 
-interface CacheItem<T> {
+export interface CacheEntry<T = any> {
   data: T;
   timestamp: number;
-  version: string;
+  ttl: number;
+  encrypted?: boolean;
 }
 
-interface MemoryCacheItem<T> extends CacheItem<T> {
-  hits: number; // Track cache hits for optimization
+export interface CacheConfig {
+  defaultTTL: number; // in seconds
+  maxSize: number;
+  enableEncryption: boolean;
+  enablePersistence: boolean;
 }
 
-// Default configurations for different cache types
-const DEFAULT_CACHE_CONFIG: Record<string, CacheConfig> = {
-  API: { ttl: 300, encrypted: false }, // 5 minutes for API responses
-  USER: { ttl: 3600, encrypted: true }, // 1 hour for user data
-  LOCATION: { ttl: 900, encrypted: false }, // 15 minutes for location
-  LISTINGS: { ttl: 30, encrypted: false }, // 30 seconds for listings
-  MESSAGES: { ttl: 3600, encrypted: true }, // 1 hour for messages
-  IMAGES: { ttl: 86400, encrypted: false }, // 24 hours for images
+const DEFAULT_CONFIG: CacheConfig = {
+  defaultTTL: 3600, // 1 hour
+  maxSize: 1000,
+  enableEncryption: false,
+  enablePersistence: true
 };
 
 class CacheManager {
-  private static instance: CacheManager;
-  private memoryCache: Map<string, MemoryCacheItem<any>>;
-  private readonly APP_VERSION: string = '1.0.0'; // Should match your app version
+  private cache = new Map<string, CacheEntry>();
+  private config: CacheConfig;
+  private encryptionKey: string | null = null;
 
-  private constructor() {
-    this.memoryCache = new Map();
+  constructor(config: Partial<CacheConfig> = {}) {
+    this.config = { ...DEFAULT_CONFIG, ...config };
+    this.initializeEncryption();
   }
 
-  public static getInstance(): CacheManager {
-    if (!CacheManager.instance) {
-      CacheManager.instance = new CacheManager();
+  /**
+   * Initialize encryption if enabled
+   */
+  private initializeEncryption(): void {
+    if (this.config.enableEncryption) {
+      // In a real app, you'd generate or retrieve a proper encryption key
+      this.encryptionKey = 'demo-encryption-key';
     }
-    return CacheManager.instance;
   }
 
-  // Generate a unique cache key
-  private generateKey(key: string, type: keyof typeof DEFAULT_CACHE_CONFIG): string {
-    return `cache_${type.toLowerCase()}_${key}`;
-  }
-
-  // Check if cache is valid
-  private isCacheValid<T>(cache: CacheItem<T>, ttl: number): boolean {
-    const now = Date.now();
-    return (
-      cache &&
-      cache.version === this.APP_VERSION &&
-      now - cache.timestamp < ttl * 1000
-    );
-  }
-
-  // Memory cache operations
-  private async getFromMemory<T>(key: string): Promise<T | null> {
-    const item = this.memoryCache.get(key);
-    if (item && this.isCacheValid(item, DEFAULT_CACHE_CONFIG.API.ttl)) {
-      item.hits++;
-      return item.data;
-    }
-    return null;
-  }
-
-  private setToMemory<T>(key: string, data: T): void {
-    this.memoryCache.set(key, {
-      data,
-      timestamp: Date.now(),
-      version: this.APP_VERSION,
-      hits: 1,
-    });
-  }
-
-  // Persistent storage operations
-  private async getFromStorage<T>(
-    key: string,
-    config: CacheConfig
-  ): Promise<T | null> {
+  /**
+   * Set a value in the cache
+   */
+  async set<T>(key: string, value: T, type: CacheType = 'API', ttl?: number): Promise<void> {
     try {
-      let cached: string | null;
+      const cacheKey = this.generateCacheKey(key, type);
+      const entryTTL = ttl || this.config.defaultTTL;
       
-      if (config.encrypted) {
-        cached = await SecureStorage.getEncryptedItem(key);
-      } else {
-        cached = await AsyncStorage.getItem(key);
-      }
-      
-      if (!cached) return null;
-      
-      const item: CacheItem<T> = JSON.parse(cached);
-      
-      if (this.isCacheValid(item, config.ttl)) {
-        return item.data;
-      }
-      
-      // Clean up expired cache
-      if (config.encrypted) {
-        await SecureStorage.removeEncryptedItem(key);
-      } else {
-        await AsyncStorage.removeItem(key);
-      }
-      return null;
-    } catch (error) {
-      console.error('Cache read error:', error);
-      return null;
-    }
-  }
+      let data = value;
+      let encrypted = false;
 
-  private async setToStorage<T>(
-    key: string,
-    data: T,
-    config: CacheConfig
-  ): Promise<void> {
-    try {
-      const item: CacheItem<T> = {
+      // Encrypt data if needed
+      if (this.config.enableEncryption && type === 'USER' && this.encryptionKey) {
+        data = this.encrypt(JSON.stringify(value)) as T;
+        encrypted = true;
+      }
+
+      const entry: CacheEntry<T> = {
         data,
         timestamp: Date.now(),
-        version: this.APP_VERSION,
+        ttl: entryTTL * 1000, // Convert to milliseconds
+        encrypted
       };
+
+      this.cache.set(cacheKey, entry);
+
+      // Persist to AsyncStorage if enabled
+      if (this.config.enablePersistence) {
+        await this.persistToStorage(cacheKey, entry);
+      }
+
+      // Clean up old entries if cache is too large
+      await this.cleanup();
+    } catch (error) {
+      console.error('Error setting cache entry:', error);
+    }
+  }
+
+  /**
+   * Get a value from the cache
+   */
+  async get<T>(key: string, type: CacheType = 'API'): Promise<T | null> {
+    try {
+      const cacheKey = this.generateCacheKey(key, type);
       
-      if (config.encrypted) {
-        await SecureStorage.setEncryptedItem(key, item);
-      } else {
-        await AsyncStorage.setItem(key, JSON.stringify(item));
+      // Try memory cache first
+      let entry = this.cache.get(cacheKey);
+      
+      // If not in memory and persistence is enabled, try AsyncStorage
+      if (!entry && this.config.enablePersistence) {
+        const storedEntry = await this.loadFromStorage(cacheKey);
+        if (storedEntry) {
+          entry = storedEntry;
+          this.cache.set(cacheKey, entry);
+        }
+      }
+
+      if (!entry) {
+        return null;
+      }
+
+      // Check if entry has expired
+      if (this.isExpired(entry)) {
+        this.cache.delete(cacheKey);
+        if (this.config.enablePersistence) {
+          this.removeFromStorage(cacheKey);
+        }
+        return null;
+      }
+
+      let data = entry.data;
+
+      // Decrypt data if needed
+      if (entry.encrypted && this.encryptionKey) {
+        try {
+          data = JSON.parse(this.decrypt(data as string));
+        } catch (error) {
+          console.error('Error decrypting cache entry:', error);
+          return null;
+        }
+      }
+
+      return data as T;
+    } catch (error) {
+      console.error('Error getting cache entry:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Delete a value from the cache
+   */
+  async delete(key: string, type: CacheType = 'API'): Promise<boolean> {
+    try {
+      const cacheKey = this.generateCacheKey(key, type);
+      const deleted = this.cache.delete(cacheKey);
+      
+      if (this.config.enablePersistence) {
+        await this.removeFromStorage(cacheKey);
+      }
+      
+      return deleted;
+    } catch (error) {
+      console.error('Error deleting cache entry:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Clear all cache entries
+   */
+  async clear(): Promise<void> {
+    try {
+      this.cache.clear();
+      
+      if (this.config.enablePersistence) {
+        await this.clearStorage();
       }
     } catch (error) {
-      console.error('Cache write error:', error);
+      console.error('Error clearing cache:', error);
     }
   }
 
-  // Public methods
-  public async get<T>(
-    key: string,
-    type: keyof typeof DEFAULT_CACHE_CONFIG
-  ): Promise<T | null> {
-    const cacheKey = this.generateKey(key, type);
-    const config = DEFAULT_CACHE_CONFIG[type];
-
-    // Try memory cache first for API responses
-    if (type === 'API') {
-      const memoryData = await this.getFromMemory<T>(cacheKey);
-      if (memoryData) return memoryData;
-    }
-
-    // Try persistent storage
-    return await this.getFromStorage<T>(cacheKey, config);
-  }
-
-  public async set<T>(
-    key: string,
-    data: T,
-    type: keyof typeof DEFAULT_CACHE_CONFIG
-  ): Promise<void> {
-    const cacheKey = this.generateKey(key, type);
-    const config = DEFAULT_CACHE_CONFIG[type];
-
-    // Store in memory if it's an API response
-    if (type === 'API') {
-      this.setToMemory(cacheKey, data);
-    }
-
-    // Store in persistent storage
-    await this.setToStorage(cacheKey, data, config);
-  }
-
-  public async remove(
-    key: string,
-    type: keyof typeof DEFAULT_CACHE_CONFIG
-  ): Promise<void> {
-    const cacheKey = this.generateKey(key, type);
-    const config = DEFAULT_CACHE_CONFIG[type];
-
-    // Remove from memory cache
-    this.memoryCache.delete(cacheKey);
-
-    // Remove from persistent storage
-    if (config.encrypted) {
-      await SecureStorage.removeEncryptedItem(cacheKey);
-    } else {
-      await AsyncStorage.removeItem(cacheKey);
-    }
-  }
-
-  public async clear(type?: keyof typeof DEFAULT_CACHE_CONFIG): Promise<void> {
-    // Clear memory cache
-    if (!type) {
-      this.memoryCache.clear();
-    } else {
-      const prefix = `cache_${type.toLowerCase()}_`;
-      for (const key of this.memoryCache.keys()) {
+  /**
+   * Clear cache entries by type
+   */
+  async clearByType(type: CacheType): Promise<void> {
+    try {
+      const prefix = this.getTypePrefix(type);
+      const keysToDelete: string[] = [];
+      
+      for (const key of this.cache.keys()) {
         if (key.startsWith(prefix)) {
-          this.memoryCache.delete(key);
+          keysToDelete.push(key);
         }
       }
-    }
-
-    // Clear persistent storage
-    try {
-      if (!type) {
-        await AsyncStorage.clear();
-        // Clear secure storage separately
-        const secureKeys = await AsyncStorage.getAllKeys();
-        for (const key of secureKeys) {
-          if (key.startsWith('encrypted_')) {
-            await SecureStorage.removeEncryptedItem(key);
-          }
+      
+      keysToDelete.forEach(key => {
+        this.cache.delete(key);
+        if (this.config.enablePersistence) {
+          this.removeFromStorage(key);
         }
-      } else {
-        const keys = await AsyncStorage.getAllKeys();
-        const prefix = `cache_${type.toLowerCase()}_`;
-        const keysToRemove = keys.filter(key => key.startsWith(prefix));
-        await AsyncStorage.multiRemove(keysToRemove);
-
-        // Clear secure storage if needed
-        if (DEFAULT_CACHE_CONFIG[type].encrypted) {
-          const securePrefix = `encrypted_${prefix}`;
-          for (const key of keys) {
-            if (key.startsWith(securePrefix)) {
-              await SecureStorage.removeEncryptedItem(key);
-            }
-          }
-        }
-      }
+      });
     } catch (error) {
-      console.error('Cache clear error:', error);
+      console.error('Error clearing cache by type:', error);
     }
   }
 
-  // Cache maintenance
-  public async maintenance(): Promise<void> {
-    try {
-      // Clear expired memory cache items
-      for (const [key, item] of this.memoryCache.entries()) {
-        if (!this.isCacheValid(item, DEFAULT_CACHE_CONFIG.API.ttl)) {
-          this.memoryCache.delete(key);
+  /**
+   * Get cache statistics
+   */
+  getStats(): {
+    size: number;
+    maxSize: number;
+    hitRate: number;
+    entriesByType: Record<CacheType, number>;
+  } {
+    const entriesByType: Record<CacheType, number> = {
+      API: 0,
+      USER: 0,
+      SYSTEM: 0
+    };
+
+    for (const key of this.cache.keys()) {
+      if (key.startsWith('api_')) entriesByType.API++;
+      else if (key.startsWith('user_')) entriesByType.USER++;
+      else if (key.startsWith('system_')) entriesByType.SYSTEM++;
+    }
+
+    return {
+      size: this.cache.size,
+      maxSize: this.config.maxSize,
+      hitRate: 0, // Would need to track hits/misses for real hit rate
+      entriesByType
+    };
+  }
+
+  /**
+   * Generate cache key with type prefix
+   */
+  private generateCacheKey(key: string, type: CacheType): string {
+    const prefix = this.getTypePrefix(type);
+    return `${prefix}${key}`;
+  }
+
+  /**
+   * Get type prefix for cache keys
+   */
+  private getTypePrefix(type: CacheType): string {
+    switch (type) {
+      case 'API': return 'api_';
+      case 'USER': return 'user_';
+      case 'SYSTEM': return 'system_';
+      default: return 'api_';
+    }
+  }
+
+  /**
+   * Check if cache entry is expired
+   */
+  private isExpired(entry: CacheEntry): boolean {
+    return Date.now() - entry.timestamp > entry.ttl;
+  }
+
+  /**
+   * Clean up expired entries and enforce size limits
+   */
+  private async cleanup(): Promise<void> {
+    // Remove expired entries
+    for (const [key, entry] of this.cache.entries()) {
+      if (this.isExpired(entry)) {
+        this.cache.delete(key);
+        if (this.config.enablePersistence) {
+          await this.removeFromStorage(key);
         }
       }
+    }
 
-      // Clear expired persistent cache items
+    // Enforce size limit (remove oldest entries)
+    if (this.cache.size > this.config.maxSize) {
+      const entries = Array.from(this.cache.entries());
+      entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+      
+      const toRemove = entries.slice(0, this.cache.size - this.config.maxSize);
+      for (const [key] of toRemove) {
+        this.cache.delete(key);
+        if (this.config.enablePersistence) {
+          await this.removeFromStorage(key);
+        }
+      }
+    }
+  }
+
+  /**
+   * Persist entry to AsyncStorage
+   */
+  private async persistToStorage(key: string, entry: CacheEntry): Promise<void> {
+    try {
+      await AsyncStorage.setItem(`cache_${key}`, JSON.stringify(entry));
+    } catch (error) {
+      console.error('Error persisting to storage:', error);
+    }
+  }
+
+  /**
+   * Load entry from AsyncStorage
+   */
+  private async loadFromStorage(key: string): Promise<CacheEntry | null> {
+    try {
+      const stored = await AsyncStorage.getItem(`cache_${key}`);
+      return stored ? JSON.parse(stored) : null;
+    } catch (error) {
+      console.error('Error loading from storage:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Remove entry from AsyncStorage
+   */
+  private async removeFromStorage(key: string): Promise<void> {
+    try {
+      await AsyncStorage.removeItem(`cache_${key}`);
+    } catch (error) {
+      console.error('Error removing from storage:', error);
+    }
+  }
+
+  /**
+   * Clear all cache entries from AsyncStorage
+   */
+  private async clearStorage(): Promise<void> {
+    try {
       const keys = await AsyncStorage.getAllKeys();
-      for (const key of keys) {
-        if (key.startsWith('cache_')) {
-          const cached = await AsyncStorage.getItem(key);
-          if (cached) {
-            const item: CacheItem<any> = JSON.parse(cached);
-            const type = key.split('_')[1].toUpperCase() as keyof typeof DEFAULT_CACHE_CONFIG;
-            if (!this.isCacheValid(item, DEFAULT_CACHE_CONFIG[type].ttl)) {
-              await AsyncStorage.removeItem(key);
-            }
-          }
+      if (keys) {
+        const keysToRemove = keys.filter(key => key.startsWith('cache_'));
+        if (keysToRemove.length > 0) {
+          await AsyncStorage.multiRemove(keysToRemove);
         }
       }
     } catch (error) {
-      console.error('Cache maintenance error:', error);
+      console.error('Error clearing storage:', error);
+    }
+  }
+
+  /**
+   * Simple encryption (for demo purposes - use proper encryption in production)
+   */
+  private encrypt(data: string): string {
+    if (!this.encryptionKey) return data;
+    
+    // Simple XOR encryption (not secure for production)
+    let encrypted = '';
+    for (let i = 0; i < data.length; i++) {
+      encrypted += String.fromCharCode(
+        data.charCodeAt(i) ^ this.encryptionKey.charCodeAt(i % this.encryptionKey.length)
+      );
+    }
+    return btoa(encrypted);
+  }
+
+  /**
+   * Simple decryption (for demo purposes - use proper decryption in production)
+   */
+  private decrypt(encryptedData: string): string {
+    if (!this.encryptionKey) return encryptedData;
+    
+    try {
+      const data = atob(encryptedData);
+      let decrypted = '';
+      for (let i = 0; i < data.length; i++) {
+        decrypted += String.fromCharCode(
+          data.charCodeAt(i) ^ this.encryptionKey.charCodeAt(i % this.encryptionKey.length)
+        );
+      }
+      return decrypted;
+    } catch (error) {
+      console.error('Error decrypting data:', error);
+      return encryptedData;
     }
   }
 }
 
-export const cacheManager = CacheManager.getInstance(); 
+// Export singleton instance
+export const cacheManager = new CacheManager();

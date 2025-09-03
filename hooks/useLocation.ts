@@ -3,7 +3,7 @@ import * as Location from 'expo-location';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LOCATION_CACHE_KEY = 'user_location_cache';
-const LOCATION_CACHE_EXPIRY = 15 * 60 * 1000; // 15 minutes in milliseconds
+const LOCATION_CACHE_EXPIRY = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 interface LocationState {
   latitude: number | null;

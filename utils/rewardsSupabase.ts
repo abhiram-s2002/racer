@@ -21,12 +21,10 @@ export interface DailyCheckin {
   username: string;
   checkin_date: string;
   omni_earned: number;
-  streak_day: number;
   created_at: string;
 }
 
 export interface UserStreak {
-  id: string;
   username: string;
   current_streak: number;
   longest_streak: number;
@@ -34,8 +32,6 @@ export interface UserStreak {
   last_checkin_date: string | null;
   weekly_rewards: number;
   monthly_rewards: number;
-  last_weekly_reset: string;
-  last_monthly_reset: string;
   created_at: string;
   updated_at: string;
 }
@@ -116,18 +112,18 @@ export async function getUserRewards(username: string): Promise<UserRewards | nu
   try {
     const { data, error } = await supabase
       .from('user_rewards')
-      .select('*')
+      .select('id, username, total_omni_earned, total_omni_spent, current_balance, last_activity_at, created_at, updated_at')
       .eq('username', username)
       .single();
 
     if (error) {
-      console.error('Error fetching user rewards:', error);
+      // Error fetching user rewards
       return null;
     }
 
     return data;
   } catch (error) {
-    console.error('Error in getUserRewards:', error);
+    // Error in getUserRewards
     return null;
   }
 }
@@ -160,7 +156,7 @@ export async function getDailyCheckins(username: string, limit = 30): Promise<Da
   try {
     const { data, error } = await supabase
       .from('daily_checkins')
-      .select('*')
+      .select('id, username, checkin_date, omni_earned, created_at')
       .eq('username', username)
       .order('checkin_date', { ascending: false })
       .limit(limit);
@@ -231,7 +227,7 @@ export async function getUserStreak(username: string): Promise<UserStreak | null
   try {
     const { data, error } = await supabase
       .from('user_streaks')
-      .select('*')
+      .select('username, current_streak, longest_streak, total_checkins, last_checkin_date, weekly_rewards, monthly_rewards, created_at, updated_at')
       .eq('username', username)
       .single();
 
@@ -318,7 +314,7 @@ export async function getReferralsByUser(username: string): Promise<Referral[]> 
   try {
     const { data, error } = await supabase
       .from('referrals')
-      .select('*')
+      .select('id, referrer_username, referred_username, referral_code, status, omni_rewarded, completed_at, created_at')
       .eq('referrer_username', username)
       .order('created_at', { ascending: false });
 
@@ -436,7 +432,7 @@ export async function getAllAchievements(): Promise<Achievement[]> {
   try {
     const { data, error } = await supabase
       .from('achievements')
-      .select('*')
+      .select('id, title, description, max_progress, omni_reward, icon, is_active, rarity, created_at')
       .eq('is_active', true)
       .order('created_at', { ascending: true });
 
@@ -457,7 +453,16 @@ export async function getUserAchievements(username: string): Promise<UserAchieve
     const { data, error } = await supabase
       .from('user_achievements')
       .select(`
-        *,
+        id,
+        username,
+        achievement_id,
+        progress,
+        max_progress,
+        completed,
+        completed_at,
+        omni_earned,
+        created_at,
+        updated_at,
         achievements (
           id,
           title,
@@ -653,7 +658,7 @@ export async function getRewardTransactions(username: string, limit = 50): Promi
   try {
     const { data, error } = await supabase
       .from('reward_transactions')
-      .select('*')
+      .select('id, username, transaction_type, amount, description, reference_id, reference_type, created_at')
       .eq('username', username)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -906,7 +911,7 @@ export async function getUserRewardsSafe(username: string): Promise<UserRewards 
         // Record doesn't exist, initialize it
         return await initializeUserRewardsRecord(username);
       }
-      console.error('Error fetching user rewards:', error);
+      // Error fetching user rewards
       return null;
     }
 
@@ -921,7 +926,7 @@ export async function getUserStreakSafe(username: string): Promise<UserStreak | 
   try {
     const { data, error } = await supabase
       .from('user_streaks')
-      .select('*')
+      .select('username, current_streak, longest_streak, total_checkins, last_checkin_date, weekly_rewards, monthly_rewards, created_at, updated_at')
       .eq('username', username)
       .single();
 
@@ -938,6 +943,94 @@ export async function getUserStreakSafe(username: string): Promise<UserStreak | 
   } catch (error) {
     console.error('Error in getUserStreakSafe:', error);
     return null;
+  }
+}
+
+/**
+ * Check and award consecutive streak bonuses
+ * Weekly bonus: 7 consecutive days
+ * Monthly bonus: 30 consecutive days
+ */
+export async function checkAndAwardStreakBonuses(username: string, currentStreak: number): Promise<{ weeklyBonus?: number; monthlyBonus?: number }> {
+  const bonuses = { weeklyBonus: undefined as number | undefined, monthlyBonus: undefined as number | undefined };
+  
+  try {
+    // Get current streak data
+    const streakData = await getUserStreakSafe(username);
+    if (!streakData) return bonuses;
+
+    // Check for weekly bonus (7 consecutive days)
+    if (currentStreak === 7 && streakData.weekly_rewards === 0) {
+      const weeklyBonusAmount = 200; // Weekly streak bonus
+      
+      // Award weekly bonus
+      await supabase
+        .from('user_streaks')
+        .update({ 
+          weekly_rewards: weeklyBonusAmount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('username', username);
+
+      // Add to user rewards
+      const { data: currentRewards } = await supabase
+        .from('user_rewards')
+        .select('current_balance, total_omni_earned')
+        .eq('username', username)
+        .single();
+
+      if (currentRewards) {
+        await supabase
+          .from('user_rewards')
+          .update({ 
+            current_balance: currentRewards.current_balance + weeklyBonusAmount,
+            total_omni_earned: currentRewards.total_omni_earned + weeklyBonusAmount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('username', username);
+      }
+
+      bonuses.weeklyBonus = weeklyBonusAmount;
+    }
+
+    // Check for monthly bonus (30 consecutive days)
+    if (currentStreak === 30 && streakData.monthly_rewards === 0) {
+      const monthlyBonusAmount = 1000; // Monthly streak bonus
+      
+      // Award monthly bonus
+      await supabase
+        .from('user_streaks')
+        .update({ 
+          monthly_rewards: monthlyBonusAmount,
+          updated_at: new Date().toISOString()
+        })
+        .eq('username', username);
+
+      // Add to user rewards
+      const { data: currentRewards } = await supabase
+        .from('user_rewards')
+        .select('current_balance, total_omni_earned')
+        .eq('username', username)
+        .single();
+
+      if (currentRewards) {
+        await supabase
+          .from('user_rewards')
+          .update({ 
+            current_balance: currentRewards.current_balance + monthlyBonusAmount,
+            total_omni_earned: currentRewards.total_omni_earned + monthlyBonusAmount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('username', username);
+      }
+
+      bonuses.monthlyBonus = monthlyBonusAmount;
+    }
+
+    return bonuses;
+  } catch (error) {
+    console.error('Error checking streak bonuses:', error);
+    return bonuses;
   }
 }
 

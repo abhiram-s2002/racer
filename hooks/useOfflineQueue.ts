@@ -131,11 +131,11 @@ export function useOfflineQueue() {
       loadPendingActions();
     });
 
-    // Update periodically
+    // Update periodically - minimal frequency since no real-time needed
     const interval = setInterval(() => {
       loadQueueStatus();
       loadPendingActions();
-    }, 5000);
+    }, 120000); // 2 minutes since no real-time
 
     return () => {
       unsubscribe();
@@ -145,10 +145,8 @@ export function useOfflineQueue() {
   }, [loadQueueStatus, loadPendingActions]);
 
   return {
-    // State
-    queueStatus,
+    // State (simplified - no UI monitoring)
     isOnline,
-    pendingActions,
     
     // Actions
     addAction,
@@ -161,11 +159,7 @@ export function useOfflineQueue() {
     processQueue,
     clearQueue,
     
-    // Utilities
-    loadQueueStatus,
-    loadPendingActions,
-    
-    // Computed values
+    // Computed values (simplified)
     hasPendingActions: queueStatus.totalActions > 0,
     isProcessing: queueStatus.isProcessing,
     canSync: isOnline && queueStatus.totalActions > 0 && !queueStatus.isProcessing,

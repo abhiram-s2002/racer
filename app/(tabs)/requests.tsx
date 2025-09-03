@@ -48,7 +48,8 @@ export default function RequestsScreen() {
     loadMore, 
     refresh, 
     createRequest,
-    isInitialized 
+    isInitialized,
+    getLastRefreshTime
   } = useRequests();
   const { latitude, longitude, updateLocation } = useLocation();
   const { user } = useAuth();
@@ -61,32 +62,49 @@ export default function RequestsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [userLocationData, setUserLocationData] = useState<LocationData | null>(null);
   const [showUserListings, setShowUserListings] = useState(false);
+  // Cache status removed - no UI monitoring needed
 
   // Load initial data when component mounts
   useEffect(() => {
     const initializeData = async () => {
-      await updateLocation();
-      // Try to get cached location data first
-      const cachedLocation = await RequestLocationUtils.getCachedLocation();
-      if (cachedLocation) {
-        setUserLocationData(cachedLocation);
-        await loadInitialData(
-          latitude || undefined, 
-          longitude || undefined, 
-          selectedCategory || undefined,
-          {
-            location_state: cachedLocation.location_state,
-            location_district: cachedLocation.location_district,
-            location_name: cachedLocation.location_name,
-          }
-        );
-      } else {
-        await loadInitialData(latitude || undefined, longitude || undefined, selectedCategory || undefined);
+      console.log('🚀 [DEBUG] Initializing requests screen...');
+      
+      try {
+        await updateLocation();
+        console.log('📍 [DEBUG] Location updated:', { latitude, longitude });
+        
+        // Try to get cached location data first
+        const cachedLocation = await RequestLocationUtils.getCachedLocation();
+        console.log('🗂️ [DEBUG] Cached location:', cachedLocation);
+        
+        if (cachedLocation) {
+          setUserLocationData(cachedLocation);
+          console.log('🎯 [DEBUG] Loading with cached location data');
+          await loadInitialData(
+            latitude || undefined, 
+            longitude || undefined, 
+            selectedCategory || undefined,
+            {
+              location_state: cachedLocation.location_state,
+              location_district: cachedLocation.location_district,
+              location_name: cachedLocation.location_name,
+            }
+          );
+        } else {
+          console.log('🌍 [DEBUG] Loading without cached location data');
+          await loadInitialData(latitude || undefined, longitude || undefined, selectedCategory || undefined);
+        }
+        
+        console.log('✅ [DEBUG] Initialization completed');
+      } catch (initError) {
+        console.log('💥 [DEBUG] Initialization error:', initError);
       }
     };
     
     initializeData();
   }, []);
+
+  // Cache status monitoring removed - no UI display needed
 
   // Reload data when category changes
   useEffect(() => {
@@ -102,7 +120,7 @@ export default function RequestsScreen() {
         } : undefined
       );
     }
-  }, [selectedCategory, userLocationData]);
+  }, [selectedCategory, userLocationData, isInitialized]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -269,7 +287,7 @@ export default function RequestsScreen() {
         ]
       );
     } catch (error) {
-      console.error('Error fetching requester phone:', error);
+      // Error fetching requester phone
       Alert.alert('Error', 'Failed to get requester information. Please try again.');
     }
   };
@@ -319,7 +337,7 @@ export default function RequestsScreen() {
         ]
       );
     } catch (error) {
-      console.error('Error fetching requester phone:', error);
+      // Error fetching requester phone
       Alert.alert('Error', 'Failed to get requester information. Please try again.');
     }
   };
@@ -411,6 +429,8 @@ export default function RequestsScreen() {
         </Text>
         <Text style={styles.resultsText}>{filteredRequests.length} requests found</Text>
       </View>
+
+      {/* Cache status indicator removed - no UI monitoring needed */}
     </View>
   );
 
@@ -440,6 +460,10 @@ export default function RequestsScreen() {
   );
 
   if (error) {
+    console.log('🚨 [DEBUG] Requests screen showing error:', error);
+    console.log('🚨 [DEBUG] Error type:', typeof error);
+    console.log('🚨 [DEBUG] Current state:', { loading, hasMore, requestsCount: requests.length });
+    
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
@@ -744,4 +768,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  // Cache status styles removed - no UI monitoring needed
 });

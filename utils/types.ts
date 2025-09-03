@@ -273,11 +273,13 @@ export interface UserRewards {
  * User streak information
  */
 export interface UserStreak {
-  id: string;
   username: string;
   current_streak: number;
   longest_streak: number;
+  total_checkins: number;
   last_checkin_date: string;
+  weekly_rewards: number;
+  monthly_rewards: number;
   created_at: string;
   updated_at: string;
 }
@@ -315,7 +317,6 @@ export interface DailyCheckin {
   username: string;
   checkin_date: string;
   omni_earned: number;
-  streak_day: number;
   created_at: string;
 }
 
@@ -384,7 +385,7 @@ export interface UserRewardsSummary {
   total_earned: number;
   total_spent: number;
   current_balance: number;
-  streak_days: number;
+  current_streak: number;
   achievements_completed: number;
   total_achievements: number;
   referrals_count: number;
