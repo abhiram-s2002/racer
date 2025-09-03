@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
-import { Home, User, MessageCircle, Activity, Gift } from 'lucide-react-native';
+import { Home, User, MessageCircle, Activity, Gift, ClipboardList } from 'lucide-react-native';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Temporary Colors object until proper import is fixed
@@ -38,6 +38,15 @@ export default function TabLayout() {
           options={{
             title: 'Home',
             tabBarIcon: ({ color }) => <Home size={24} color={color} />,
+          }}
+        />
+        <Tabs.Screen
+          name="requests"
+          options={{
+            title: 'Requests',
+            tabBarIcon: ({ size, color }) => (
+              <ClipboardList size={size} color={color} />
+            ),
           }}
         />
         <Tabs.Screen

@@ -18,13 +18,13 @@ import CategorySelectionModal from '@/components/CategorySelectionModal';
 import RatingModal from '@/components/RatingModal';
 import { Activity, deleteActivity } from '@/utils/activitySupabase';
 import { deleteListing as deleteListingWithImages } from '../../utils/listingSupabase';
+import { supabase } from '@/utils/supabaseClient';
 import { useIsFocused } from '@react-navigation/native';
 import { useCachedActivities } from '@/hooks/useCachedActivities';
 import RatingService from '@/utils/ratingService';
 
 import { useRouter } from 'expo-router';
 // Removed react-native-expo-image-cache import - using standard Image component
-import { supabase } from '@/utils/supabaseClient';
 
 import { formatPriceWithUnit } from '@/utils/formatters';
 import { Category } from '@/utils/types';
@@ -482,58 +482,56 @@ function ActivityScreen() {
   const renderPingItem = ({ item }: { item: Activity }) => {
     const handleChatPress = async () => {
       try {
-        // Since chat button only appears for accepted pings, we can directly get the chat
+        // Get the other participant's username (not the current user)
+        const otherUsername = item.sender_username === username ? item.receiver_username : item.sender_username;
         
-        // First, get the ping details to find the listing_id and participants
-        const { data: pingDetails, error: pingError } = await supabase
-          .from('pings')
-          .select('listing_id, sender_username, receiver_username')
-          .eq('id', item.id)
+        // Fetch the other participant's phone number from their profile
+        const { data: participantProfile, error } = await supabase
+          .from('users')
+          .select('phone, name')
+          .eq('username', otherUsername)
           .single();
-        
-        if (pingError || !pingDetails) {
-          Alert.alert('Error', 'Unable to find ping details. Please try again.');
-            return;
-          }
-          
-        // Now query the chats table directly to find the chat
-        // Since listing_id doesn't exist, we'll find the chat by matching both participants
-        const { data: allChats, error: chatError } = await supabase
-          .from('chats')
-          .select('id, status, participant_a, participant_b');
-        
-        if (chatError) {
-          Alert.alert('Error', 'Unable to access chats. Please try again.');
+
+        if (error || !participantProfile) {
+          Alert.alert('Error', 'Unable to find participant information.');
           return;
         }
-        
-        // Find the chat that matches both participants
-        const chatData = allChats?.find(chat => 
-          (chat.participant_a === pingDetails.sender_username && chat.participant_b === pingDetails.receiver_username) ||
-          (chat.participant_a === pingDetails.receiver_username && chat.participant_b === pingDetails.sender_username)
+
+        if (!participantProfile.phone) {
+          Alert.alert(
+            'No Phone Number',
+            'This user has not provided a phone number for WhatsApp.',
+            [{ text: 'OK', style: 'default' }]
+          );
+          return;
+        }
+
+        // Show confirmation dialog
+        Alert.alert(
+          'Open WhatsApp',
+          `Start a WhatsApp chat with ${participantProfile.name || otherUsername}?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Open WhatsApp', 
+              onPress: () => {
+                // Format phone number for WhatsApp (remove any non-digit characters except +)
+                const phoneNumber = participantProfile.phone.replace(/[^\d+]/g, '');
+                // Open WhatsApp with the phone number
+                const whatsappUrl = `whatsapp://send?phone=${phoneNumber}`;
+                Linking.openURL(whatsappUrl).catch(() => {
+                  // Fallback to WhatsApp web if app is not installed
+                  const whatsappWebUrl = `https://wa.me/${phoneNumber}`;
+                  Linking.openURL(whatsappWebUrl);
+                });
+              }
+            }
+          ]
         );
         
-        const existingChatId = chatData?.id;
-        
-        if (chatError || !existingChatId) {
-          Alert.alert('Error', 'Unable to access chat. Please try again.');
-          return;
-        }
-        
-        // Navigate to existing chat
-        router.push({
-          pathname: '/messages',
-          params: { chatId: existingChatId.toString() }
-        });
-        
       } catch (error) {
-        console.error('❌ [Activity] Error handling chat navigation:', error);
-        console.error('❌ [Activity] Full error details:', {
-          error,
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : 'No stack trace'
-        });
-        Alert.alert('Error', 'Unable to access chat. Please try again.');
+        console.error('❌ [Activity] Error opening WhatsApp:', error);
+        Alert.alert('Error', 'Failed to open WhatsApp. Please try again.');
       }
     };
     

@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
-  Alert as RNAlert
+  Alert as RNAlert,
+  Linking
 } from 'react-native';
 import { MessageCircle, CheckCircle, XCircle } from 'lucide-react-native';
 
@@ -51,121 +52,69 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
       // Update ping status
       await updatePingStatusNew(item.id, response);
       
-      if (response === 'accepted') {
-        // Create chat for accepted ping
-        try {
-          // Check if chat already exists for this ping
-          const { data: existingChats, error: checkError } = await supabase
-            .from('chats')
-            .select('id')
-            .or(`participant_a.eq.${item.sender_username},participant_a.eq.${item.receiver_username}`)
-            .or(`participant_b.eq.${item.sender_username},participant_b.eq.${item.receiver_username}`)
-            .eq('listing_id', item.listing_id);
-
-          if (checkError) {
-            // Continue with chat creation even if check fails
-          }
-
-          const existingChatId = existingChats?.[0]?.id;
-
-          if (!existingChatId) {
-            // Create new chat
-            const { data: newChat, error: createError } = await supabase
-              .from('chats')
-              .insert({
-                listing_id: item.listing_id,
-                participant_a: item.sender_username,
-                participant_b: item.receiver_username,
-                status: 'active'
-              })
-              .select('id')
-              .single();
-
-            if (createError) {
-              RNAlert.alert('Error', 'Failed to create chat. Please try again.');
-              return;
-            }
-
-            const newChatId = newChat.id;
-            setChatId(newChatId);
-
-            // Send acceptance message to the chat
-            try {
-              const { error: messageError } = await supabase.rpc('send_chat_message', {
-                chat_id_param: newChatId,
-                sender_username_param: username,
-                message_text: 'Ping accepted! You can now chat about this listing.'
-              });
-
-              if (messageError) {
-                // Continue even if message fails
-              }
-            } catch (messageError) {
-              // Continue even if message fails
-            }
-          }
-
-          // Call parent callback to update UI
-          onStatusChange?.(item.id, response);
-        } catch (chatError) {
-          // Continue even if chat creation fails
-        }
-      }
-
-      // Call parent callback to update UI
-      onStatusChange?.(item.id, response);
+      // Chat functionality removed - using WhatsApp instead
     } catch (error) {
       RNAlert.alert('Error', 'Failed to respond to ping. Please try again.');
     }
   };
   
-    // Handle chat button press
+    // Handle chat button press - now opens WhatsApp
   const handleChatPress = async () => {
-    if (chatId) {
-      // Chat already exists - just navigate to it
-      try {
-        router.push({
-          pathname: '/messages',
-          params: { chatId: chatId }
-        });
-      } catch (navError) {
-        // Navigation error
-        // Fallback navigation
-        router.push('/messages');
-      }
-    } else if (item.status === 'accepted') {
-      // Ping is accepted but no chat ID - this shouldn't happen normally
-      // Try to get the existing chat by querying directly
-      try {
-        
-        const { data: allChats, error: chatError } = await supabase
-          .from('chats')
-          .select('id, status, participant_a, participant_b');
-        
-        if (chatError) {
-          return;
-        }
-        
-        // Find the chat that matches both participants
-        const chatData = allChats?.find(chat => 
-          (chat.participant_a === item.sender_username && chat.participant_b === item.receiver_username) ||
-          (chat.participant_a === item.receiver_username && chat.participant_b === item.sender_username)
-        );
-        
-        if (chatData?.id) {
-          setChatId(chatData.id);
-          router.push({
-            pathname: '/messages',
-            params: { chatId: chatData.id }
-          });
-        } else {
-          RNAlert.alert('Chat Not Found', 'Chat was not created properly. Please try again.');
-        }
-      } catch (error) {
-        RNAlert.alert('Error', 'Chat not available. Please try again.');
-      }
-    } else {
+    if (item.status !== 'accepted') {
       RNAlert.alert('Cannot Chat', 'This ping must be accepted before you can start chatting.');
+      return;
+    }
+
+    try {
+      // Get the other participant's username (not the current user)
+      const otherUsername = item.sender_username === username ? item.receiver_username : item.sender_username;
+      
+      // Fetch the other participant's phone number from their profile
+      const { data: participantProfile, error } = await supabase
+        .from('users')
+        .select('phone, name')
+        .eq('username', otherUsername)
+        .single();
+
+      if (error || !participantProfile) {
+        RNAlert.alert('Error', 'Unable to find participant information.');
+        return;
+      }
+
+      if (!participantProfile.phone) {
+        RNAlert.alert(
+          'No Phone Number',
+          'This user has not provided a phone number for WhatsApp.'
+        );
+        return;
+      }
+
+      // Show confirmation dialog
+      RNAlert.alert(
+        'Open WhatsApp',
+        `Start a WhatsApp chat with ${participantProfile.name || otherUsername}?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Open WhatsApp', 
+            onPress: () => {
+              // Format phone number for WhatsApp (remove any non-digit characters except +)
+              const phoneNumber = participantProfile.phone.replace(/[^\d+]/g, '');
+              // Open WhatsApp with the phone number
+              const whatsappUrl = `whatsapp://send?phone=${phoneNumber}`;
+              Linking.openURL(whatsappUrl).catch(() => {
+                // Fallback to WhatsApp web if app is not installed
+                const whatsappWebUrl = `https://wa.me/${phoneNumber}`;
+                Linking.openURL(whatsappWebUrl);
+              });
+            }
+          }
+        ]
+      );
+      
+    } catch (error) {
+      console.error('Error opening WhatsApp:', error);
+      RNAlert.alert('Error', 'Failed to open WhatsApp. Please try again.');
     }
   };
   

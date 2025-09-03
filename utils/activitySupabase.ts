@@ -420,19 +420,4 @@ export const checkExistingPing = async (listingId: string, senderUsername: strin
   }
 }; 
 
-// Create chat from ping
-export const createChatFromPing = async (pingId: string): Promise<string | null> => {
-  try {
-    const { data, error } = await supabase.rpc('create_chat_from_ping', {
-      ping_id: pingId
-    });
-
-    if (error) {
-      return null;
-    }
-
-    return data;
-  } catch (error) {
-    return null;
-  }
-}; 
+// Chat functionality removed - using WhatsApp instead 

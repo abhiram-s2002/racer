@@ -82,9 +82,7 @@ export const validateListingDescription = (description: string): ValidationResul
     return { isValid: true, sanitizedValue: '', error: undefined };
   }
 
-  if (sanitized.length < 10) {
-    return { isValid: false, error: 'Description must be at least 10 characters' };
-  }
+  // No minimum length requirement for description
 
   if (sanitized.length > 1000) {
     return { isValid: false, error: 'Description must be less than 1000 characters' };

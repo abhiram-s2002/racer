@@ -279,14 +279,9 @@ class OfflineQueueManager {
   }
 
   private async executeMessageAction(action: OfflineAction): Promise<boolean> {
-    try {
-      const { MarketplaceChatService } = await import('./marketplaceChatService');
-      await MarketplaceChatService.sendMessage(action.data.chatId, action.data.senderUsername, action.data.text);
-      return true;
-    } catch (error) {
-      console.error('Message action failed:', error);
-      return false;
-    }
+    // Chat functionality removed - using WhatsApp instead
+    console.log('Message action skipped - using WhatsApp for communication');
+    return true;
   }
 
   private async executeUploadAction(action: OfflineAction): Promise<boolean> {

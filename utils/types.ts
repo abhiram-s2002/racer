@@ -66,10 +66,34 @@ export interface Listing {
 }
 
 /**
+ * Service request
+ */
+export interface Request {
+  id: string;
+  requester_username: string;
+  title: string;
+  description?: string;
+  budget_min?: number;
+  budget_max?: number;
+  category: RequestCategory;
+  urgency: RequestUrgency;
+  location?: string;
+  location_name?: string;
+  location_district?: string;
+  location_state?: string;
+  latitude?: number;
+  longitude?: number;
+  distance_km?: number; // Distance from user to request
+  expires_at?: string; // ISO timestamp when request expires
+  updated_at: string;
+}
+
+/**
  * Chat conversation between users
  */
 export interface Chat {
   id: string;
+  listing_id?: string;
   participant_a: string;
   participant_b: string;
   last_message?: string;
@@ -172,6 +196,26 @@ export type Category =
   | 'other';
 
 /**
+ * Request categories for service requests
+ */
+export type RequestCategory = 
+  | 'food_beverages'
+  | 'groceries_essentials'
+  | 'teachers_learning'
+  | 'home_services'
+  | 'events_media'
+  | 'vehicles_travel'
+  | 'electronics_appliances'
+  | 'jobs_work'
+  | 'health_wellness'
+  | 'others';
+
+/**
+ * Request urgency levels
+ */
+export type RequestUrgency = 'urgent' | 'normal' | 'flexible';
+
+/**
  * Chat status values
  */
 export type ChatStatus = 'active' | 'archived' | 'blocked';
@@ -197,7 +241,11 @@ export type ActivityType =
   | 'ping_received'
   | 'ping_responded'
   | 'message_sent'
-  | 'message_received';
+  | 'message_received'
+  | 'request_created'
+  | 'request_chat_started'
+  | 'request_message_sent'
+  | 'request_message_received';
 
 /**
  * Activity status values
@@ -476,6 +524,20 @@ export interface ListingsState {
 }
 
 /**
+ * Requests hook state
+ */
+export interface RequestsState {
+  requests: Request[];
+  loading: boolean;
+  page: number;
+  hasMore: boolean;
+  category: RequestCategory | null;
+  locationAvailable: boolean;
+  error?: string;
+  lastRefresh: number;
+}
+
+/**
  * Messages hook state
  */
 export interface MessagesState {
@@ -543,6 +605,19 @@ export interface PingFormData {
  */
 export interface MessageFormData {
   text: string;
+}
+
+/**
+ * Form data type for requests
+ */
+export interface RequestFormData {
+  title: string;
+  description: string;
+  budget_min?: number;
+  budget_max?: number;
+  category: RequestCategory;
+  urgency: RequestUrgency;
+  location?: string;
 }
 
 // ============================================================================
