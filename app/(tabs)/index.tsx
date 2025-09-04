@@ -617,6 +617,7 @@ function HomeScreen() {
   const renderListing = useCallback(({ item }: { item: any }) => {
     const seller = sellerInfoMap[item.username] || { name: 'Unknown Seller', avatar_url: '' };
     
+    
     return (
       <View style={styles.listingCard}>
         <TouchableOpacity onPress={() => handleImageClick(item)}>
@@ -710,9 +711,9 @@ function HomeScreen() {
                     <Text style={styles.noRatingText}>No ratings yet</Text>
                   )}
                 </View>
-                <View style={[styles.statusBadge, item.is_active && styles.activeBadge]}>
-                  <Text style={[styles.statusText, item.is_active && styles.activeText]}>
-                    {item.is_active ? 'Active' : 'Inactive'}
+                <View style={[styles.statusBadge, (item.is_active !== false) && styles.activeBadge]}>
+                  <Text style={[styles.statusText, (item.is_active !== false) && styles.activeText]}>
+                    {(item.is_active !== false) ? 'Active' : 'Inactive'}
                   </Text>
                 </View>
               </View>

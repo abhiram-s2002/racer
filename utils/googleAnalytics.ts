@@ -14,10 +14,10 @@ interface AnalyticsEvent {
 class GoogleAnalyticsService {
   private static instance: GoogleAnalyticsService;
   private isInitialized = false;
-  private measurementId: string = '';
-  private clientId: string = '';
+  private measurementId = '';
+  private clientId = '';
   private eventQueue: AnalyticsEvent[] = [];
-  private flushInterval: number = 30000; // 30 seconds
+  private flushInterval = 30000; // 30 seconds
   private flushTimer?: NodeJS.Timeout;
 
   static getInstance(): GoogleAnalyticsService {
@@ -63,7 +63,7 @@ class GoogleAnalyticsService {
     try {
       const randomBytes = await Crypto.getRandomBytesAsync(16);
       const timestamp = Date.now();
-      return `${timestamp}.${randomBytes.toString('hex')}`;
+      return `${timestamp}.${Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('')}`;
     } catch (error) {
       // Fallback to simple timestamp-based ID
       return `${Date.now()}.${Math.random().toString(36).substr(2, 9)}`;
@@ -76,7 +76,7 @@ class GoogleAnalyticsService {
   private startFlushTimer(): void {
     this.flushTimer = setInterval(() => {
       this.flushEvents();
-    }, this.flushInterval);
+    }, this.flushInterval) as any;
   }
 
   /**

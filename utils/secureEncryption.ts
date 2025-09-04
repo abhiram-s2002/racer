@@ -259,7 +259,7 @@ export class PasswordUtils {
   /**
    * Generate a secure random password
    */
-  static async generateSecurePassword(length: number = 16): Promise<string> {
+  static async generateSecurePassword(length = 16): Promise<string> {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
     let password = '';
     
@@ -279,6 +279,7 @@ function btoa(str: string): string {
     return Buffer.from(str, 'binary').toString('base64');
   } catch (error) {
     // Fallback for React Native
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require('base-64').encode(str);
   }
 }
@@ -288,6 +289,7 @@ function atob(str: string): string {
     return Buffer.from(str, 'base64').toString('binary');
   } catch (error) {
     // Fallback for React Native
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     return require('base-64').decode(str);
   }
 }

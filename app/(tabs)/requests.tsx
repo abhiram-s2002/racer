@@ -467,7 +467,7 @@ export default function RequestsScreen() {
           </View>
           <Text style={styles.errorTitle}>Unable to load requests</Text>
           <Text style={styles.errorMessage}>
-            We're having trouble connecting to our servers. Please check your internet connection and try again.
+            We&apos;re having trouble connecting to our servers. Please check your internet connection and try again.
           </Text>
           <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
             <Text style={styles.retryButtonText}>Retry</Text>

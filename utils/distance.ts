@@ -12,6 +12,11 @@ export function formatDistance(distanceKm: number): string {
     return 'Unknown';
   }
   
+  // Handle very small distances (scientific notation or extremely close)
+  if (distanceKm < 0.001) { // Less than 1 meter
+    return '0km';
+  }
+  
   // Convert to meters for more precise formatting
   const distanceM = distanceKm * 1000;
   

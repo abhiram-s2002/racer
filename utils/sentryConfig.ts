@@ -91,7 +91,11 @@ export const addBreadcrumb = (message: string, category: string, data?: Record<s
 
 // Performance monitoring
 export const startTransaction = (name: string, op: string) => {
-  return Sentry.startTransaction({ name, op });
+  // Note: startTransaction is deprecated in newer Sentry versions
+  // Using startSpan instead for performance monitoring
+  return Sentry.startSpan({ name, op }, () => {
+    // Empty function for span
+  });
 };
 
 export const finishTransaction = (transaction: any) => {
