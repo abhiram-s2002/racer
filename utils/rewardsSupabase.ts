@@ -186,6 +186,18 @@ export async function createDailyCheckin(username: string, checkinDate: string, 
       .single();
 
     if (error) {
+      // Handle duplicate key error (23505) gracefully - user already checked in today
+      if (error.code === '23505' && error.message.includes('daily_checkins_username_checkin_date_key')) {
+        // This is expected - user already checked in today, so return the existing record
+        const { data: existingCheckin } = await supabase
+          .from('daily_checkins')
+          .select()
+          .eq('username', username)
+          .eq('checkin_date', checkinDate)
+          .single();
+        return existingCheckin;
+      }
+      
       console.error('Error creating daily checkin:', error);
       return null;
     }

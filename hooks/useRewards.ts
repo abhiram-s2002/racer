@@ -141,6 +141,13 @@ export function useRewards(username: string) {
       // Create check-in record
       const checkin = await createDailyCheckin(username, today, omniEarned);
       if (!checkin) {
+        // If checkin is null, it might be because user already checked in today
+        // Check again to be sure
+        const alreadyCheckedIn = await hasCheckedInToday(username);
+        if (alreadyCheckedIn) {
+          // User already checked in today, this is not an error
+          return true;
+        }
         throw new Error('Failed to create check-in');
       }
 

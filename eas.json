@@ -6,7 +6,6 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "appName": "GeoMart",
       "env": {
         "EXPO_PUBLIC_ENV": "development",
         "EXPO_PUBLIC_SUPABASE_URL": "https://vroanjodovwsyydxrmma.supabase.co",
@@ -16,12 +15,12 @@
         "EXPO_PUBLIC_GOOGLE_ANALYTICS_ID": "G-1RN9LQFY3G"
       },
       "android": {
-        "resourceClass": "medium"
+        "resourceClass": "medium",
+        "buildType": "apk"
       }
     },
     "preview": {
       "distribution": "internal",
-      "appName": "GeoMart",
       "env": {
         "EXPO_PUBLIC_ENV": "staging",
         "EXPO_PUBLIC_SUPABASE_URL": "https://vroanjodovwsyydxrmma.supabase.co",
@@ -35,7 +34,6 @@
       }
     },
     "production": {
-      "appName": "GeoMart",
       "env": {
         "EXPO_PUBLIC_ENV": "production",
         "EXPO_PUBLIC_SUPABASE_URL": "https://vroanjodovwsyydxrmma.supabase.co",
