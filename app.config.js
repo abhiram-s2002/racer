@@ -73,6 +73,7 @@ module.exports = {
     owner: "silvieur",
     privacy: "public",
     description: "A local marketplace app for buying and selling items in your community. Connect with nearby sellers, browse listings, and make secure transactions.",
+    privacyPolicy: "https://abhiram-s2002.github.io/geomart-privacy/privacy-policy.html",
     primaryColor: "#22C55E",
     platforms: [
       "ios",

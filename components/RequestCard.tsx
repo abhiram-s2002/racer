@@ -140,13 +140,15 @@ export function RequestCard({ request, onPress, onSave, onContact, onCall }: Req
 
       {/* Action Buttons */}
       <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.callButton} onPress={onCall}>
+        <TouchableOpacity style={styles.primaryButton} onPress={onContact}>
+          <MessageCircle size={16} color="#FFFFFF" />
+          <Text style={styles.primaryButtonText}>Contact</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.secondaryButton} onPress={onCall}>
           <Phone size={16} color="#2563EB" />
+          <Text style={styles.secondaryButtonText}>Call</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.contactButton} onPress={onContact}>
-          <MessageCircle size={16} color="#16A34A" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.saveButton} onPress={onSave}>
+        <TouchableOpacity style={styles.tertiaryButton} onPress={onSave}>
           <Bookmark size={16} color="#64748B" />
         </TouchableOpacity>
       </View>
@@ -157,26 +159,28 @@ export function RequestCard({ request, onPress, onSave, onContact, onCall }: Req
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginVertical: 8,
+    marginHorizontal: 20,
+    marginVertical: 6,
     borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   cardContent: {
     flexDirection: 'row',
-    padding: 16,
+    padding: 20,
   },
   iconContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
+    width: 64,
+    height: 64,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 20,
+    marginRight: 16,
   },
   content: {
     flex: 1,
@@ -188,11 +192,12 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#1E293B',
+    color: '#0F172A',
     flex: 1,
     marginRight: 8,
+    lineHeight: 22,
   },
   timeContainer: {
     flexDirection: 'row',
@@ -216,19 +221,19 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 14,
     color: '#64748B',
-    marginBottom: 8,
+    marginBottom: 12,
     lineHeight: 20,
   },
   budgetRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   budget: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#22C55E',
+    fontWeight: '700',
+    color: '#059669',
   },
   metaRow: {
     flexDirection: 'row',
@@ -252,37 +257,50 @@ const styles = StyleSheet.create({
   },
   actionButtons: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    gap: 12,
+    alignItems: 'center',
+  },
+  primaryButton: {
+    flex: 1,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#22C55E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexDirection: 'row',
     gap: 8,
   },
-  contactButton: {
-    flex: 1,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: '#86EFAC', // Light green
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  contactButtonText: {
+  primaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '600',
-    marginLeft: 4,
   },
-  callButton: {
+  secondaryButton: {
     flex: 1,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: '#93C5FD', // Light blue
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
-  saveButton: {
-    flex: 1,
-    height: 36,
-    borderRadius: 8,
-    backgroundColor: '#F1F5F9',
+  secondaryButtonText: {
+    color: '#2563EB',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  tertiaryButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     justifyContent: 'center',
     alignItems: 'center',
   },

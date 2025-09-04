@@ -229,9 +229,9 @@ These Terms, together with our Privacy Policy and any other agreements reference
 
 For questions about these Terms, contact us:
 
-**Email**: legal@racermarketplace.com
-**Phone**: [Your Support Phone Number]
-**Address**: [Your Business Address]
+**Email**: risingsoup76@gmail.com
+**Phone**: [Add your support phone number]
+**Address**: [Add your business address]
 
 ## 16. Additional Provisions
 

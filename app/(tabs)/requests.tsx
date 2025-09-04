@@ -15,7 +15,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { 
-  Search, 
   Filter, 
   Plus,
   MapPin,
@@ -54,7 +53,6 @@ export default function RequestsScreen() {
   const { latitude, longitude, updateLocation } = useLocation();
   const { user } = useAuth();
   
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<RequestCategory | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCategoryFilter, setShowCategoryFilter] = useState(false);
@@ -217,15 +215,10 @@ export default function RequestsScreen() {
   };
 
   const filteredRequests = requests.filter(request => {
-    // Filter by search query
-    const matchesSearch = !searchQuery || 
-      request.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      request.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    
     // Filter by category (if selected)
     const matchesCategory = !selectedCategory || request.category === selectedCategory;
     
-    return matchesSearch && matchesCategory;
+    return matchesCategory;
   });
 
   const handleContact = async (request: Request) => {
@@ -346,34 +339,40 @@ export default function RequestsScreen() {
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <Text style={styles.title}>Requests</Text>
-      <Text style={styles.subtitle}>Find services you need nearby</Text>
+      {/* Header Title Section */}
+      <View style={styles.headerTitleSection}>
+        <Text style={styles.title}>Service Requests</Text>
+        <Text style={styles.subtitle}>Find and connect with local service providers</Text>
+      </View>
       
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Search size={20} color="#64748B" style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search requests..."
-          placeholderTextColor="#94A3B8"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+      {/* Filter Button */}
+      <View style={styles.filterRow}>
         <TouchableOpacity 
           style={styles.filterButton}
           onPress={() => setShowCategoryFilter(true)}
         >
           <Filter size={20} color="#64748B" />
+          <Text style={styles.filterButtonText}>Filter by Category</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Your Listings Button */}
-      <TouchableOpacity 
-        style={styles.yourListingsButton}
-        onPress={() => setShowUserListings(true)}
-      >
-        <Text style={styles.yourListingsButtonText}>📋 Your Listings</Text>
-      </TouchableOpacity>
+      {/* Action Buttons Row */}
+      <View style={styles.actionButtonsRow}>
+        <TouchableOpacity 
+          style={styles.yourListingsButton}
+          onPress={() => setShowUserListings(true)}
+        >
+          <Text style={styles.yourListingsButtonText}>My Requests</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.createRequestButton}
+          onPress={() => setShowCreateModal(true)}
+        >
+          <Plus size={14} color="#FFFFFF" />
+          <Text style={styles.createRequestButtonText}>Create Request</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Location Section */}
       <View style={styles.locationSection}>
@@ -391,13 +390,13 @@ export default function RequestsScreen() {
             style={styles.currentLocationButton}
             onPress={handleUseCurrentLocation}
           >
-            <Text style={styles.currentLocationButtonText}>📍 Current</Text>
+            <Text style={styles.currentLocationButtonText}>Use Current Location</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={styles.pickLocationButton}
             onPress={() => setShowLocationPicker(true)}
           >
-            <Text style={styles.pickLocationButtonText}>🎯 Pick</Text>
+            <Text style={styles.pickLocationButtonText}>Select Location</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -406,20 +405,22 @@ export default function RequestsScreen() {
       {selectedCategory && (
         <View style={styles.categoryFilter}>
           <Text style={styles.categoryFilterText}>
-            {getCategoryById(selectedCategory)?.name}
+            Filtered by: {getCategoryById(selectedCategory)?.name}
           </Text>
           <TouchableOpacity onPress={() => handleCategorySelect(null)}>
-            <Text style={styles.clearFilterText}>Clear</Text>
+            <Text style={styles.clearFilterText}>Clear Filter</Text>
           </TouchableOpacity>
         </View>
       )}
 
-      {/* Sort Info */}
-      <View style={styles.sortInfo}>
-        <Text style={styles.sortText}>
-          Sort: {userLocationData ? 'Location-based' : 'Latest'}
+      {/* Results Summary */}
+      <View style={styles.resultsSummary}>
+        <Text style={styles.resultsText}>
+          {filteredRequests.length} {filteredRequests.length === 1 ? 'request' : 'requests'} found
         </Text>
-        <Text style={styles.resultsText}>{filteredRequests.length} requests found</Text>
+        <Text style={styles.sortText}>
+          {userLocationData ? 'Sorted by distance' : 'Sorted by latest'}
+        </Text>
       </View>
 
       {/* Cache status indicator removed - no UI monitoring needed */}
@@ -431,22 +432,28 @@ export default function RequestsScreen() {
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color="#22C55E" />
+        <Text style={styles.loadingText}>Loading more requests...</Text>
       </View>
     );
   };
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Text style={styles.emptyTitle}>No requests found</Text>
+      <View style={styles.emptyIconContainer}>
+        <Text style={styles.emptyIcon}>📋</Text>
+      </View>
+      <Text style={styles.emptyTitle}>
+        No service requests available
+      </Text>
       <Text style={styles.emptySubtitle}>
-        {searchQuery ? 'Try adjusting your search' : 'Be the first to create a request in your area'}
+        Be the first to post a service request in your area and connect with local providers
       </Text>
       <TouchableOpacity 
         style={styles.createButton}
         onPress={() => setShowCreateModal(true)}
       >
         <Plus size={20} color="#FFFFFF" />
-        <Text style={styles.createButtonText}>Create Request</Text>
+        <Text style={styles.createButtonText}>Post New Request</Text>
       </TouchableOpacity>
     </View>
   );
@@ -455,10 +462,15 @@ export default function RequestsScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>Something went wrong</Text>
-          <Text style={styles.errorMessage}>{error}</Text>
+          <View style={styles.errorIconContainer}>
+            <Text style={styles.errorIcon}>⚠️</Text>
+          </View>
+          <Text style={styles.errorTitle}>Unable to load requests</Text>
+          <Text style={styles.errorMessage}>
+            We're having trouble connecting to our servers. Please check your internet connection and try again.
+          </Text>
           <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
-            <Text style={styles.retryButtonText}>Try Again</Text>
+            <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -488,14 +500,6 @@ export default function RequestsScreen() {
         contentContainerStyle={styles.listContainer}
       />
 
-      {/* Floating Action Button */}
-      <TouchableOpacity 
-        style={styles.fab}
-        onPress={() => setShowCreateModal(true)}
-      >
-        <Plus size={20} color="#FFFFFF" />
-        <Text style={styles.fabText}>Add Request</Text>
-      </TouchableOpacity>
 
       {/* Modals */}
       <CreateRequestModal
@@ -535,78 +539,110 @@ const styles = StyleSheet.create({
     backgroundColor: '#F8FAFC',
   },
   listContainer: {
-    paddingBottom: 100,
+    paddingBottom: 120,
   },
   header: {
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
   },
+  headerTitleSection: {
+    marginBottom: 16,
+  },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1E293B',
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#0F172A',
     marginBottom: 4,
+    letterSpacing: -0.3,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#64748B',
-    marginBottom: 20,
+    lineHeight: 18,
+    fontWeight: '400',
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 16,
-  },
-  searchIcon: {
-    marginRight: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1E293B',
+  filterRow: {
+    marginBottom: 12,
   },
   filterButton: {
-    padding: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    gap: 8,
+  },
+  filterButtonText: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  actionButtonsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
   },
   yourListingsButton: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 16,
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   yourListingsButtonText: {
+    color: '#475569',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  createRequestButton: {
+    flex: 1,
+    backgroundColor: '#22C55E',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  createRequestButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: '600',
   },
   locationSection: {
-    backgroundColor: '#F1F5F9',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   locationInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   locationText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#64748B',
-    marginLeft: 8,
+    marginLeft: 6,
     flex: 1,
   },
   locationButtons: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 6,
   },
   currentLocationButton: {
     flex: 1,
@@ -618,8 +654,8 @@ const styles = StyleSheet.create({
   },
   currentLocationButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
   },
   pickLocationButton: {
     flex: 1,
@@ -631,8 +667,8 @@ const styles = StyleSheet.create({
   },
   pickLocationButtonText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 12,
+    fontWeight: '600',
   },
   categoryFilter: {
     flexDirection: 'row',
@@ -642,113 +678,137 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
   },
   categoryFilterText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#0369A1',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   clearFilterText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#0369A1',
+    fontWeight: '600',
     textDecorationLine: 'underline',
   },
-  sortInfo: {
+  resultsSummary: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingTop: 6,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
   sortText: {
-    fontSize: 14,
-    color: '#64748B',
+    fontSize: 11,
+    color: '#94A3B8',
     fontWeight: '500',
   },
   resultsText: {
-    fontSize: 14,
-    color: '#64748B',
+    fontSize: 12,
+    color: '#475569',
+    fontWeight: '600',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
-    paddingVertical: 60,
+    paddingVertical: 80,
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  emptyIcon: {
+    fontSize: 32,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1E293B',
-    marginBottom: 8,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   emptySubtitle: {
     fontSize: 16,
     color: '#64748B',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
+    lineHeight: 24,
   },
   createButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#22C55E',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 16,
     borderRadius: 12,
+    gap: 8,
   },
   createButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
-    marginLeft: 8,
   },
   footerLoader: {
-    paddingVertical: 20,
+    paddingVertical: 24,
     alignItems: 'center',
+    gap: 12,
   },
-  fab: {
-    position: 'absolute',
-    bottom: 30,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#22C55E',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 28,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  fabText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+  loadingText: {
+    fontSize: 14,
+    color: '#64748B',
+    fontWeight: '500',
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
+    paddingVertical: 80,
+  },
+  errorIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#FEF2F2',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  errorIcon: {
+    fontSize: 32,
   },
   errorTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#EF4444',
-    marginBottom: 8,
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#DC2626',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   errorMessage: {
     fontSize: 16,
     color: '#64748B',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
+    lineHeight: 24,
   },
   retryButton: {
     backgroundColor: '#22C55E',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 16,
     borderRadius: 12,
   },
   retryButtonText: {

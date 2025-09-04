@@ -6,6 +6,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "appName": "GeoMart",
       "env": {
         "EXPO_PUBLIC_ENV": "development",
         "EXPO_PUBLIC_SUPABASE_URL": "https://vroanjodovwsyydxrmma.supabase.co",
@@ -14,15 +15,13 @@
         "EXPO_PUBLIC_SENTRY_DSN": "https://12bda6c71fb7e7c03519c5543ba94e47@o4509779115507712.ingest.us.sentry.io/4509779117080576",
         "EXPO_PUBLIC_GOOGLE_ANALYTICS_ID": "G-1RN9LQFY3G"
       },
-      "ios": {
-        "resourceClass": "m-medium"
-      },
       "android": {
         "resourceClass": "medium"
       }
     },
     "preview": {
       "distribution": "internal",
+      "appName": "GeoMart",
       "env": {
         "EXPO_PUBLIC_ENV": "staging",
         "EXPO_PUBLIC_SUPABASE_URL": "https://vroanjodovwsyydxrmma.supabase.co",
@@ -31,14 +30,12 @@
         "EXPO_PUBLIC_SENTRY_DSN": "https://12bda6c71fb7e7c03519c5543ba94e47@o4509779115507712.ingest.us.sentry.io/4509779117080576",
         "EXPO_PUBLIC_GOOGLE_ANALYTICS_ID": "G-1RN9LQFY3G"
       },
-      "ios": {
-        "resourceClass": "m-medium"
-      },
       "android": {
         "resourceClass": "medium"
       }
     },
     "production": {
+      "appName": "GeoMart",
       "env": {
         "EXPO_PUBLIC_ENV": "production",
         "EXPO_PUBLIC_SUPABASE_URL": "https://vroanjodovwsyydxrmma.supabase.co",
@@ -47,9 +44,6 @@
         "EXPO_PUBLIC_SENTRY_DSN": "https://12bda6c71fb7e7c03519c5543ba94e47@o4509779115507712.ingest.us.sentry.io/4509779117080576",
         "EXPO_PUBLIC_GOOGLE_ANALYTICS_ID": "G-1RN9LQFY3G"
       },
-      "ios": {
-        "resourceClass": "m-medium"
-      },
       "android": {
         "resourceClass": "medium"
       }
@@ -57,11 +51,6 @@
   },
   "submit": {
     "production": {
-      "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-app-store-connect-app-id",
-        "appleTeamId": "your-apple-team-id"
-      },
       "android": {
         "serviceAccountKeyPath": "./google-service-account.json",
         "track": "production"

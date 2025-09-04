@@ -203,7 +203,6 @@ INSERT INTO achievements (id, title, description, icon, category, max_progress, 
     ('power_user', 'Power User', 'Use the app for 7 consecutive days', 'Flame', 'engagement', 7, 150, 'rare'),
     ('loyal_user', 'Loyal User', 'Use the app for 30 consecutive days', 'Crown', 'engagement', 30, 500, 'epic'),
     ('quick_responder', 'Quick Responder', 'Respond to messages within 1 hour', 'Phone', 'engagement', 10, 125, 'rare'),
-    ('trend_setter', 'Trend Setter', 'Have a listing viewed 100+ times', 'TrendingUp', 'milestone', 100, 300, 'epic'),
     ('referral_king', 'Referral King', 'Refer 5 friends successfully', 'Crown', 'milestone', 5, 500, 'epic'),
     ('perfect_seller', 'Perfect Seller', 'Maintain 5-star rating for 10 sales', 'Star', 'special', 10, 750, 'legendary')
 ON CONFLICT (id) DO NOTHING;

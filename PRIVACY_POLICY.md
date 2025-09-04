@@ -126,9 +126,9 @@ If you are a California resident, you have the following rights:
 
 ### 7.3 How to Exercise Your Rights
 To exercise any of these rights, contact us at:
-- **Email**: privacy@geomart.com
-- **Phone**: [Your Support Phone Number]
-- **Address**: [Your Business Address]
+- **Email**: risingsoup76@gmail.com
+- **Phone**: +91 7306 51 9350
+- **Address**: Kozhikode, Kerala, India
 
 We will respond to your request within 30 days (GDPR) or 45 days (CCPA).
 
@@ -197,9 +197,9 @@ Your continued use of the app after changes become effective constitutes accepta
 ### 13.1 General Privacy Inquiries
 For questions about this privacy policy or our data practices:
 
-**Email**: privacy@geomart.com
-**Phone**: [Your Support Phone Number]
-**Address**: [Your Business Address]
+**Email**: risingsoup76@gmail.com
+**Phone**: +91 7306 51 9350
+**Address**: Kozhikode, Kerala, India
 
 ### 13.2 Data Protection Officer (GDPR)
 For EU users, you can contact our Data Protection Officer at:

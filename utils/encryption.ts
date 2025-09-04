@@ -1,3 +1,11 @@
+/**
+ * @deprecated This file contains insecure encryption methods
+ * Use utils/secureEncryption.ts for production-ready encryption
+ * 
+ * WARNING: This file uses hardcoded keys and simple XOR encryption
+ * which are NOT secure for production use.
+ */
+
 // TypeScript module declarations for missing types
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -10,9 +18,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 declare let console: Console;
 
-// Remove all previous globalThis/Buffer/require polyfills
-// Use imported btoa, atob, TextEncoder, and TextDecoder directly in the code
-
+// SECURITY WARNING: These are hardcoded keys - NOT SECURE FOR PRODUCTION
+// Use utils/secureEncryption.ts instead
 const ENCRYPTION_KEY = 'omnimart_encryption_key_2024';
 const SALT = 'omnimart_salt_2024';
 
