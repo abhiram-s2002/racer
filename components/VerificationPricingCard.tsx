@@ -45,7 +45,7 @@ const VerificationPricingCard: React.FC<VerificationPricingCardProps> = ({
 
       {/* Demo Section - Show how verification looks */}
       <View style={styles.demoSection}>
-        <Text style={styles.demoTitle}>See how you'll look when verified:</Text>
+        <Text style={styles.demoTitle}>See how you&apos;ll look when verified:</Text>
         <View style={styles.demoUserRow}>
           <Text style={styles.demoUserName}>{userName}</Text>
           <View style={styles.demoVerificationBadge}>

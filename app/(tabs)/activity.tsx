@@ -512,14 +512,14 @@ function ActivityScreen() {
         // Format activity details for WhatsApp message
         const activityMessage = formatActivityForWhatsApp({
           type: item.type === 'sent_ping' ? 'listing' : 'ping',
-          title: item.title,
-          description: item.description,
-          category: item.category,
-          price: item.price,
-          location: item.location,
+          title: item.title || 'Untitled',
+          description: (item as any).description,
+          category: (item as any).category,
+          price: item.price ? parseFloat(item.price) : undefined,
+          location: (item as any).location,
           userName: participantProfile.name,
           userUsername: otherUsername,
-          distance: item.distance_km,
+          distance: (item as any).distance_km,
           message: item.message
         });
 
