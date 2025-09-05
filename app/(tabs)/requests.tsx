@@ -33,6 +33,7 @@ import { RequestLocationPicker } from '@/components/RequestLocationPicker';
 import { UserListingsModal } from '@/components/UserListingsModal';
 import { RequestLocationUtils, LocationData } from '@/utils/requestLocationUtils';
 import { supabase } from '@/utils/supabaseClient';
+import { formatRequestForWhatsApp, createWhatsAppURL, createWhatsAppWebURL } from '@/utils/whatsappMessageFormatter';
 
 const { width } = Dimensions.get('window');
 
@@ -96,6 +97,7 @@ export default function RequestsScreen() {
 
   // Cache status monitoring removed - no UI display needed
 
+
   // Reload data when category changes
   useEffect(() => {
     if (isInitialized) {
@@ -111,6 +113,7 @@ export default function RequestsScreen() {
       );
     }
   }, [selectedCategory, userLocationData, isInitialized]);
+
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -249,10 +252,13 @@ export default function RequestsScreen() {
         return;
       }
 
+      // Format request details for WhatsApp message
+      const requestMessage = formatRequestForWhatsApp(request, requesterProfile.name);
+
       // Show confirmation dialog
       Alert.alert(
         'Open WhatsApp',
-        `Start a WhatsApp chat with ${requesterProfile.name || request.requester_username}?`,
+        `Start a WhatsApp chat with ${requesterProfile.name || request.requester_username} about their request?`,
         [
           { text: 'Cancel', style: 'cancel' },
           { 
@@ -260,11 +266,11 @@ export default function RequestsScreen() {
             onPress: () => {
               // Format phone number for WhatsApp (remove any non-digit characters except +)
               const phoneNumber = requesterProfile.phone.replace(/[^\d+]/g, '');
-              // Open WhatsApp with the phone number
-              const whatsappUrl = `whatsapp://send?phone=${phoneNumber}`;
+              // Open WhatsApp with the phone number and pre-filled message
+              const whatsappUrl = createWhatsAppURL(phoneNumber, requestMessage);
               Linking.openURL(whatsappUrl).catch(() => {
                 // Fallback to WhatsApp web if app is not installed
-                const whatsappWebUrl = `https://wa.me/${phoneNumber}`;
+                const whatsappWebUrl = createWhatsAppWebURL(phoneNumber, requestMessage);
                 Linking.openURL(whatsappWebUrl);
               });
             }
@@ -330,6 +336,8 @@ export default function RequestsScreen() {
   const renderRequestCard = ({ item }: { item: Request }) => (
     <RequestCard 
       request={item} 
+      requesterName={item.requester_name}
+      requesterVerified={item.requester_verified}
       onPress={() => {/* No navigation - requests are not selectable */}}
       onSave={() => {/* Handle save */}}
       onContact={() => handleContact(item)}

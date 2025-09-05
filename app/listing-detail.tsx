@@ -47,12 +47,15 @@ interface SellerInfo {
   phone: string;
   location_display: string;
   bio: string;
+  verification_status?: 'verified' | 'not_verified';
+  verified_at?: string;
+  expires_at?: string;
 }
 
 function ListingDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { id } = useLocalSearchParams();
+  const { id, sellerData } = useLocalSearchParams();
   
   // State management
   const [listing, setListing] = useState<Listing | null>(null);
@@ -64,6 +67,18 @@ function ListingDetailScreen() {
 
   // Memoized values to prevent unnecessary re-renders
   const listingId = useMemo(() => id as string, [id]);
+  
+  // Helper function to fetch seller data from database
+  const fetchSellerFromDatabase = async (username: string) => {
+    const { data: sellerData, error: sellerError } = await supabase
+      .from('users')
+      .select('username, name, avatar_url, phone, location_display, bio, verification_status, verified_at, expires_at')
+      .eq('username', username)
+      .single();
+    
+    if (sellerError) throw sellerError;
+    setSellerInfo(sellerData);
+  };
   
   // Fetch listing data
   const fetchListingData = useCallback(async () => {
@@ -102,15 +117,18 @@ function ListingDetailScreen() {
       
       setListing(listingData);
       
-      // Fetch seller info
-      const { data: sellerData, error: sellerError } = await supabase
-        .from('users')
-        .select('username, name, avatar_url, phone, location_display, bio')
-        .eq('username', listingData.username)
-        .single();
-      
-      if (sellerError) throw sellerError;
-      setSellerInfo(sellerData);
+      // Use passed seller data if available, otherwise fetch from database
+      if (sellerData) {
+        try {
+          const parsedSellerData = JSON.parse(sellerData as string);
+          setSellerInfo(parsedSellerData);
+        } catch (error) {
+          // If parsing fails, fall back to database fetch
+          await fetchSellerFromDatabase(listingData.username);
+        }
+      } else {
+        await fetchSellerFromDatabase(listingData.username);
+      }
       
       // Fetch seller's other listings
       const { data: otherListings, error: listingsError } = await supabase

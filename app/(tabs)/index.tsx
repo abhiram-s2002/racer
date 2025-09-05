@@ -51,6 +51,8 @@ import { trackScreenView, trackSearch, trackFilterUsed, trackListingView } from 
 import { useLocationCheck } from '@/hooks/useLocationCheck';
 import LocationCheckPopup from '@/components/LocationCheckPopup';
 import RatingService from '@/utils/ratingService';
+import VerificationBadge from '@/components/VerificationBadge';
+import { isUserVerified } from '@/utils/verificationUtils';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 36) / 2; // Account for padding and gap
@@ -129,7 +131,7 @@ function HomeScreen() {
       // Batch fetch only missing seller profiles from Supabase
       const { data: users, error } = await supabase
         .from('users')
-        .select('username, name, avatar_url, email, phone, location, location_display, bio')
+        .select('username, name, avatar_url, email, phone, location, location_display, bio, verification_status, verified_at, expires_at')
         .in('username', missingUsernames);
       if (error || !users) {
         return;
@@ -552,9 +554,23 @@ function HomeScreen() {
     // Track listing view
     trackListingView(listing.id, listing.category, listing.price);
     
-    // Navigate to listing detail page instead of showing image popup
-    router.push(`/listing-detail?id=${listing.id}`);
-  }, [router]);
+    // Get seller data from cache
+    const seller = sellerInfoMap[listing.username];
+    
+    // Navigate to listing detail page with seller data
+    if (seller) {
+      router.push({
+        pathname: '/listing-detail',
+        params: {
+          id: listing.id,
+          sellerData: JSON.stringify(seller)
+        }
+      });
+    } else {
+      // Fallback to just ID if seller data not available
+      router.push(`/listing-detail?id=${listing.id}`);
+    }
+  }, [router, sellerInfoMap]);
 
   const handleToggleSortByDistance = () => {
     trackFilterUsed('distance', 'toggle');
@@ -663,6 +679,12 @@ function HomeScreen() {
                   }
                 </Text>
               </View>
+            </View>
+
+            {/* Seller Name with Verification Badge */}
+            <View style={styles.sellerInfo}>
+              <Text style={styles.sellerName}>{seller.name || 'Unknown Seller'}</Text>
+              {isUserVerified(seller) && <VerificationBadge size="small" />}
             </View>
 
             {/* Additional Info Section */}
@@ -1598,7 +1620,8 @@ const styles = StyleSheet.create({
   sellerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 3,
+    marginBottom: 6,
+    marginTop: 2,
   },
   sellerAvatar: {
     width: 18,

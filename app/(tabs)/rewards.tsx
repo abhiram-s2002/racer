@@ -18,6 +18,8 @@ import { useRewards } from '@/hooks/useRewards';
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { type Referral } from '@/utils/rewardsSupabase';
 import { type ReferralCommission } from '@/utils/types';
+import VerificationBadge from '@/components/VerificationBadge';
+import { isUserVerified } from '@/utils/verificationUtils';
 
 import {
   Coins,
@@ -193,7 +195,10 @@ function RewardsScreen() {
           </Text>
         </View>
         <View style={styles.referralDetails}>
-          <Text style={styles.referralName}>{item.referred_username}</Text>
+          <View style={styles.referralNameRow}>
+            <Text style={styles.referralName}>{item.referred_username}</Text>
+            {/* Verification badge removed - referral data doesn't include verification status */}
+          </View>
           <Text style={styles.referralDate}>
             {new Date(item.created_at).toLocaleDateString()}
           </Text>
@@ -1407,6 +1412,11 @@ const styles = StyleSheet.create({
   },
   referralDetails: {
     flex: 1,
+  },
+  referralNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
   },
   referralName: {
     fontSize: 16,

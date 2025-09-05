@@ -8,6 +8,8 @@ import {
 import { MapPin, User } from 'lucide-react-native';
 import { LocationUtils } from '@/utils/locationUtils';
 import HomeRatingDisplay from './HomeRatingDisplay';
+import VerificationBadge from './VerificationBadge';
+import { isUserVerified } from '@/utils/verificationUtils';
 
 interface SellerInfo {
   username: string;
@@ -16,6 +18,9 @@ interface SellerInfo {
   phone: string;
   location_display: string;
   bio: string;
+  verification_status?: 'verified' | 'not_verified';
+  verified_at?: string;
+  expires_at?: string;
 }
 
 interface SellerInfoSectionProps {
@@ -52,6 +57,7 @@ const SellerInfoSection: React.FC<SellerInfoSectionProps> = React.memo(({
             <View style={styles.nameRow}>
               <User size={16} color="#64748B" />
               <Text style={styles.name}>{seller.name || 'Unknown Seller'}</Text>
+              {isUserVerified(seller) && <VerificationBadge size="small" />}
             </View>
             <View style={styles.locationRow}>
               <MapPin size={14} color="#64748B" />

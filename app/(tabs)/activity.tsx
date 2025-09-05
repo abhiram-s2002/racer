@@ -22,6 +22,8 @@ import { supabase } from '@/utils/supabaseClient';
 import { useIsFocused } from '@react-navigation/native';
 import { useCachedActivities } from '@/hooks/useCachedActivities';
 import RatingService from '@/utils/ratingService';
+import VerificationBadge from '@/components/VerificationBadge';
+import { isUserVerified } from '@/utils/verificationUtils';
 
 import { useRouter } from 'expo-router';
 // Removed react-native-expo-image-cache import - using standard Image component
@@ -31,6 +33,7 @@ import { Category } from '@/utils/types';
 
 import NewRobustImage from '@/components/NewRobustImage';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
+import { formatActivityForWhatsApp, createWhatsAppURL, createWhatsAppWebURL } from '@/utils/whatsappMessageFormatter';
 
 
 declare const console: Console;
@@ -488,7 +491,7 @@ function ActivityScreen() {
         // Fetch the other participant's phone number from their profile
         const { data: participantProfile, error } = await supabase
           .from('users')
-          .select('phone, name')
+          .select('phone, name, verification_status, verified_at, expires_at')
           .eq('username', otherUsername)
           .single();
 
@@ -506,10 +509,24 @@ function ActivityScreen() {
           return;
         }
 
+        // Format activity details for WhatsApp message
+        const activityMessage = formatActivityForWhatsApp({
+          type: item.type === 'sent_ping' ? 'listing' : 'ping',
+          title: item.title,
+          description: item.description,
+          category: item.category,
+          price: item.price,
+          location: item.location,
+          userName: participantProfile.name,
+          userUsername: otherUsername,
+          distance: item.distance_km,
+          message: item.message
+        });
+
         // Show confirmation dialog
         Alert.alert(
           'Open WhatsApp',
-          `Start a WhatsApp chat with ${participantProfile.name || otherUsername}?`,
+          `Start a WhatsApp chat with ${participantProfile.name || otherUsername} about this activity?`,
           [
             { text: 'Cancel', style: 'cancel' },
             { 
@@ -517,11 +534,11 @@ function ActivityScreen() {
               onPress: () => {
                 // Format phone number for WhatsApp (remove any non-digit characters except +)
                 const phoneNumber = participantProfile.phone.replace(/[^\d+]/g, '');
-                // Open WhatsApp with the phone number
-                const whatsappUrl = `whatsapp://send?phone=${phoneNumber}`;
+                // Open WhatsApp with the phone number and pre-filled message
+                const whatsappUrl = createWhatsAppURL(phoneNumber, activityMessage);
                 Linking.openURL(whatsappUrl).catch(() => {
                   // Fallback to WhatsApp web if app is not installed
-                  const whatsappWebUrl = `https://wa.me/${phoneNumber}`;
+                  const whatsappWebUrl = createWhatsAppWebURL(phoneNumber, activityMessage);
                   Linking.openURL(whatsappWebUrl);
                 });
               }
@@ -562,7 +579,10 @@ function ActivityScreen() {
         <View style={styles.pingUser}>
           <Image source={{ uri: displayUser.avatar || '' }} style={styles.userAvatar} resizeMode="cover" />
           <View style={styles.pingDetails}>
-            <Text style={styles.pingUserName}>{displayUser.name}</Text>
+            <View style={styles.pingUserNameRow}>
+              <Text style={styles.pingUserName}>{displayUser.name}</Text>
+              {/* Verification badge removed - ping data doesn't include verification status */}
+            </View>
             <Text style={styles.pingUserLabel}>
               {item.type === 'sent_ping' ? 'Sent to' : 'From'} @{displayUser.username}
             </Text>
@@ -1126,11 +1146,15 @@ const styles = StyleSheet.create({
   pingDetails: {
     flex: 1,
   },
+  pingUserNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
   pingUserName: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
-    marginBottom: 2,
   },
   pingUserLabel: {
     fontSize: 12,

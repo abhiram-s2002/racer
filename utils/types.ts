@@ -23,6 +23,9 @@ export interface User {
   latitude?: number;
   longitude?: number;
   isAvailable: boolean;
+  verification_status?: 'verified' | 'not_verified';
+  verified_at?: string;
+  expires_at?: string;
   stats?: Record<string, any>;
   notification_settings?: NotificationSettings;
   created_at: string;
@@ -70,7 +73,9 @@ export interface Listing {
  */
 export interface Request {
   id: string;
-  requester_username: string;
+  requester_username: string; // Username for contact/call functionality
+  requester_name?: string; // Requester name from database join
+  requester_verified?: boolean; // Verification status from database
   title: string;
   description?: string;
   budget_min?: number;

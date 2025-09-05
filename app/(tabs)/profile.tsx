@@ -25,6 +25,9 @@ import MapView, { Marker } from 'react-native-maps';
 import { Button } from 'react-native';
 import { validatePhoneNumber, formatPhoneNumberForDisplay } from '@/utils/validation';
 import RatingDisplay from '@/components/RatingDisplay';
+import VerificationBadge from '@/components/VerificationBadge';
+import VerificationPricingCard from '@/components/VerificationPricingCard';
+import { isUserVerified } from '@/utils/verificationUtils';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 
@@ -47,6 +50,9 @@ function ProfileScreen() {
     avatar: '',
     isAvailable: true,
     username: '',
+    verification_status: 'not_verified' as 'verified' | 'not_verified',
+    verified_at: undefined as string | undefined,
+    expires_at: undefined as string | undefined,
   });
 
   const [notifications, setNotifications] = useState({
@@ -110,6 +116,9 @@ function ProfileScreen() {
           bio: profile.bio || '',
           avatar: profile.avatar_url || '',
           isAvailable: profile.isAvailable !== undefined ? profile.isAvailable : true,
+          verification_status: profile.verification_status,
+          verified_at: profile.verified_at,
+          expires_at: profile.expires_at,
         };
         
         setProfileData(newProfileData);
@@ -564,7 +573,10 @@ function ProfileScreen() {
               </TouchableOpacity>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.name}>{profileData.name || 'No name set'}</Text>
+              <View style={styles.nameRow}>
+                <Text style={styles.name}>{profileData.name || 'No name set'}</Text>
+                {isUserVerified(profileData) && <VerificationBadge size="medium" />}
+              </View>
               <Text style={styles.username}>@{profileData.username || 'username'}</Text>
               
               {/* User Rating Display */}
@@ -602,6 +614,9 @@ function ProfileScreen() {
             <Text style={styles.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Verification Section */}
+        <VerificationPricingCard userName={profileData.name || 'Your Name'} />
 
         {/* Stats Section */}
         {/* Removed as per edit hint */}
@@ -809,11 +824,15 @@ const styles = StyleSheet.create({
   profileInfo: {
     flex: 1,
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   name: {
     fontSize: 22,
     fontFamily: 'Inter-Bold',
     color: '#1E293B',
-    marginBottom: 4,
   },
   username: {
     fontSize: 16,

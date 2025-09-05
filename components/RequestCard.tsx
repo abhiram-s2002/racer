@@ -1,11 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import { MapPin, Clock, MessageCircle, Bookmark, Phone } from 'lucide-react-native';
+import { MapPin, Clock, MessageCircle, Bookmark, Phone, User } from 'lucide-react-native';
 import { Request } from '@/utils/types';
 import { getCategoryById, getCategoryIcon, getCategoryColor } from '@/utils/requestCategories';
+import VerificationBadge from './VerificationBadge';
 
 interface RequestCardProps {
   request: Request;
+  requesterName?: string; // Add requester name prop
+  requesterVerified?: boolean; // Add verification status prop
   onPress?: () => void; // Made optional since requests are not selectable
   onSave: () => void;
   onContact: () => void;
@@ -14,7 +17,7 @@ interface RequestCardProps {
 
 const { width } = Dimensions.get('window');
 
-export function RequestCard({ request, onPress, onSave, onContact, onCall }: RequestCardProps) {
+export function RequestCard({ request, requesterName, requesterVerified, onPress, onSave, onContact, onCall }: RequestCardProps) {
   const category = getCategoryById(request.category);
   const IconComponent = getCategoryIcon(request.category);
   const categoryColor = getCategoryColor(request.category);
@@ -93,6 +96,15 @@ export function RequestCard({ request, onPress, onSave, onContact, onCall }: Req
               {request.title}
             </Text>
           </View>
+
+          {/* Requester Name with Verification Badge */}
+          {requesterName && (
+            <View style={styles.requesterRow}>
+              <User size={14} color="#64748B" />
+              <Text style={styles.requesterName}>{requesterName}</Text>
+              {requesterVerified && <VerificationBadge size="small" />}
+            </View>
+          )}
 
           {/* Urgency Badge */}
           {request.urgency === 'urgent' && (
@@ -198,6 +210,17 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
     lineHeight: 22,
+  },
+  requesterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    gap: 6,
+  },
+  requesterName: {
+    fontSize: 13,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
   },
   timeContainer: {
     flexDirection: 'row',

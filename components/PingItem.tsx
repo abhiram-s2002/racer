@@ -15,6 +15,7 @@ import { MessageCircle, CheckCircle, XCircle } from 'lucide-react-native';
 import { formatPriceWithUnit } from '@/utils/formatters';
 import { updatePingStatusNew } from '@/utils/activitySupabase';
 import { useRouter } from 'expo-router';
+import { formatPingForWhatsApp, createWhatsAppURL, createWhatsAppWebURL } from '@/utils/whatsappMessageFormatter';
 
 import { supabase } from '@/utils/supabaseClient';
 
@@ -89,10 +90,23 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
         return;
       }
 
+      // Format ping/listing details for WhatsApp message
+      const pingMessage = formatPingForWhatsApp({
+        title: item.title,
+        description: item.description,
+        category: item.category,
+        price: item.price,
+        location: item.location,
+        sellerName: participantProfile.name,
+        sellerUsername: otherUsername,
+        distance: item.distance_km,
+        message: item.message
+      });
+
       // Show confirmation dialog
       RNAlert.alert(
         'Open WhatsApp',
-        `Start a WhatsApp chat with ${participantProfile.name || otherUsername}?`,
+        `Start a WhatsApp chat with ${participantProfile.name || otherUsername} about this listing?`,
         [
           { text: 'Cancel', style: 'cancel' },
           { 
@@ -100,11 +114,11 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
             onPress: () => {
               // Format phone number for WhatsApp (remove any non-digit characters except +)
               const phoneNumber = participantProfile.phone.replace(/[^\d+]/g, '');
-              // Open WhatsApp with the phone number
-              const whatsappUrl = `whatsapp://send?phone=${phoneNumber}`;
+              // Open WhatsApp with the phone number and pre-filled message
+              const whatsappUrl = createWhatsAppURL(phoneNumber, pingMessage);
               Linking.openURL(whatsappUrl).catch(() => {
                 // Fallback to WhatsApp web if app is not installed
-                const whatsappWebUrl = `https://wa.me/${phoneNumber}`;
+                const whatsappWebUrl = createWhatsAppWebURL(phoneNumber, pingMessage);
                 Linking.openURL(whatsappWebUrl);
               });
             }
