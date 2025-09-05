@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
 import { signUp, signIn } from '@/utils/auth';
 import { useRouter } from 'expo-router';
@@ -73,8 +73,39 @@ function AuthScreen() {
   const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
+  const [emailVerificationMode, setEmailVerificationMode] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [resendLoading, setResendLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [canResend, setCanResend] = useState(false);
   const router = useRouter();
   const errorHandler = ErrorHandler.getInstance();
+
+  // Timer effect for resend code countdown
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => {
+          if (prev <= 1) {
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [resendTimer]);
 
   const handleAuth = async () => {
     setLoading(true);
@@ -146,33 +177,31 @@ function AuthScreen() {
       }
         
       try {
-        const { error } = await signUp(email, password);
+        // Send OTP for email verification first
+        const { error } = await supabase.auth.signInWithOtp({
+          email: email,
+          options: {
+            shouldCreateUser: false, // We'll create user after OTP verification
+          }
+        });
+        
         if (error) {
           await errorHandler.handleError(error, {
-            operation: 'email_signup',
+            operation: 'email_otp_send',
             component: 'AuthScreen',
           });
         } else {
-          // Store referral code in user metadata for later processing
-          if (referralCode.trim() && referralCodeValid) {
-            try {
-              await supabase.auth.updateUser({
-                data: { referral_code: referralCode.trim() }
-              });
-              // Referral code stored in user metadata
-            } catch (referralError) {
-              // Failed to store referral code in metadata
-            }
-          }
-          
-          // Navigate to profile setup page for new users
-          router.replace('/ProfileSetup');
+          // OTP sent successfully, show OTP input and start timer
+          setVerificationEmail(email);
+          setOtpSent(true);
+          setResendTimer(60); // Start 60-second timer
+          setCanResend(false);
           setLoading(false);
           return;
         }
       } catch (error) {
         await errorHandler.handleError(error, {
-          operation: 'email_signup',
+          operation: 'email_otp_send',
           component: 'AuthScreen',
         });
       }
@@ -309,12 +338,142 @@ function AuthScreen() {
     setReferralCodeValid(null);
     setValidatingReferral(false);
     setResetEmail('');
+    setVerificationEmail('');
+    setEmailVerificationMode(false);
+    setOtpSent(false);
+    setOtp('');
+    setResendTimer(0);
+    setCanResend(false);
   };
 
   const exitForgotPasswordMode = () => {
     setForgotPasswordMode(false);
     setResetEmail('');
   };
+
+
+  const handleOtpVerification = async () => {
+    if (!networkMonitor.isOnline()) {
+      await errorHandler.handleError(
+        new Error('No internet connection available'),
+        {
+          operation: 'otp_verification',
+          component: 'AuthScreen',
+        }
+      );
+      return;
+    }
+
+    if (!otp.trim() || otp.length !== 6) {
+      await errorHandler.handleError(
+        new Error('Please enter a valid 6-digit OTP'),
+        {
+          operation: 'otp_validation',
+          component: 'AuthScreen',
+        }
+      );
+      return;
+    }
+
+    setOtpLoading(true);
+    
+    try {
+      // Verify OTP
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: verificationEmail,
+        token: otp,
+        type: 'email'
+      });
+
+      if (error) {
+        await errorHandler.handleError(error, {
+          operation: 'otp_verification',
+          component: 'AuthScreen',
+        });
+      } else {
+        // OTP verified, now create the user account
+        const { error: signupError } = await signUp(verificationEmail, password);
+        
+        if (signupError) {
+          await errorHandler.handleError(signupError, {
+            operation: 'email_signup_after_otp',
+            component: 'AuthScreen',
+          });
+        } else {
+          // Store referral code in user metadata for later processing
+          if (referralCode.trim() && referralCodeValid) {
+            try {
+              await supabase.auth.updateUser({
+                data: { referral_code: referralCode.trim() }
+              });
+            } catch (referralError) {
+              // Failed to store referral code in metadata
+            }
+          }
+          
+          // Navigate to profile setup page for new users
+          router.replace('/ProfileSetup');
+          setOtpLoading(false);
+          return;
+        }
+      }
+    } catch (error) {
+      await errorHandler.handleError(error, {
+        operation: 'otp_verification',
+        component: 'AuthScreen',
+      });
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!networkMonitor.isOnline()) {
+      await errorHandler.handleError(
+        new Error('No internet connection available'),
+        {
+          operation: 'resend_otp',
+          component: 'AuthScreen',
+        }
+      );
+      return;
+    }
+
+    setResendLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email: verificationEmail,
+        options: {
+          shouldCreateUser: false,
+        }
+      });
+
+      if (error) {
+        await errorHandler.handleError(error, {
+          operation: 'resend_otp',
+          component: 'AuthScreen',
+        });
+      } else {
+        // Restart the timer after successful resend
+        setResendTimer(60);
+        setCanResend(false);
+        Alert.alert(
+          'OTP Sent',
+          'A new verification code has been sent to your email address.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      await errorHandler.handleError(error, {
+        operation: 'resend_otp',
+        component: 'AuthScreen',
+      });
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
 
   // If in forgot password mode, show password reset UI
   if (forgotPasswordMode) {
@@ -475,14 +634,58 @@ function AuthScreen() {
             )}
           </View>
         )}
+
+        {/* OTP Input Field - Only show in signup mode after OTP is sent */}
+        {mode === 'signup' && otpSent && (
+          <View style={styles.otpContainer}>
+            <Text style={styles.otpLabel}>Enter verification code sent to {verificationEmail}</Text>
+            <TextInput
+              placeholder="Enter 6-digit code"
+              value={otp}
+              onChangeText={setOtp}
+              keyboardType="numeric"
+              maxLength={6}
+              style={styles.otpInput}
+              placeholderTextColor="#767676"
+              autoFocus
+            />
+            <TouchableOpacity
+              style={[styles.button, otpLoading && styles.buttonDisabled]}
+              onPress={handleOtpVerification}
+              disabled={otpLoading || otp.length !== 6}
+            >
+              <Text style={styles.buttonText}>
+                {otpLoading ? 'Verifying...' : 'Complete Sign Up'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.resendButton, (!canResend || resendLoading) && styles.resendButtonDisabled]}
+              onPress={handleResendOtp}
+              disabled={!canResend || resendLoading}
+            >
+              <Text style={[styles.resendButtonText, (!canResend || resendLoading) && styles.resendButtonTextDisabled]}>
+                {resendLoading 
+                  ? 'Sending...' 
+                  : canResend 
+                    ? 'Resend Code' 
+                    : `Resend Code (${resendTimer}s)`
+                }
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
         
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleAuth}
-          disabled={loading}
-        >
-          <Text style={styles.buttonText}>{mode === 'login' ? 'Login' : 'Sign Up'}</Text>
-        </TouchableOpacity>
+        {!otpSent && (
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleAuth}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>
+              {mode === 'login' ? 'Login' : 'Verify Email'}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* Forgot Password Link - Only show in login mode */}
         {mode === 'login' && (
@@ -684,5 +887,57 @@ const styles = StyleSheet.create({
   },
   invalidCodeText: {
     color: '#EF4444',
+  },
+  emailText: {
+    fontWeight: '600',
+    color: '#22C55E',
+  },
+  verificationInstructions: {
+    fontSize: 13,
+    color: '#555555',
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 18,
+    paddingHorizontal: 10,
+  },
+  otpContainer: {
+    width: '100%',
+    marginTop: 10,
+  },
+  otpLabel: {
+    fontSize: 13,
+    color: '#555555',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  otpInput: {
+    width: '100%',
+    fontSize: 18,
+    color: '#0F1111',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 3,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#A6A6A6',
+    textAlign: 'center',
+    letterSpacing: 2,
+  },
+  resendButton: {
+    marginTop: 10,
+    padding: 8,
+    alignItems: 'center',
+  },
+  resendButtonText: {
+    color: '#22C55E',
+    fontSize: 13,
+    fontWeight: '400',
+  },
+  resendButtonDisabled: {
+    opacity: 0.5,
+  },
+  resendButtonTextDisabled: {
+    color: '#999999',
   },
 }); 

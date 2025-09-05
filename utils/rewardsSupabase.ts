@@ -376,7 +376,10 @@ export async function getReferralByCode(referralCode: string): Promise<UserRefer
       .single();
 
     if (error) {
-      console.error('Error fetching referral by code:', error);
+      // Don't log error for "not found" case (PGRST116), it's expected behavior
+      if (error.code !== 'PGRST116') {
+        console.error('Error fetching referral by code:', error);
+      }
       return null;
     }
 
