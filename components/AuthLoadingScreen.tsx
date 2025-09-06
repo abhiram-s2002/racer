@@ -117,7 +117,7 @@ export default function AuthLoadingScreen({ message = "Setting up your experienc
             }
           ]}
         >
-          Welcome to OmniMarketplace
+          Welcome to GeoMart
         </Animated.Text>
 
         <Animated.Text

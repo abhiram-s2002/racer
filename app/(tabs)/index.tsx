@@ -53,6 +53,10 @@ import LocationCheckPopup from '@/components/LocationCheckPopup';
 import RatingService from '@/utils/ratingService';
 import VerificationBadge from '@/components/VerificationBadge';
 import { isUserVerified } from '@/utils/verificationUtils';
+import HomeLoadingStates from '@/components/HomeLoadingStates';
+import ListingSkeleton from '@/components/ListingSkeleton';
+import { batchRatingService } from '@/utils/batchRatingService';
+import { requestBatcher } from '@/utils/requestBatching';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 36) / 2; // Account for padding and gap
@@ -81,6 +85,7 @@ function HomeScreen() {
   const [hasShownFeedbackPrompt, setHasShownFeedbackPrompt] = useState(false);
   const [existingPings, setExistingPings] = useState<Record<string, boolean>>({});
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
+  const [loadingStage, setLoadingStage] = useState<'initial' | 'loading' | 'error' | 'offline' | 'empty'>('initial');
   
 
   
@@ -113,7 +118,20 @@ function HomeScreen() {
   // Offline queue for handling network issues
   const { addPingAction, isOnline } = useOfflineQueue();
 
-  // Load seller info for all listings
+  // Manage loading stages
+  useEffect(() => {
+    if (loading && !refreshing) {
+      setLoadingStage('loading');
+    } else if (!networkMonitor.isOnline()) {
+      setLoadingStage('offline');
+    } else if (listings.length === 0) {
+      setLoadingStage('empty');
+    } else {
+      setLoadingStage('initial');
+    }
+  }, [loading, refreshing, listings.length]);
+
+  // Load seller info for all listings using request batching
   useEffect(() => {
     async function loadSellerInfo() {
       const uniqueSellerUsernames = Array.from(new Set(listings.map(l => l.username)));
@@ -128,23 +146,27 @@ function HomeScreen() {
         return; // Already have all the data we need
       }
       
-      // Batch fetch only missing seller profiles from Supabase
-      const { data: users, error } = await supabase
-        .from('users')
-        .select('username, name, avatar_url, email, phone, location, location_display, bio, verification_status, verified_at, expires_at')
-        .in('username', missingUsernames);
-      if (error || !users) {
-        return;
+      try {
+        // Use request batching for efficient seller profile loading
+        const sellerPromises = missingUsernames.map(username => 
+          requestBatcher.addRequest('user_profile', { username })
+        );
+        
+        const sellerResults = await Promise.allSettled(sellerPromises);
+        
+        // Update seller info map with new data
+        setSellerInfoMap(prev => {
+          const newMap = { ...prev };
+          sellerResults.forEach((result, index) => {
+            if (result.status === 'fulfilled' && result.value) {
+              newMap[missingUsernames[index]] = result.value;
+            }
+          });
+          return newMap;
+        });
+      } catch (error) {
+        // Silent error handling for seller info loading
       }
-      
-      // Update seller info map with new data
-      setSellerInfoMap(prev => {
-        const newMap = { ...prev };
-        for (const user of users) {
-          newMap[user.username] = user;
-        }
-        return newMap;
-      });
     }
     
     if (listings.length > 0) {
@@ -205,40 +227,34 @@ function HomeScreen() {
 
   const loadUserRatings = async () => {
     try {
-      const ratings: Record<string, { rating: string; reviewCount: number }> = {};
-      const checkedUsers: Record<string, boolean> = {};
+      // Get unique usernames that need rating data
+      const usernamesToCheck = listings
+        .map(listing => listing.username)
+        .filter(username => username && !userRatings[username]);
       
-      for (const listing of listings) {
-        if (listing.username && !userRatings[listing.username] && !checkedUsers[listing.username]) {
-          try {
-            const stats = await RatingService.getUserRatingStats(listing.username);
-            
-            if (stats && stats.total_ratings > 0) {
-              ratings[listing.username] = {
-                rating: stats.average_rating.toFixed(1),
-                reviewCount: stats.total_ratings
-              };
-            }
-            // Mark this user as checked (even if they have no ratings)
-            checkedUsers[listing.username] = true;
-          } catch (error) {
-            // Mark this user as checked even on error
-            checkedUsers[listing.username] = true;
-          }
-        }
+      if (usernamesToCheck.length === 0) {
+        return;
       }
+
+      // Use batch rating service for efficient loading
+      const batchRatings = await batchRatingService.getBatchUserRatings(usernamesToCheck);
       
-      // Update ratings and mark checked users
+      // Update ratings with batch results
       setUserRatings(prev => {
         const newRatings = { ...prev };
-        // Add new ratings
-        Object.assign(newRatings, ratings);
-        // Mark users as checked by setting them to null if they have no ratings
-        Object.keys(checkedUsers).forEach(username => {
-          if (!newRatings[username]) {
+        
+        // Add batch ratings
+        Object.entries(batchRatings).forEach(([username, rating]) => {
+          newRatings[username] = rating;
+        });
+        
+        // Mark users as checked (even if they have no ratings)
+        usernamesToCheck.forEach(username => {
+          if (newRatings[username] === undefined) {
             newRatings[username] = null;
           }
         });
+        
         return newRatings;
       });
     } catch (error) {
@@ -926,9 +942,13 @@ function HomeScreen() {
         return;
       }
 
+      // Only wait for listings refresh, not ratings
       await refreshListings();
-      // Also reload user ratings after refreshing listings
-      await loadUserRatings();
+      
+      // Load ratings in background (don't wait for it)
+      loadUserRatings().catch(() => {
+        // Silent error handling for background rating loading
+      });
     } catch (error) {
       await errorHandler.handleError(error, {
         operation: 'refresh_listings',
@@ -938,6 +958,20 @@ function HomeScreen() {
       setRefreshing(false);
     }
   }, [refreshListings, loadUserRatings]);
+
+  const handleRetry = useCallback(async () => {
+    setLoadingStage('loading');
+    try {
+      await refreshListings();
+      await loadUserRatings();
+    } catch (error) {
+      setLoadingStage('error');
+      await errorHandler.handleError(error, {
+        operation: 'retry_listings',
+        component: 'HomeScreen',
+      });
+    }
+  }, [refreshListings, loadUserRatings, errorHandler]);
 
   // Memoized values for FlatList props
   const sectionTitle = useMemo(() => 
@@ -1226,17 +1260,27 @@ function HomeScreen() {
         
 
         
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading listings...</Text>
-          </View>
+        {loadingStage === 'loading' ? (
+          <HomeLoadingStates 
+            stage="loading"
+            onRetry={handleRetry}
+          />
+        ) : loadingStage === 'offline' ? (
+          <HomeLoadingStates 
+            stage="offline"
+            onRetry={handleRetry}
+          />
+        ) : loadingStage === 'error' ? (
+          <HomeLoadingStates 
+            stage="error"
+            onRetry={handleRetry}
+            errorMessage="Failed to load listings. Please try again."
+          />
         ) : displayListings.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No listings found</Text>
-            <Text style={styles.emptySubtext}>
-              {emptyStateText}
-            </Text>
-          </View>
+          <HomeLoadingStates 
+            stage="empty"
+            onRetry={handleRetry}
+          />
         ) : (
           <FlatList
             data={displayListings}

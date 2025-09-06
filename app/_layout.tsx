@@ -14,6 +14,7 @@ import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
 import { useLocationCheck } from '@/hooks/useLocationCheck';
 import LocationCheckPopup from '@/components/LocationCheckPopup';
+import AuthLoadingScreen from '@/components/AuthLoadingScreen';
 
 
 function validateUserProfileFields({ id, username, email, name }: { id: string; username: string; email: string; name: string }) {
@@ -164,6 +165,7 @@ export async function upsertUserProfile(authUser: any) {
 
 export default function AuthGate() {
   const [loading, setLoading] = useState(true);
+  const [loadingStage, setLoadingStage] = useState('initializing');
   const [authenticated, setAuthenticated] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -171,18 +173,26 @@ export default function AuthGate() {
   const { showPopup, hidePopup, retryCheck } = useLocationCheck();
 
   useEffect(() => {
-    // Initialize monitoring services
-    initializeSentry();
-    googleAnalytics.initialize();
-    
-    const checkAuth = async () => {
+    const initializeApp = async () => {
+      const startTime = Date.now();
+      
       try {
+        // Stage 1: Initialize monitoring services
+        setLoadingStage('initializing');
+        initializeSentry();
+        googleAnalytics.initialize();
+        
+        // Stage 2: Check authentication
+        setLoadingStage('authenticating');
         const { user } = await getCurrentUser();
         setAuthenticated(!!user);
         
         if (user) {
+          // Stage 3: Validate user profile
+          setLoadingStage('validating_profile');
           const username = user.user_metadata?.username;
           const name = user.user_metadata?.full_name || user.user_metadata?.name;
+          
           if (!username || !name) {
             // Prevent redirect loop
             if (pathname !== '/ProfileSetup') {
@@ -192,13 +202,24 @@ export default function AuthGate() {
             return;
           }
           
-          // Location permission is now handled by popup system
-          // No need to redirect - popup will show if there are issues
-          
+          // Stage 4: Update user profile
+          setLoadingStage('setting_up_profile');
           const result = await upsertUserProfile(user);
           if (result && result.error) {
             // User profile upsert failed - handled silently
           }
+        }
+        
+        // Stage 5: Finalizing
+        setLoadingStage('finalizing');
+        
+        // Calculate minimum loading time (2.5 seconds for smooth UX)
+        const elapsed = Date.now() - startTime;
+        const minLoadingTime = 2500;
+        const remainingTime = Math.max(0, minLoadingTime - elapsed);
+        
+        if (remainingTime > 0) {
+          await new Promise(resolve => setTimeout(resolve, remainingTime));
         }
         
         setLoading(false);
@@ -210,7 +231,8 @@ export default function AuthGate() {
         setLoading(false);
       }
     };
-    checkAuth();
+    
+    initializeApp();
   }, []); // Remove pathname dependency to prevent loops
 
 
@@ -253,11 +275,24 @@ export default function AuthGate() {
   }, []);
 
   if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    const getLoadingMessage = () => {
+      switch (loadingStage) {
+        case 'initializing':
+          return 'Initializing GeoMart...';
+        case 'authenticating':
+          return 'Checking your account...';
+        case 'validating_profile':
+          return 'Validating your profile...';
+        case 'setting_up_profile':
+          return 'Setting up your GeoMart experience...';
+        case 'finalizing':
+          return 'Almost ready...';
+        default:
+          return 'Setting up your GeoMart experience...';
+      }
+    };
+
+    return <AuthLoadingScreen message={getLoadingMessage()} />;
   }
 
   if (!authenticated) {

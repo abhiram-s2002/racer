@@ -615,9 +615,6 @@ function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Verification Section */}
-        <VerificationPricingCard userName={profileData.name || 'Your Name'} />
-
         {/* Stats Section */}
         {/* Removed as per edit hint */}
 
@@ -643,6 +640,9 @@ function ProfileScreen() {
                             <Text style={styles.contactText}>{formatPhoneNumberForDisplay(profileData.phone)}</Text>
           </View>
         </View>
+
+        {/* Verification Section */}
+        <VerificationPricingCard userName={profileData.name || 'Your Name'} />
 
         {/* Availability Toggle */}
         <View style={styles.availabilitySection}>

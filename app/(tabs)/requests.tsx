@@ -23,6 +23,7 @@ import {
 import { useRequests } from '@/hooks/useRequests';
 import { useLocation } from '@/hooks/useLocation';
 import { useAuth } from '@/hooks/useAuth';
+import { batchRatingService } from '@/utils/batchRatingService';
 
 import { Request, RequestCategory } from '@/utils/types';
 import { getCategoryById } from '@/utils/requestCategories';
@@ -61,6 +62,7 @@ export default function RequestsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [userLocationData, setUserLocationData] = useState<LocationData | null>(null);
   const [showUserListings, setShowUserListings] = useState(false);
+  const [requesterRatings, setRequesterRatings] = useState<Record<string, { rating: string; reviewCount: number } | null>>({});
   // Cache status removed - no UI monitoring needed
 
   // Load initial data when component mounts
@@ -94,6 +96,32 @@ export default function RequestsScreen() {
     
     initializeData();
   }, []);
+
+  // Load requester ratings for all requests
+  const loadRequesterRatings = async () => {
+    try {
+      const uniqueRequesters = Array.from(new Set(requests.map(r => r.requester_username)));
+      if (uniqueRequesters.length === 0) return;
+
+      const batchRatings = await batchRatingService.getBatchUserRatings(uniqueRequesters);
+      setRequesterRatings(prev => {
+        const newRatings = { ...prev };
+        Object.entries(batchRatings).forEach(([username, rating]) => {
+          newRatings[username] = rating;
+        });
+        return newRatings;
+      });
+    } catch (error) {
+      // Silent error handling for rating loading
+    }
+  };
+
+  // Load ratings when requests change
+  useEffect(() => {
+    if (requests.length > 0) {
+      loadRequesterRatings();
+    }
+  }, [requests]);
 
   // Cache status monitoring removed - no UI display needed
 
@@ -338,6 +366,7 @@ export default function RequestsScreen() {
       request={item} 
       requesterName={item.requester_name}
       requesterVerified={item.requester_verified}
+      requesterRating={requesterRatings[item.requester_username]}
       onPress={() => {/* No navigation - requests are not selectable */}}
       onSave={() => {/* Handle save */}}
       onContact={() => handleContact(item)}
