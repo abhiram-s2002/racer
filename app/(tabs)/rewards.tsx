@@ -855,6 +855,41 @@ function RewardsScreen() {
           )}
         </View>
 
+        {/* Verification Rewards Information */}
+        <View style={styles.disclaimerSection}>
+          <View style={styles.verificationRewardsCard}>
+            <View style={styles.verificationRewardsContent}>
+              <View style={styles.verificationRewardsHeader}>
+                <Crown size={20} color="#F59E0B" />
+                <Text style={styles.verificationRewardsTitle}>Verified User Benefits</Text>
+              </View>
+              <Text style={styles.verificationRewardsText}>
+                🎁 <Text style={styles.verificationRewardsBold}>Extra Allocation for Verified Users:</Text>
+              </Text>
+              <Text style={styles.verificationRewardsDetails}>
+                • <Text style={styles.verificationRewardsBold}>Company Shares:</Text> Verified users receive additional equity allocation based on their verification badge duration
+              </Text>
+              <Text style={styles.verificationRewardsDetails}>
+                • <Text style={styles.verificationRewardsBold}>Multiplier Effect:</Text> Each month of verified status increases your share allocation multiplier
+              </Text>
+              <Text style={styles.verificationRewardsDetails}>
+                • <Text style={styles.verificationRewardsBold}>Bonus OMNI Points:</Text> 2x OMNI points for all transactions when verified
+              </Text>
+              <Text style={styles.verificationRewardsFormula}>
+                <Text style={styles.verificationRewardsBold}>Formula:</Text> Base Allocation × (1 + 0.1 × Verified Months)
+              </Text>
+              <Text style={styles.verificationRewardsNote}>
+                💡 The longer you stay verified, the more company shares you earn!
+              </Text>
+              <View style={styles.verificationRewardsDisclaimer}>
+                <Text style={styles.verificationRewardsDisclaimerText}>
+                  <Text style={styles.verificationRewardsBold}>Important:</Text> Verified user bonus allocations and company shares will only be calculated and made visible at the time of the company's successful exit or IPO. These rewards are not visible or claimable before the exit/IPO event.
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* Legal Disclaimer */}
         <View style={styles.disclaimerSection}>
           <View style={styles.disclaimerCard}>
@@ -1984,6 +2019,79 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#9CA3AF',
     fontStyle: 'italic',
+  },
+  verificationRewardsCard: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+  },
+  verificationRewardsContent: {
+    flex: 1,
+  },
+  verificationRewardsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  verificationRewardsTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    color: '#92400E',
+    marginLeft: 8,
+  },
+  verificationRewardsText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#92400E',
+    marginBottom: 8,
+  },
+  verificationRewardsBold: {
+    fontFamily: 'Inter-Bold',
+    color: '#92400E',
+  },
+  verificationRewardsDetails: {
+    fontSize: 13,
+    fontFamily: 'Inter-Regular',
+    color: '#92400E',
+    marginBottom: 6,
+    lineHeight: 18,
+  },
+  verificationRewardsFormula: {
+    fontSize: 13,
+    fontFamily: 'Inter-Medium',
+    color: '#92400E',
+    marginTop: 8,
+    marginBottom: 8,
+    backgroundColor: '#FEF7CD',
+    padding: 8,
+    borderRadius: 6,
+    textAlign: 'center',
+  },
+  verificationRewardsNote: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#92400E',
+    marginTop: 8,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  verificationRewardsDisclaimer: {
+    backgroundColor: '#FEF7CD',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+  },
+  verificationRewardsDisclaimerText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#92400E',
+    lineHeight: 16,
+    textAlign: 'center',
   },
 });
 

@@ -170,7 +170,7 @@ export default function AuthGate() {
   const router = useRouter();
   const pathname = usePathname();
   const errorHandler = ErrorHandler.getInstance();
-  const { showPopup, hidePopup, retryCheck } = useLocationCheck();
+  const { showPopup, isChecking, locationStatus, checkLocationStatus, hidePopup, retryCheck } = useLocationCheck();
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -303,11 +303,13 @@ export default function AuthGate() {
     <ErrorBoundary componentName="AuthGate">
       <Slot />
       
-      {/* Location Check Popup */}
+      {/* Location Check Popup with System Prompt Button */}
       <LocationCheckPopup
         visible={showPopup && authenticated}
         onClose={hidePopup}
         onRetry={retryCheck}
+        locationStatus={locationStatus}
+        isChecking={isChecking}
       />
     </ErrorBoundary>
   );

@@ -1,6 +1,6 @@
 # Privacy Policy for GeoMart
 
-**Last Updated:** January 24, 2025
+**Last Updated:** January 25, 2025
 
 ## 1. Introduction
 
@@ -12,29 +12,37 @@ This Privacy Policy explains:
 - Your rights regarding your personal data
 - How we protect your information
 - How to contact us about privacy concerns
+- Our compliance with applicable privacy laws including GDPR, CCPA, and Indian data protection regulations
 
 ## 2. Information We Collect
 
 ### 2.1 Information You Provide
-- **Account Information**: Name, email address, phone number, username, password
-- **Profile Information**: Profile pictures, location preferences, bio, avatar
-- **Marketplace Activity**: Listings, messages, transactions, reviews, pings
-- **Communications**: Messages with other users, support requests, feedback
-- **Location Data**: Your precise location when you enable location services
-- **Payment Information**: If applicable, payment method details (processed securely)
+- **Account Information**: Name, email address, phone number, username, password, verification status
+- **Profile Information**: Profile pictures, location preferences, bio, avatar, verification badges
+- **Marketplace Activity**: Listings, messages, transactions, reviews, pings, ratings, leaderboard participation
+- **Communications**: Messages with other users, support requests, feedback, notifications preferences
+- **Location Data**: Your precise location when you enable location services, location history
+- **Payment Information**: If applicable, payment method details (processed securely by third-party providers)
+- **Verification Data**: Identity verification documents, phone verification, email verification
+- **Preferences**: App settings, notification preferences, privacy settings
 
 ### 2.2 Information We Collect Automatically
-- **Device Information**: Device type, operating system, unique device identifiers, IP address
-- **Usage Information**: How you interact with our app, features used, time spent, pages viewed
-- **Log Data**: Browser type, access times, error logs, performance data
-- **Location Data**: General location based on IP address (when precise location is disabled)
-- **Analytics Data**: App performance, crash reports, user behavior patterns
+- **Device Information**: Device type, operating system, unique device identifiers, IP address, device model, screen resolution
+- **Usage Information**: How you interact with our app, features used, time spent, pages viewed, search queries
+- **Log Data**: Browser type, access times, error logs, performance data, API calls, server logs
+- **Location Data**: General location based on IP address (when precise location is disabled), approximate location
+- **Analytics Data**: App performance, crash reports, user behavior patterns, feature usage statistics
+- **Technical Data**: App version, session duration, network information, battery usage
+- **Security Data**: Login attempts, security events, suspicious activity detection
 
 ### 2.3 Information from Third Parties
-- **Social Media**: If you connect your social media accounts
-- **Payment Processors**: Transaction information (if applicable)
-- **Analytics Providers**: Usage statistics and performance metrics
-- **Error Monitoring**: Crash reports and error logs
+- **Social Media**: If you connect your social media accounts (profile information, friends list)
+- **Payment Processors**: Transaction information (if applicable), payment verification
+- **Analytics Providers**: Usage statistics and performance metrics, user behavior analysis
+- **Error Monitoring**: Crash reports and error logs, performance monitoring
+- **Identity Verification Services**: Verification status, identity confirmation
+- **Location Services**: Enhanced location data from third-party providers
+- **Communication Services**: SMS delivery status, email delivery confirmation
 
 ## 3. How We Use Your Information
 
@@ -45,6 +53,10 @@ This Privacy Policy explains:
 - Improve our app and user experience
 - Ensure security and prevent fraud
 - Comply with legal obligations
+- Provide customer support and resolve issues
+- Maintain and improve our platform infrastructure
+- Conduct research and analytics to enhance our services
+- Implement and maintain verification systems
 
 ### 3.2 Specific Purposes
 - **Authentication**: Verify your identity and maintain account security
@@ -53,6 +65,10 @@ This Privacy Policy explains:
 - **Analytics**: Understand app usage and improve functionality
 - **Support**: Respond to your questions and provide customer service
 - **Legal Compliance**: Meet regulatory requirements and respond to legal requests
+- **Verification**: Implement identity verification and trust systems
+- **Rewards**: Manage rewards, achievements, and leaderboard systems
+- **Safety**: Monitor for suspicious activity and ensure platform safety
+- **Personalization**: Customize your experience based on preferences and behavior
 
 ## 4. Legal Basis for Processing (GDPR)
 
@@ -61,14 +77,19 @@ We process your personal data based on the following legal grounds:
 - **Contract Performance**: To provide our services under our Terms of Service
 - **Legitimate Interest**: To improve our services and ensure security
 - **Legal Obligation**: To comply with applicable laws and regulations
+- **Vital Interests**: To protect your safety and the safety of others
+- **Public Task**: When required for public interest or official authority
 
 ## 5. Information Sharing
 
 ### 5.1 With Other Users
-- Your profile information (username, avatar, location) is visible to other users
+- Your profile information (username, avatar, location, verification status) is visible to other users
 - Messages you send are shared with recipients
 - Listing information is publicly visible within the app
 - Your activity status may be visible to other users
+- Your ratings and reviews are visible to other users
+- Your leaderboard position and achievements may be visible to other users
+- Your location (if enabled) may be visible to nearby users
 
 ### 5.2 With Service Providers
 - **Cloud Hosting**: Supabase (database and authentication)
@@ -76,6 +97,10 @@ We process your personal data based on the following legal grounds:
 - **Error Monitoring**: Sentry (crash reporting)
 - **Payment Processing**: Third-party payment processors (if applicable)
 - **Communication**: Email and SMS service providers
+- **Identity Verification**: Third-party verification services
+- **Location Services**: Map and location data providers
+- **Content Delivery**: CDN providers for faster content delivery
+- **Security Services**: Fraud detection and security monitoring services
 
 ### 5.3 Legal Requirements
 We may disclose your information if:
@@ -83,9 +108,13 @@ We may disclose your information if:
 - To protect our rights, property, or safety
 - To investigate fraud or security issues
 - To comply with government requests
+- To respond to court orders or subpoenas
+- To protect the rights and safety of our users
+- To prevent or investigate illegal activities
+- To comply with regulatory requirements
 
 ### 5.4 Business Transfers
-In the event of a merger, acquisition, or sale of assets, your information may be transferred as part of the business transaction.
+In the event of a merger, acquisition, or sale of assets, your information may be transferred as part of the business transaction. We will ensure that any such transfer is subject to appropriate privacy protections and that you are notified of any material changes to this Privacy Policy.
 
 ## 6. Data Security
 
@@ -97,12 +126,21 @@ We implement appropriate technical and organizational security measures:
 - Regular security audits and vulnerability assessments
 - Secure data storage practices
 - Network security and firewalls
+- Multi-factor authentication where appropriate
+- Regular security updates and patches
+- Intrusion detection and prevention systems
+- Data backup and disaster recovery procedures
 
 ### 6.2 Organizational Measures
 - Employee training on data protection
 - Access controls and authentication
 - Regular security reviews
 - Incident response procedures
+- Data protection impact assessments
+- Privacy by design principles
+- Regular staff background checks
+- Confidentiality agreements with all staff
+- Data minimization practices
 
 ## 7. Your Rights (GDPR & CCPA Compliance)
 
@@ -130,7 +168,7 @@ To exercise any of these rights, contact us at:
 - **Phone**: +91 7306 51 9350
 - **Address**: Kozhikode, Kerala, India
 
-We will respond to your request within 30 days (GDPR) or 45 days (CCPA).
+We will respond to your request within 30 days (GDPR) or 45 days (CCPA). We may require verification of your identity before processing your request.
 
 ## 8. Data Retention
 
@@ -147,6 +185,10 @@ We retain your information for as long as necessary to:
 - **Communication Data**: Retained for 2 years after last activity
 - **Analytics Data**: Retained for 26 months
 - **Log Data**: Retained for 90 days
+- **Location Data**: Retained for 1 year after last use
+- **Verification Data**: Retained for 3 years after verification
+- **Support Data**: Retained for 2 years after resolution
+- **Marketing Data**: Retained until consent is withdrawn
 
 ## 9. International Data Transfers
 
@@ -156,11 +198,16 @@ Your information may be transferred to and processed in countries other than you
 - **Standard Contractual Clauses**: For EU to non-EU transfers
 - **Adequacy Decisions**: Where applicable
 - **Other Safeguards**: As required by applicable law
+- **Data Processing Agreements**: With all third-party service providers
+- **Privacy Shield**: Where applicable (for US transfers)
+- **Binding Corporate Rules**: For intra-group transfers
 
 ### 9.2 Transfer Locations
 - **Primary Processing**: United States
 - **Backup Storage**: Multiple locations for redundancy
 - **Analytics**: United States and other locations as specified by service providers
+- **Customer Support**: India and other locations as needed
+- **Development**: India and other locations as needed
 
 ## 10. Cookies and Tracking Technologies
 
@@ -169,17 +216,19 @@ Your information may be transferred to and processed in countries other than you
 - **Analytics Cookies**: Help us understand app usage
 - **Performance Cookies**: Monitor app performance
 - **Security Cookies**: Enhance security features
+- **Preference Cookies**: Remember your settings and preferences
+- **Marketing Cookies**: For targeted advertising (with consent)
 
 ### 10.2 Cookie Management
-You can control cookies through your device settings. However, disabling certain cookies may affect app functionality.
+You can control cookies through your device settings. However, disabling certain cookies may affect app functionality. We provide cookie preferences in our app settings where you can manage your cookie choices.
 
 ## 11. Children's Privacy
 
 ### 11.1 Age Restrictions
-Our app is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13.
+Our app is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are between 13 and 18 years old, you must have parental consent to use our services.
 
 ### 11.2 Parental Rights
-If you are a parent and believe your child has provided us with personal information, please contact us immediately.
+If you are a parent and believe your child has provided us with personal information, please contact us immediately. We will take steps to delete such information and prevent further collection.
 
 ## 12. Changes to This Policy
 
@@ -188,9 +237,11 @@ We may update this privacy policy from time to time. We will notify you of any m
 - Posting the new policy in the app
 - Sending you an email notification
 - Displaying an in-app notification
+- Updating the "Last Updated" date at the top of this policy
+- Providing notice through our official communication channels
 
 ### 12.2 Continued Use
-Your continued use of the app after changes become effective constitutes acceptance of the updated policy.
+Your continued use of the app after changes become effective constitutes acceptance of the updated policy. For material changes, we will provide at least 30 days' notice before the changes take effect.
 
 ## 13. Contact Information
 
@@ -201,25 +252,28 @@ For questions about this privacy policy or our data practices:
 **Phone**: +91 7306 51 9350
 **Address**: Kozhikode, Kerala, India
 
+**Business Hours**: Monday to Friday, 9:00 AM to 6:00 PM IST
+**Response Time**: We aim to respond to privacy inquiries within 48 hours
+
 ### 13.2 Data Protection Officer (GDPR)
 For EU users, you can contact our Data Protection Officer at:
-**Email**: dpo@geomart.com
+**Email**: risingsoup76@gmail.com
 
 ### 13.3 California Privacy Rights (CCPA)
 For California residents exercising CCPA rights:
-**Email**: california-privacy@geomart.com
+**Email**: risingsoup76@gmail.com
 
 ## 14. Additional Information
 
 ### 14.1 Third-Party Services
-Our app may contain links to third-party services. We are not responsible for the privacy practices of these services.
+Our app may contain links to third-party services. We are not responsible for the privacy practices of these services. We encourage you to review the privacy policies of any third-party services you use.
 
 ### 14.2 Data Breach Notification
-In the event of a data breach affecting your personal information, we will notify you and relevant authorities as required by law.
+In the event of a data breach affecting your personal information, we will notify you and relevant authorities as required by law. We will provide notice within 72 hours of becoming aware of the breach, where feasible.
 
 ### 14.3 Do Not Track
-Our app does not respond to "Do Not Track" signals as we do not track users across third-party websites.
+Our app does not respond to "Do Not Track" signals as we do not track users across third-party websites. However, we respect your privacy choices and provide controls within our app to manage your data preferences.
 
 ---
 
-*This privacy policy is effective as of January 24, 2025. For previous versions, please contact us.* 
+*This privacy policy is effective as of January 25, 2025. For previous versions, please contact us at risingsoup76@gmail.com.* 

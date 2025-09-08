@@ -41,20 +41,20 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="requests"
-          options={{
-            title: 'Requests',
-            tabBarIcon: ({ size, color }) => (
-              <ClipboardList size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="activity"
           options={{
             title: 'Activity',
             tabBarIcon: ({ size, color }) => (
               <Activity size={size} color={color} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="requests"
+          options={{
+            title: 'Requests',
+            tabBarIcon: ({ size, color }) => (
+              <ClipboardList size={size} color={color} />
             ),
           }}
         />

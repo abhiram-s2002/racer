@@ -57,6 +57,16 @@ const VerificationPricingCard: React.FC<VerificationPricingCardProps> = ({
 
       {/* Emotional Hook */}
       <Text style={styles.emotionalHook}>Build Trust, Get More Sales!</Text>
+      
+      {/* Additional Benefits Description */}
+      <View style={styles.extraBenefitsSection}>
+        <Text style={styles.extraBenefitsTitle}>🎁 Verified Members Get:</Text>
+        <Text style={styles.extraBenefitsText}>
+          • Extra Omni Points for every transaction{'\n'}
+          • Company shares allocation program{'\n'}
+          • Exclusive early access to new features
+        </Text>
+      </View>
 
       {/* Pricing Options */}
       <View style={styles.pricingContainer}>
@@ -94,10 +104,7 @@ const VerificationPricingCard: React.FC<VerificationPricingCardProps> = ({
           <Star size={14} color="#22C55E" />
           <Text style={styles.benefitText}>Build trust with buyers & sellers</Text>
         </View>
-        <View style={styles.benefitItem}>
-          <Star size={14} color="#22C55E" />
-          <Text style={styles.benefitText}>Get priority in search results</Text>
-        </View>
+        
         <View style={styles.benefitItem}>
           <Star size={14} color="#22C55E" />
           <Text style={styles.benefitText}>Verified badge on your profile</Text>
@@ -106,6 +113,7 @@ const VerificationPricingCard: React.FC<VerificationPricingCardProps> = ({
           <Star size={14} color="#22C55E" />
           <Text style={styles.benefitText}>Higher response rates</Text>
         </View>
+        
       </View>
 
       {/* Action Button */}
@@ -241,7 +249,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Bold',
     textAlign: 'center',
+    marginBottom: 12,
+  },
+  extraBenefitsSection: {
+    backgroundColor: '#F0FDF4',
+    padding: 12,
+    borderRadius: 10,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  extraBenefitsTitle: {
+    color: '#16A34A',
+    fontSize: 13,
+    fontFamily: 'Inter-Bold',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  extraBenefitsText: {
+    color: '#15803D',
+    fontSize: 11,
+    fontFamily: 'Inter-Medium',
+    textAlign: 'center',
+    lineHeight: 16,
   },
   pricingContainer: {
     marginBottom: 16,

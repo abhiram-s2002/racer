@@ -119,15 +119,33 @@ function SettingsScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // Delete user data from database
-        await supabase.from('users').delete().eq('id', user.id);
-        await supabase.auth.admin.deleteUser(user.id);
+        // Use the database function to comprehensively delete user data
+        const { error } = await supabase.rpc('delete_user_account', {
+          user_id: user.id
+        });
+
+        if (error) {
+          throw error;
+        }
+        
+        // Sign out the user (this will remove the auth session)
         await signOut();
+        
+        // Clear any cached data
+        try {
+          await supabase.auth.signOut({ scope: 'local' });
+        } catch (signOutError) {
+          console.log('Sign out error (expected):', signOutError);
+        }
+        
+        // Redirect to auth screen
         router.replace('/auth');
+        
+        Alert.alert('Success', 'Your account has been deleted successfully. You will need to create a new account if you want to use the app again.');
       }
     } catch (error) {
-      // Error deleting account
-      Alert.alert('Error', 'Failed to delete account');
+      console.error('Error deleting account:', error);
+      Alert.alert('Error', 'Failed to delete account. Please try again or contact support.');
     } finally {
       setDeleteModalVisible(false);
       setDeleteConfirmation('');
@@ -321,7 +339,7 @@ function SettingsScreen() {
             icon={<HelpCircle size={20} color="#64748B" />}
             title="Help & Support"
             subtitle="Get help and contact support"
-            onPress={() => Alert.alert('Help & Support', 'Contact us at support@omnimarketplace.com for assistance.')}
+            onPress={() => Alert.alert('Help & Support', 'Contact us at risingsoup76@gmail.com or call +91 7306 51 9350 for assistance.\n\nBusiness Hours: Monday to Friday, 9:00 AM to 6:00 PM IST')}
           />
           
           <SettingItem
@@ -342,7 +360,7 @@ function SettingsScreen() {
             icon={<Info size={20} color="#64748B" />}
             title="About"
             subtitle="App version and information"
-            onPress={() => Alert.alert('About', 'OmniMarketplace v1.0.0\n\nA marketplace for buying and selling items locally.')}
+            onPress={() => Alert.alert('About', 'GeoMart v1.0.0\n\nA comprehensive local marketplace platform for buying and selling items and services in your community.\n\nContact: risingsoup76@gmail.com\nPhone: +91 7306 51 9350\nLocation: Kozhikode, Kerala, India')}
           />
         </View>
 

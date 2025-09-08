@@ -17,11 +17,11 @@ function PrivacyScreen() {
   const router = useRouter();
 
   const handleContact = () => {
-    Linking.openURL('mailto:privacy@omnimart.com');
+    Linking.openURL('mailto:risingsoup76@gmail.com');
   };
 
   const handleCall = () => {
-    Linking.openURL('tel:+1234567890');
+    Linking.openURL('tel:+917306519350');
   };
 
   return (
@@ -46,10 +46,10 @@ function PrivacyScreen() {
           </View>
           <Text style={styles.sectionTitle}>Your Privacy Matters</Text>
           <Text style={styles.paragraph}>
-            At OmniMart, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, and safeguard your data.
+            At GeoMart, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, and safeguard your data.
           </Text>
           <Text style={styles.paragraph}>
-            Last updated: {new Date().toLocaleDateString()}
+            Last updated: January 25, 2025
           </Text>
         </View>
 
@@ -66,6 +66,8 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• Phone number and email address</Text>
             <Text style={styles.bullet}>• Profile pictures and avatars</Text>
             <Text style={styles.bullet}>• Location information (with your consent)</Text>
+            <Text style={styles.bullet}>• Verification data and documents</Text>
+            <Text style={styles.bullet}>• App settings and preferences</Text>
           </View>
 
           <Text style={styles.subsectionTitle}>Usage Information</Text>
@@ -77,6 +79,8 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• Search queries and browsing history</Text>
             <Text style={styles.bullet}>• Communication data (messages, pings)</Text>
             <Text style={styles.bullet}>• Transaction history and preferences</Text>
+            <Text style={styles.bullet}>• Ratings, reviews, and leaderboard participation</Text>
+            <Text style={styles.bullet}>• Security events and login attempts</Text>
           </View>
         </View>
 
@@ -93,6 +97,9 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• Send notifications and updates</Text>
             <Text style={styles.bullet}>• Prevent fraud and ensure security</Text>
             <Text style={styles.bullet}>• Analyze usage patterns and trends</Text>
+            <Text style={styles.bullet}>• Implement verification systems</Text>
+            <Text style={styles.bullet}>• Manage rewards and leaderboard systems</Text>
+            <Text style={styles.bullet}>• Provide customer support</Text>
           </View>
         </View>
 
@@ -107,6 +114,8 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• With service providers who help us operate the app</Text>
             <Text style={styles.bullet}>• When required by law or to protect our rights</Text>
             <Text style={styles.bullet}>• With your explicit consent</Text>
+            <Text style={styles.bullet}>• With identity verification services</Text>
+            <Text style={styles.bullet}>• With security and fraud detection services</Text>
           </View>
         </View>
 
@@ -124,6 +133,9 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• Secure authentication and access controls</Text>
             <Text style={styles.bullet}>• Regular security audits and updates</Text>
             <Text style={styles.bullet}>• Limited access to personal information</Text>
+            <Text style={styles.bullet}>• Multi-factor authentication where appropriate</Text>
+            <Text style={styles.bullet}>• Intrusion detection and prevention systems</Text>
+            <Text style={styles.bullet}>• Data backup and disaster recovery procedures</Text>
           </View>
         </View>
 
@@ -138,6 +150,9 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• Transaction data: 7 years for tax purposes</Text>
             <Text style={styles.bullet}>• Communication data: Until account deletion</Text>
             <Text style={styles.bullet}>• Usage analytics: 2 years (anonymized)</Text>
+            <Text style={styles.bullet}>• Location data: 1 year after last use</Text>
+            <Text style={styles.bullet}>• Verification data: 3 years after verification</Text>
+            <Text style={styles.bullet}>• Support data: 2 years after resolution</Text>
           </View>
         </View>
 
@@ -157,6 +172,9 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• Export your data</Text>
             <Text style={styles.bullet}>• Opt out of marketing communications</Text>
             <Text style={styles.bullet}>• Restrict data processing</Text>
+            <Text style={styles.bullet}>• Object to processing</Text>
+            <Text style={styles.bullet}>• Withdraw consent at any time</Text>
+            <Text style={styles.bullet}>• Lodge complaints with supervisory authorities</Text>
           </View>
         </View>
 
@@ -171,9 +189,11 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• Analyze app usage and performance</Text>
             <Text style={styles.bullet}>• Provide personalized content</Text>
             <Text style={styles.bullet}>• Ensure security and prevent fraud</Text>
+            <Text style={styles.bullet}>• Enable essential app functionality</Text>
+            <Text style={styles.bullet}>• Monitor app performance</Text>
           </View>
           <Text style={styles.paragraph}>
-            You can control cookie settings through your device settings.
+            You can control cookie settings through your device settings. We provide cookie preferences in our app settings.
           </Text>
         </View>
 
@@ -188,6 +208,9 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• Analytics services (Google Analytics)</Text>
             <Text style={styles.bullet}>• Cloud storage providers</Text>
             <Text style={styles.bullet}>• Communication services</Text>
+            <Text style={styles.bullet}>• Identity verification services</Text>
+            <Text style={styles.bullet}>• Location services and map providers</Text>
+            <Text style={styles.bullet}>• Security and fraud detection services</Text>
           </View>
           <Text style={styles.paragraph}>
             These services have their own privacy policies, which we encourage you to review.
@@ -198,7 +221,10 @@ function PrivacyScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>9. Children&apos;s Privacy</Text>
           <Text style={styles.paragraph}>
-            OmniMart is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you believe we have collected information from a child under 13, please contact us immediately.
+            GeoMart is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are between 13 and 18 years old, you must have parental consent to use our services.
+          </Text>
+          <Text style={styles.paragraph}>
+            If you believe we have collected information from a child under 13, please contact us immediately. We will take steps to delete such information and prevent further collection.
           </Text>
         </View>
 
@@ -208,6 +234,9 @@ function PrivacyScreen() {
           <Text style={styles.paragraph}>
             Your information may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place to protect your data in accordance with this Privacy Policy and applicable laws.
           </Text>
+          <Text style={styles.paragraph}>
+            We use Standard Contractual Clauses for EU to non-EU transfers and maintain data processing agreements with all third-party service providers.
+          </Text>
         </View>
 
         {/* Changes to Privacy Policy */}
@@ -215,6 +244,9 @@ function PrivacyScreen() {
           <Text style={styles.sectionTitle}>11. Changes to This Policy</Text>
           <Text style={styles.paragraph}>
             We may update this Privacy Policy from time to time. We will notify you of significant changes through the app or email. Your continued use of the service constitutes acceptance of the updated policy.
+          </Text>
+          <Text style={styles.paragraph}>
+            For material changes, we will provide at least 30 days&apos; notice before the changes take effect.
           </Text>
         </View>
 
@@ -230,23 +262,29 @@ function PrivacyScreen() {
           
           <TouchableOpacity style={styles.contactItem} onPress={handleContact}>
             <Mail size={16} color="#22C55E" />
-            <Text style={styles.contactText}>privacy@omnimart.com</Text>
+            <Text style={styles.contactText}>risingsoup76@gmail.com</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.contactItem} onPress={handleCall}>
             <Phone size={16} color="#22C55E" />
-            <Text style={styles.contactText}>+1 (234) 567-8900</Text>
+            <Text style={styles.contactText}>+91 7306 51 9350</Text>
           </TouchableOpacity>
           
           <Text style={styles.paragraph}>
-            Data Protection Officer: privacy@omnimart.com
+            Business Hours: Monday to Friday, 9:00 AM to 6:00 PM IST
+          </Text>
+          <Text style={styles.paragraph}>
+            Response Time: We aim to respond to privacy inquiries within 48 hours
+          </Text>
+          <Text style={styles.paragraph}>
+            Data Protection Officer: risingsoup76@gmail.com
           </Text>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            © {new Date().getFullYear()} OmniMart. All rights reserved.
+            © {new Date().getFullYear()} GeoMart. All rights reserved.
           </Text>
         </View>
       </ScrollView>

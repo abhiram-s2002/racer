@@ -17,11 +17,11 @@ function TermsScreen() {
   const router = useRouter();
 
   const handleContact = () => {
-    Linking.openURL('mailto:support@omnimart.com');
+    Linking.openURL('mailto:risingsoup76@gmail.com');
   };
 
   const handleCall = () => {
-    Linking.openURL('tel:+1234567890');
+    Linking.openURL('tel:+917306519350');
   };
 
   return (
@@ -41,12 +41,12 @@ function TermsScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Introduction */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Welcome to OmniMart</Text>
+          <Text style={styles.sectionTitle}>Welcome to GeoMart</Text>
           <Text style={styles.paragraph}>
-            These Terms of Service (&quot;Terms&quot;) govern your use of the OmniMart mobile application and services. By using OmniMart, you agree to these Terms.
+            These Terms of Service (&quot;Terms&quot;) govern your use of the GeoMart mobile application and services. By using GeoMart, you agree to these Terms.
           </Text>
           <Text style={styles.paragraph}>
-            Last updated: {new Date().toLocaleDateString()}
+            Last updated: January 25, 2025
           </Text>
         </View>
 
@@ -54,7 +54,7 @@ function TermsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>1. Acceptance of Terms</Text>
           <Text style={styles.paragraph}>
-            By downloading, installing, or using the OmniMart app, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the app.
+            By downloading, installing, or using the GeoMart app, you agree to be bound by these Terms. If you do not agree to these Terms, do not use the app.
           </Text>
         </View>
 
@@ -62,13 +62,15 @@ function TermsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>2. Service Description</Text>
           <Text style={styles.paragraph}>
-            OmniMart is a local marketplace platform that connects buyers and sellers in your community. Users can:
+            GeoMart is a comprehensive local marketplace platform that connects buyers and sellers in your community. Users can:
           </Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• List items for sale</Text>
-            <Text style={styles.bullet}>• Browse and purchase items</Text>
-            <Text style={styles.bullet}>• Communicate with other users</Text>
-            <Text style={styles.bullet}>• Earn rewards through referrals</Text>
+            <Text style={styles.bullet}>• Create, manage, and browse listings for items and services</Text>
+            <Text style={styles.bullet}>• Communicate with other users through secure messaging and pings</Text>
+            <Text style={styles.bullet}>• Access location-based features and sorting</Text>
+            <Text style={styles.bullet}>• Earn rewards, achievements, and leaderboard recognition</Text>
+            <Text style={styles.bullet}>• Utilize verification systems for enhanced trust and safety</Text>
+            <Text style={styles.bullet}>• Participate in community ratings and feedback systems</Text>
           </View>
         </View>
 
@@ -80,6 +82,9 @@ function TermsScreen() {
           </Text>
           <Text style={styles.paragraph}>
             You must provide accurate and complete information when creating your account. You may not use another person&apos;s account or share your account credentials.
+          </Text>
+          <Text style={styles.paragraph}>
+            You must be at least 18 years old or have parental consent to use our services. You must verify your phone number and email address.
           </Text>
         </View>
 
@@ -96,6 +101,9 @@ function TermsScreen() {
             <Text style={styles.bullet}>• Use the service for commercial purposes without permission</Text>
             <Text style={styles.bullet}>• Attempt to gain unauthorized access to the service</Text>
             <Text style={styles.bullet}>• Violate any applicable laws or regulations</Text>
+            <Text style={styles.bullet}>• Create fake accounts or use multiple accounts</Text>
+            <Text style={styles.bullet}>• Manipulate ratings, reviews, or feedback systems</Text>
+            <Text style={styles.bullet}>• Share account credentials with others</Text>
           </View>
         </View>
 
@@ -110,9 +118,12 @@ function TermsScreen() {
             <Text style={styles.bullet}>• Set fair and reasonable prices</Text>
             <Text style={styles.bullet}>• Respond promptly to buyer inquiries</Text>
             <Text style={styles.bullet}>• Complete transactions in good faith</Text>
+            <Text style={styles.bullet}>• Include clear, high-quality images when applicable</Text>
+            <Text style={styles.bullet}>• Comply with local and international trade regulations</Text>
+            <Text style={styles.bullet}>• Not contain copyrighted material without permission</Text>
           </View>
           <Text style={styles.paragraph}>
-            OmniMart reserves the right to remove listings that violate these guidelines.
+            GeoMart reserves the right to remove listings that violate these guidelines.
           </Text>
         </View>
 
@@ -120,13 +131,16 @@ function TermsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>6. Transactions</Text>
           <Text style={styles.paragraph}>
-            OmniMart facilitates connections between buyers and sellers but is not a party to transactions. Users are responsible for:
+            GeoMart facilitates connections between buyers and sellers but is not a party to transactions. Users are responsible for:
           </Text>
           <View style={styles.bulletList}>
             <Text style={styles.bullet}>• Negotiating terms and conditions</Text>
             <Text style={styles.bullet}>• Arranging payment and delivery</Text>
             <Text style={styles.bullet}>• Resolving disputes between parties</Text>
             <Text style={styles.bullet}>• Complying with local laws and regulations</Text>
+            <Text style={styles.bullet}>• All tax obligations related to transactions</Text>
+            <Text style={styles.bullet}>• Ensuring items comply with safety standards</Text>
+            <Text style={styles.bullet}>• Verifying the legal right to sell items</Text>
           </View>
         </View>
 
@@ -136,13 +150,19 @@ function TermsScreen() {
           <Text style={styles.paragraph}>
             Your privacy is important to us. Please review our Privacy Policy to understand how we collect, use, and protect your information.
           </Text>
+          <Text style={styles.paragraph}>
+            We process your data based on legitimate interests, contractual necessity, and legal obligations. You have rights regarding your personal data including access, correction, deletion, and portability.
+          </Text>
         </View>
 
         {/* Intellectual Property */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>8. Intellectual Property</Text>
           <Text style={styles.paragraph}>
-            OmniMart and its content are protected by copyright, trademark, and other intellectual property laws. You may not copy, modify, or distribute our content without permission.
+            GeoMart and its content are protected by copyright, trademark, and other intellectual property laws. You may not copy, modify, or distribute our content without permission.
+          </Text>
+          <Text style={styles.paragraph}>
+            You retain ownership of content you create and post, but grant us a worldwide, non-exclusive, royalty-free license to use your content to provide and improve our services.
           </Text>
         </View>
 
@@ -150,13 +170,15 @@ function TermsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>9. Limitation of Liability</Text>
           <Text style={styles.paragraph}>
-            OmniMart is provided &quot;as is&quot; without warranties. We are not liable for any damages arising from your use of the service, including but not limited to:
+            GeoMart is provided &quot;as is&quot; without warranties. We are not liable for any damages arising from your use of the service, including but not limited to:
           </Text>
           <View style={styles.bulletList}>
             <Text style={styles.bullet}>• Transaction disputes between users</Text>
             <Text style={styles.bullet}>• Loss of data or information</Text>
             <Text style={styles.bullet}>• Service interruptions or errors</Text>
             <Text style={styles.bullet}>• Third-party actions or content</Text>
+            <Text style={styles.bullet}>• Any loss of profits, business, or opportunities</Text>
+            <Text style={styles.bullet}>• Damages arising from your violation of these Terms</Text>
           </View>
         </View>
 
@@ -166,6 +188,9 @@ function TermsScreen() {
           <Text style={styles.paragraph}>
             We may terminate or suspend your account at any time for violations of these Terms. You may also delete your account at any time.
           </Text>
+          <Text style={styles.paragraph}>
+            Upon termination, your access to the service will cease, your content may be removed, and we may retain certain data as required by law.
+          </Text>
         </View>
 
         {/* Changes to Terms */}
@@ -174,13 +199,16 @@ function TermsScreen() {
           <Text style={styles.paragraph}>
             We may update these Terms from time to time. We will notify you of significant changes through the app or email. Continued use of the service constitutes acceptance of updated Terms.
           </Text>
+          <Text style={styles.paragraph}>
+            For material changes, we will provide at least 30 days&apos; notice before the changes take effect.
+          </Text>
         </View>
 
         {/* Governing Law */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>12. Governing Law</Text>
           <Text style={styles.paragraph}>
-            These Terms are governed by the laws of [Your Jurisdiction]. Any disputes will be resolved in the courts of [Your Jurisdiction].
+            These Terms are governed by the laws of India. Any disputes will be resolved in the courts of Kozhikode, Kerala, India.
           </Text>
         </View>
 
@@ -193,24 +221,28 @@ function TermsScreen() {
           
           <TouchableOpacity style={styles.contactItem} onPress={handleContact}>
             <Mail size={16} color="#22C55E" />
-            <Text style={styles.contactText}>support@omnimart.com</Text>
+            <Text style={styles.contactText}>risingsoup76@gmail.com</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.contactItem} onPress={handleCall}>
             <Phone size={16} color="#22C55E" />
-            <Text style={styles.contactText}>+1 (234) 567-8900</Text>
+            <Text style={styles.contactText}>+91 7306 51 9350</Text>
           </TouchableOpacity>
           
           <View style={styles.contactItem}>
             <MapPin size={16} color="#22C55E" />
-            <Text style={styles.contactText}>123 Market Street, City, State 12345</Text>
+            <Text style={styles.contactText}>Kozhikode, Kerala, India</Text>
           </View>
+          
+          <Text style={styles.paragraph}>
+            Business Hours: Monday to Friday, 9:00 AM to 6:00 PM IST
+          </Text>
         </View>
 
         {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            © {new Date().getFullYear()} OmniMart. All rights reserved.
+            © {new Date().getFullYear()} GeoMart. All rights reserved.
           </Text>
         </View>
       </ScrollView>

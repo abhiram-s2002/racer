@@ -48,8 +48,7 @@ import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { trackScreenView, trackSearch, trackFilterUsed, trackListingView } from '@/utils/googleAnalytics';
-import { useLocationCheck } from '@/hooks/useLocationCheck';
-import LocationCheckPopup from '@/components/LocationCheckPopup';
+// Location check is handled globally in _layout.tsx
 import RatingService from '@/utils/ratingService';
 import VerificationBadge from '@/components/VerificationBadge';
 import { isUserVerified } from '@/utils/verificationUtils';
@@ -109,8 +108,7 @@ function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const { pingListingId } = useLocalSearchParams();
 
-  // Location check popup
-  const { showPopup, hidePopup, retryCheck } = useLocationCheck();
+  // Location check is handled globally in _layout.tsx
 
   // Ping limits for the selected listing
   const { limitInfo, loading: limitLoading, getPingLimitMessage, getPingLimitColor, checkPingLimit, recordPing } = usePingLimits(username);
@@ -1325,12 +1323,7 @@ function HomeScreen() {
         onSubmit={handleSubmitFeedback}
       />
 
-      {/* Location Check Popup */}
-      <LocationCheckPopup
-        visible={showPopup}
-        onClose={hidePopup}
-        onRetry={retryCheck}
-      />
+      {/* Location Check Popup is handled globally in _layout.tsx */}
 
 
     </View>

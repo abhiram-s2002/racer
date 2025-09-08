@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import {
   View,
   Text,
@@ -16,65 +16,90 @@ interface LocationCheckPopupProps {
   visible: boolean;
   onClose: () => void;
   onRetry: () => void;
+  locationStatus?: {
+    gpsEnabled: boolean | null;
+    permissionGranted: boolean | null;
+  };
+  isChecking?: boolean;
 }
 
-export default function LocationCheckPopup({ 
+const LocationCheckPopup = memo(function LocationCheckPopup({ 
   visible, 
   onClose, 
-  onRetry 
+  onRetry,
+  locationStatus = { gpsEnabled: null, permissionGranted: null },
+  isChecking = false
 }: LocationCheckPopupProps) {
-  const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined' | null>(null);
-  const [gpsEnabled, setGpsEnabled] = useState<boolean | null>(null);
-  const [checking, setChecking] = useState(false);
+  // Use data from hook instead of duplicating API calls
+  const gpsEnabled = locationStatus.gpsEnabled;
+  const permissionStatus = locationStatus.permissionGranted ? 'granted' : 'denied';
+  const checking = isChecking;
 
-  useEffect(() => {
-    if (visible) {
-      checkLocationStatus();
-    }
-  }, [visible]);
-
-  const checkLocationStatus = async () => {
-    setChecking(true);
+  const openLocationSettings = async () => {
     try {
-      // Check GPS status
-      const locationEnabled = await Location.hasServicesEnabledAsync();
-      setGpsEnabled(locationEnabled);
-
-      // Check permission status
-      const { status } = await Location.getForegroundPermissionsAsync();
-      setPermissionStatus(status);
+      if (Platform.OS === 'ios') {
+        // iOS: Open app-specific settings
+        const url = 'app-settings:';
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+        } else {
+          // Fallback to general settings
+          await Linking.openSettings();
+        }
+      } else {
+        // Android: Open app-specific settings
+        await Linking.openSettings();
+      }
     } catch (error) {
-      // Error checking location status
-      setGpsEnabled(false);
-      setPermissionStatus('denied');
-    } finally {
-      setChecking(false);
-    }
-  };
-
-  const openLocationSettings = () => {
-    if (Platform.OS === 'ios') {
-      Linking.openURL('app-settings:');
-    } else {
+      console.error('Error opening app settings:', error);
+      // Fallback to general settings
       Linking.openSettings();
     }
   };
 
-  const openGPSSettings = () => {
-    if (Platform.OS === 'ios') {
-      Linking.openURL('App-Prefs:Privacy&path=LOCATION');
-    } else {
+  const openGPSSettings = async () => {
+    try {
+      if (Platform.OS === 'ios') {
+        // iOS: Open Location Services settings
+        const url = 'App-Prefs:Privacy&path=LOCATION';
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+        } else {
+          // Fallback to general settings
+          await Linking.openSettings();
+        }
+      } else {
+        // Android: Open Location settings directly
+        const url = 'android.settings.LOCATION_SOURCE_SETTINGS';
+        const canOpen = await Linking.canOpenURL(url);
+        if (canOpen) {
+          await Linking.openURL(url);
+        } else {
+          // Fallback to general settings
+          await Linking.openSettings();
+        }
+      }
+    } catch (error) {
+      console.error('Error opening GPS settings:', error);
+      // Fallback to general settings
       Linking.openSettings();
     }
   };
 
-  const openPhoneLocationSettings = () => {
-    if (Platform.OS === 'ios') {
-      // Open iOS Location Services settings
-      Linking.openURL('App-Prefs:Privacy&path=LOCATION');
-    } else {
-      // Open Android Location settings
-      Linking.openURL('android.settings.LOCATION_SOURCE_SETTINGS');
+  const triggerSystemPrompt = async () => {
+    try {
+      // This will trigger the system location permission prompt
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (status === 'granted') {
+        // Permission granted, close popup
+        onClose();
+      }
+      // If denied, popup stays open
+    } catch (error) {
+      console.error('Error requesting location permission:', error);
     }
   };
 
@@ -84,15 +109,15 @@ export default function LocationCheckPopup({
 
   const getStatusMessage = () => {
     if (checking) {
-      return 'Checking location status...';
+      return 'Checking location access...';
     }
 
     if (!gpsEnabled && permissionStatus !== 'granted') {
-      return 'Location permission and GPS are required for this app to work properly.';
+      return 'We need location access to show you nearby items and help you find what you\'re looking for.';
     } else if (!gpsEnabled) {
-      return 'GPS is turned off. Please enable location services to use this app.';
+      return 'Location services are turned off. Enable them to discover items near you.';
     } else if (permissionStatus !== 'granted') {
-      return 'Location permission is required for this app to work properly.';
+      return 'Allow location access to see nearby items and connect with local sellers.';
     }
 
     return '';
@@ -101,64 +126,27 @@ export default function LocationCheckPopup({
   const getActionButton = () => {
     if (checking) return null;
 
-    if (!gpsEnabled && permissionStatus !== 'granted') {
+    // Show system prompt button for permission issues
+    if (permissionStatus !== 'granted') {
       return (
-        <>
-          <View style={styles.buttonRow}>
-            <TouchableOpacity
-              style={[styles.button, styles.primaryButton]}
-              onPress={openLocationSettings}
-            >
-              <Text style={styles.buttonText}>Fix Permission</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.secondaryButton]}
-              onPress={openGPSSettings}
-            >
-              <Text style={styles.buttonText}>Enable GPS</Text>
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            style={[styles.button, styles.tertiaryButton, styles.fullWidthButton]}
-            onPress={openPhoneLocationSettings}
-          >
-            <Text style={styles.buttonText}>Open Location Settings</Text>
-          </TouchableOpacity>
-        </>
+        <TouchableOpacity
+          style={[styles.button, styles.primaryButton, styles.fullWidthButton]}
+          onPress={triggerSystemPrompt}
+        >
+          <Text style={styles.buttonText}>Allow Location Access</Text>
+        </TouchableOpacity>
       );
-    } else if (!gpsEnabled) {
+    }
+
+    // Show GPS settings button for GPS issues
+    if (!gpsEnabled) {
       return (
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.button, styles.primaryButton]}
-            onPress={openGPSSettings}
-          >
-            <Text style={styles.buttonText}>Enable GPS</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.tertiaryButton]}
-            onPress={openPhoneLocationSettings}
-          >
-            <Text style={styles.buttonText}>Location Settings</Text>
-          </TouchableOpacity>
-        </View>
-      );
-    } else if (permissionStatus !== 'granted') {
-      return (
-        <>
-          <TouchableOpacity
-            style={[styles.button, styles.primaryButton, styles.fullWidthButton]}
-            onPress={openLocationSettings}
-          >
-            <Text style={styles.buttonText}>Grant Permission</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.tertiaryButton, styles.fullWidthButton]}
-            onPress={openPhoneLocationSettings}
-          >
-            <Text style={styles.buttonText}>Open Location Settings</Text>
-          </TouchableOpacity>
-        </>
+        <TouchableOpacity
+          style={[styles.button, styles.primaryButton, styles.fullWidthButton]}
+          onPress={openGPSSettings}
+        >
+          <Text style={styles.buttonText}>Enable Location Services</Text>
+        </TouchableOpacity>
       );
     }
 
@@ -186,12 +174,12 @@ export default function LocationCheckPopup({
               <Ionicons 
                 name="location" 
                 size={32} 
-                color={gpsEnabled && permissionStatus === 'granted' ? '#22C55E' : '#EF4444'} 
+                color="#EF4444"
               />
             </View>
-            <Text style={styles.title}>Location Required</Text>
+            <Text style={styles.title}>Location Access</Text>
             <Text style={styles.subtitle}>
-              This app needs location access to function properly
+              Help us show you the best nearby items
             </Text>
           </View>
 
@@ -226,27 +214,18 @@ export default function LocationCheckPopup({
           {/* Action Buttons */}
           {getActionButton()}
 
-          {/* Footer Buttons */}
-          <View style={styles.footerButtons}>
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={handleRetry}
-            >
-              <Text style={styles.retryButtonText}>Check Again</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={onClose}
-            >
-              <Text style={styles.closeButtonText}>Close</Text>
-            </TouchableOpacity>
-          </View>
+          {/* Check Again Button */}
+          <TouchableOpacity
+            style={styles.checkAgainButton}
+            onPress={handleRetry}
+          >
+            <Text style={styles.checkAgainButtonText}>Check Again</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </Modal>
   );
-}
+});
 
 const styles = StyleSheet.create({
   overlay: {
@@ -320,15 +299,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     paddingHorizontal: 16,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    marginBottom: 24,
-    gap: 16,
-  },
   button: {
-    flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -338,12 +309,6 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: '#22C55E',
   },
-  secondaryButton: {
-    backgroundColor: '#3B82F6',
-  },
-  tertiaryButton: {
-    backgroundColor: '#8B5CF6',
-  },
   fullWidthButton: {
     marginTop: 12,
   },
@@ -352,41 +317,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
   },
-  footerButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    gap: 16,
-    marginTop: 8,
-  },
-  retryButton: {
-    flex: 1,
+  checkAgainButton: {
+    marginTop: 16,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 24,
     borderRadius: 8,
-
-    backgroundColor: '#F59E0B',
-    alignItems: 'center',
-  },
-  retryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
-  },
-  closeButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#D1D5DB',
     alignItems: 'center',
   },
-  closeButtonText: {
+  checkAgainButtonText: {
     color: '#6B7280',
     fontSize: 14,
     fontFamily: 'Inter-Medium',
   },
 });
+
+export default LocationCheckPopup;
