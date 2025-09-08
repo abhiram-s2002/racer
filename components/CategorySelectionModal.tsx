@@ -9,7 +9,18 @@ import {
   Dimensions,
 } from 'react-native';
 import { X, ShoppingCart, Apple, UtensilsCrossed, Wrench, Palette, Home, Car, MoreHorizontal } from 'lucide-react-native';
-import { mockCategories } from '@/utils/mockData';
+// Categories moved to inline definition for better performance
+const categories = [
+  { id: 'all', name: 'All Categories' },
+  { id: 'groceries', name: 'Groceries' },
+  { id: 'fruits', name: 'Fruits' },
+  { id: 'food', name: 'Food' },
+  { id: 'services', name: 'Services' },
+  { id: 'art', name: 'Art' },
+  { id: 'rental', name: 'Rental' },
+  { id: 'vehicles', name: 'Vehicles' },
+  { id: 'others', name: 'Others' },
+];
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 const { width } = Dimensions.get('window');

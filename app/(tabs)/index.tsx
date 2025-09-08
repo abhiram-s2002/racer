@@ -19,7 +19,19 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, MapPin, Phone, MessageCircle, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Check, Home, Star, Clock, Tag, Car, MoreHorizontal } from 'lucide-react-native';
 import { Plus } from 'lucide-react-native';
-import { mockCategories } from '@/utils/mockData';
+// Categories moved to inline definition for better performance
+const categories = [
+  { id: 'all', name: 'All Categories' },
+  { id: 'groceries', name: 'Groceries' },
+  { id: 'fruits', name: 'Fruits' },
+  { id: 'food', name: 'Food' },
+  { id: 'services', name: 'Services' },
+  { id: 'art', name: 'Art' },
+  { id: 'rental', name: 'Rental' },
+  { id: 'vehicles', name: 'Vehicles' },
+  { id: 'others', name: 'Others' },
+];
+
 import AddListingModal from '@/components/AddListingModal';
 import PingTemplateSelector from '@/components/PingTemplateSelector';
 import FeedbackModal from '@/components/FeedbackModal';
@@ -709,7 +721,7 @@ function HomeScreen() {
                   <View style={styles.categoryBadge}>
                     <Tag size={10} color="#64748B" />
                                       <Text style={styles.listingCategoryText}>
-                    {mockCategories.find(cat => cat.id === item.category)?.name || item.category || 'General'}
+                    {categories.find(cat => cat.id === item.category)?.name || item.category || 'General'}
                   </Text>
                   </View>
                   {item.tags && item.tags.length > 0 && (
@@ -973,7 +985,7 @@ function HomeScreen() {
 
   // Memoized values for FlatList props
   const sectionTitle = useMemo(() => 
-    selectedCategory === 'all' ? 'All Listings' : `${mockCategories.find(c => c.id === selectedCategory)?.name} Listings`
+    selectedCategory === 'all' ? 'All Listings' : `${categories.find(c => c.id === selectedCategory)?.name} Listings`
   , [selectedCategory]);
 
   const emptyStateText = useMemo(() => 
@@ -1237,7 +1249,7 @@ function HomeScreen() {
       {/* Categories */}
       <View style={styles.categoriesSection}>
         <FlatList
-          data={mockCategories}
+          data={categories}
           renderItem={renderCategory}
           keyExtractor={categoryKeyExtractor}
           horizontal

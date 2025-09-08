@@ -32,7 +32,18 @@ import {
   MoreHorizontal,
   Image as ImageIcon
 } from 'lucide-react-native';
-import { mockCategories } from '@/utils/mockData';
+// Categories moved to inline definition for better performance
+const categories = [
+  { id: 'all', name: 'All Categories' },
+  { id: 'groceries', name: 'Groceries' },
+  { id: 'fruits', name: 'Fruits' },
+  { id: 'food', name: 'Food' },
+  { id: 'services', name: 'Services' },
+  { id: 'art', name: 'Art' },
+  { id: 'rental', name: 'Rental' },
+  { id: 'vehicles', name: 'Vehicles' },
+  { id: 'others', name: 'Others' },
+];
 import { useLocation } from '@/hooks/useLocation';
 import { supabase } from '@/utils/supabaseClient';
 import { withErrorHandling } from '@/utils/errorHandler';
@@ -507,7 +518,7 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
               style={styles.categoryScrollContainer}
               contentContainerStyle={styles.categoryScrollContent}
             >
-              {mockCategories.filter(c => c.id !== 'all').map((category) => {
+              {categories.filter(c => c.id !== 'all').map((category) => {
                 const categoryIcons = {
                   groceries: ShoppingCart,
                   fruits: Apple,

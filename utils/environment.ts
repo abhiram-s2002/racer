@@ -335,7 +335,7 @@ export class Environment {
         imageTtl: this.imageCacheTtl,
       },
       development: {
-        mockData: this.enableMockData,
+        // mockData removed for production optimization
         debugMode: this.debugMode,
         devServerUrl: this.devServerUrl,
       },

@@ -6,7 +6,18 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useListings } from '@/hooks/useListings';
-import { mockCategories } from '@/utils/mockData';
+// Categories moved to inline definition for better performance
+const categories = [
+  { id: 'all', name: 'All Categories' },
+  { id: 'groceries', name: 'Groceries' },
+  { id: 'fruits', name: 'Fruits' },
+  { id: 'food', name: 'Food' },
+  { id: 'services', name: 'Services' },
+  { id: 'art', name: 'Art' },
+  { id: 'rental', name: 'Rental' },
+  { id: 'vehicles', name: 'Vehicles' },
+  { id: 'others', name: 'Others' },
+];
 import LocationFilterModal from '@/components/LocationFilterModal';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import MapHeader from '@/components/MapHeader';
@@ -243,7 +254,7 @@ function MapViewScreen() {
               {selectedCategory.length > 0 && (
                 <Text style={styles.categorySubtitle}>
                   {'\n'}Categories: {selectedCategory.map(cat => 
-                    mockCategories.find(c => c.id === cat)?.name || cat
+                    categories.find(c => c.id === cat)?.name || cat
                   ).join(', ')}
                 </Text>
               )}
@@ -269,7 +280,7 @@ function MapViewScreen() {
                 <Text style={styles.listingTitle}>{listing.title}</Text>
                 <Text style={styles.listingPrice}>${listing.price}</Text>
                 <Text style={styles.listingCategory}>
-                  {mockCategories.find(c => c.id === listing.category)?.name || listing.category}
+                  {categories.find(c => c.id === listing.category)?.name || listing.category}
                 </Text>
               </TouchableOpacity>
             ))}

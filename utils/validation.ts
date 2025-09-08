@@ -4,7 +4,18 @@
  * Provides security and data quality validation for all user inputs
  */
 
-import { mockCategories } from './mockData';
+// Categories moved to inline definition for better performance
+const categories = [
+  { id: 'all', name: 'All Categories' },
+  { id: 'groceries', name: 'Groceries' },
+  { id: 'fruits', name: 'Fruits' },
+  { id: 'food', name: 'Food' },
+  { id: 'services', name: 'Services' },
+  { id: 'art', name: 'Art' },
+  { id: 'rental', name: 'Rental' },
+  { id: 'vehicles', name: 'Vehicles' },
+  { id: 'others', name: 'Others' },
+];
 
 export interface ValidationResult {
   isValid: boolean;
@@ -274,7 +285,7 @@ export const validateSearchQuery = (query: string): ValidationResult => {
  * Validate category selection
  */
 export const validateCategory = (category: string): ValidationResult => {
-  const validCategories = mockCategories
+  const validCategories = categories
     .map(cat => cat.id)
     .filter(id => id !== 'all'); // Exclude 'all' if needed
 

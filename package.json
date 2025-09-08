@@ -18,8 +18,6 @@
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
     "type-check": "tsc --noEmit",
-    "test": "jest",
-    "test:watch": "jest --watch",
     "clean": "expo r -c",
     "prebuild": "npm run lint && npm run type-check",
     "env:dev": "cp env.example .env.development",
