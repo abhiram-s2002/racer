@@ -90,10 +90,39 @@ export function useListings() {
 
         if (error) {
           // Fallback to direct query on error
-          const { data: fallbackData, error: fallbackError } = await supabase
+          // First get hidden listing IDs and blocked user IDs
+          const { data: { user } } = await supabase.auth.getUser();
+          let hiddenListingIds: string[] = [];
+          let blockedUserIds: string[] = [];
+          
+          if (user) {
+            // Get hidden listing IDs
+            const { data: hiddenData } = await supabase
+              .rpc('get_hidden_listing_ids', { user_id: user.id });
+            hiddenListingIds = (hiddenData || []).map((item: any) => item.listing_id);
+            
+            // Get blocked user IDs
+            const { data: blockedData } = await supabase
+              .rpc('get_blocked_user_ids', { user_id: user.id });
+            blockedUserIds = (blockedData || []).map((item: any) => item.blocked_id);
+          }
+          
+          let query = supabase
             .from('listings')
             .select('id, username, title, description, price, price_unit, category, thumbnail_images, preview_images, image_folder_path, latitude, longitude, created_at, updated_at, is_active')
-            .eq('is_active', true)
+            .eq('is_active', true);
+          
+          // Filter out hidden listings
+          if (hiddenListingIds.length > 0) {
+            query = query.not('id', 'in', `(${hiddenListingIds.join(',')})`);
+          }
+          
+          // Filter out blocked users' listings
+          if (blockedUserIds.length > 0) {
+            query = query.not('username', 'in', `(SELECT username FROM users WHERE id IN (${blockedUserIds.join(',')}))`);
+          }
+          
+          const { data: fallbackData, error: fallbackError } = await query
             .order('created_at', { ascending: false })
             .range(
               pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE,
@@ -124,10 +153,47 @@ export function useListings() {
 
         const allData = data || [];
         
-        // Slice the data for the current page
+        // Filter out hidden listings and blocked users from the results
+        const { data: { user } } = await supabase.auth.getUser();
+        let filteredData = allData;
+        let hiddenListingIds: string[] = [];
+        let blockedUserIds: string[] = [];
+        
+        if (user) {
+            // Get hidden listing IDs
+            const { data: hiddenData } = await supabase
+              .rpc('get_hidden_listing_ids', { user_id: user.id });
+            hiddenListingIds = (hiddenData || []).map((item: any) => item.listing_id);
+          
+            // Get blocked user IDs
+            const { data: blockedData } = await supabase
+              .rpc('get_blocked_user_ids', { user_id: user.id });
+            blockedUserIds = (blockedData || []).map((item: any) => item.blocked_id);
+          
+          // Filter out hidden listings
+          if (hiddenListingIds.length > 0) {
+            filteredData = filteredData.filter((listing: any) => !hiddenListingIds.includes(listing.id));
+          }
+          
+          // Filter out blocked users' listings
+          if (blockedUserIds.length > 0) {
+            // Get usernames of blocked users
+            const { data: blockedUsers } = await supabase
+              .from('users')
+              .select('username')
+              .in('id', blockedUserIds);
+            const blockedUsernames = blockedUsers?.map(u => u.username) || [];
+            
+            if (blockedUsernames.length > 0) {
+              filteredData = filteredData.filter((listing: any) => !blockedUsernames.includes(listing.username));
+            }
+          }
+        }
+        
+        // Slice the filtered data for the current page
         const startIndex = pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE;
         const pageSize = getPageSize(pageNumber);
-        const result = allData.slice(startIndex, startIndex + pageSize);
+        const result = filteredData.slice(startIndex, startIndex + pageSize);
         
         // Got listings for page
         if (result.length > 0) {
@@ -150,11 +216,39 @@ export function useListings() {
         return result;
       } else {
         // Use direct query if no location or distance sorting disabled
-
-        const { data, error } = await supabase
+        // First get hidden listing IDs and blocked user IDs
+        const { data: { user } } = await supabase.auth.getUser();
+        let hiddenListingIds: string[] = [];
+        let blockedUserIds: string[] = [];
+        
+        if (user) {
+          // Get hidden listing IDs
+          const { data: hiddenData } = await supabase
+            .rpc('get_hidden_listing_ids', { user_id: user.id });
+          hiddenListingIds = hiddenData || [];
+          
+          // Get blocked user IDs
+          const { data: blockedData } = await supabase
+            .rpc('get_blocked_user_ids', { user_id: user.id });
+          blockedUserIds = blockedData || [];
+        }
+        
+        let query = supabase
           .from('listings')
           .select('id, username, title, description, price, price_unit, category, thumbnail_images, preview_images, image_folder_path, latitude, longitude, created_at, updated_at, is_active')
-          .eq('is_active', true)
+          .eq('is_active', true);
+        
+        // Filter out hidden listings
+        if (hiddenListingIds.length > 0) {
+          query = query.not('id', 'in', `(${hiddenListingIds.join(',')})`);
+        }
+        
+        // Filter out blocked users' listings
+        if (blockedUserIds.length > 0) {
+          query = query.not('username', 'in', `(SELECT username FROM users WHERE id IN (${blockedUserIds.join(',')}))`);
+        }
+        
+        const { data, error } = await query
           .order('created_at', { ascending: false })
           .range(
             pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE,
@@ -334,12 +428,51 @@ export function useListings() {
     // Navigation return logic handled silently
   }, [listings.length]);
 
+  // Force refresh listings after content management actions (hide, block, etc.)
+  const forceRefreshListings = useCallback(async () => {
+    try {
+      // Clear ALL cache to ensure fresh data
+      cacheRef.current.clear();
+      
+      setPage(1);
+      setLoading(true);
+      
+      const freshListings = await fetchListings(
+        1, 
+        location.latitude || undefined, 
+        location.longitude || undefined
+      );
+      
+      // Ensure no duplicate IDs in refreshed listings
+      const uniqueFreshListings = deduplicateListings(freshListings);
+      
+      // Cache images for refreshed listings
+      uniqueFreshListings.forEach((listing: Listing) => {
+        if (listing.id) {
+          try {
+            imageCache.setListingImages(listing.id, listing);
+          } catch (error) {
+            // Silent fail - cache errors shouldn't break the app
+          }
+        }
+      });
+      
+      setListings(uniqueFreshListings);
+      setHasMore(uniqueFreshListings.length === INITIAL_PAGE_SIZE);
+    } catch (error) {
+      console.error('Error force refreshing listings:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchListings, location.latitude, location.longitude]);
+
   return {
     listings,
     loading,
     loadMoreListings,
     hasMore,
     refreshListings,
+    forceRefreshListings,
     sortByDistance,
     toggleDistanceSort,
     maxDistance,

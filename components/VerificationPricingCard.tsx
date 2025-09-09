@@ -62,9 +62,9 @@ const VerificationPricingCard: React.FC<VerificationPricingCardProps> = ({
       <View style={styles.extraBenefitsSection}>
         <Text style={styles.extraBenefitsTitle}>🎁 Verified Members Get:</Text>
         <Text style={styles.extraBenefitsText}>
-          • Extra Omni Points for every transaction{'\n'}
-          • Company shares allocation program{'\n'}
-          • Exclusive early access to new features
+          • Extra OMNI tokens for every transaction{'\n'}
+          • Early access to future app features{'\n'}
+          • Premium gamification benefits
         </Text>
       </View>
 

@@ -32,6 +32,7 @@ import { CreateRequestModal } from '@/components/CreateRequestModal';
 import { CategoryFilterModal } from '@/components/CategoryFilterModal';
 import { RequestLocationPicker } from '@/components/RequestLocationPicker';
 import { UserListingsModal } from '@/components/UserListingsModal';
+import ListingOptionsModal from '@/components/ListingOptionsModal';
 import { RequestLocationUtils, LocationData } from '@/utils/requestLocationUtils';
 import { supabase } from '@/utils/supabaseClient';
 import { formatRequestForWhatsApp, createWhatsAppURL, createWhatsAppWebURL } from '@/utils/whatsappMessageFormatter';
@@ -63,6 +64,8 @@ export default function RequestsScreen() {
   const [userLocationData, setUserLocationData] = useState<LocationData | null>(null);
   const [showUserListings, setShowUserListings] = useState(false);
   const [requesterRatings, setRequesterRatings] = useState<Record<string, { rating: string; reviewCount: number } | null>>({});
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [selectedRequestForOptions, setSelectedRequestForOptions] = useState<Request | null>(null);
   // Cache status removed - no UI monitoring needed
 
   // Load initial data when component mounts
@@ -204,6 +207,20 @@ export default function RequestsScreen() {
 
   const handleDeleteRequest = useCallback((requestId: string) => {
     // Refresh the requests list after deletion
+    refresh(
+      latitude || undefined,
+      longitude || undefined,
+      selectedCategory || undefined,
+      userLocationData ? {
+        location_state: userLocationData.location_state,
+        location_district: userLocationData.location_district,
+        location_name: userLocationData.location_name,
+      } : undefined
+    );
+  }, [refresh, latitude, longitude, selectedCategory, userLocationData]);
+
+  // Helper function to refresh requests with current parameters
+  const refreshRequests = useCallback(() => {
     refresh(
       latitude || undefined,
       longitude || undefined,
@@ -371,6 +388,10 @@ export default function RequestsScreen() {
       onSave={() => {/* Handle save */}}
       onContact={() => handleContact(item)}
       onCall={() => handleCall(item)}
+      onOptions={() => {
+        setSelectedRequestForOptions(item);
+        setShowOptionsModal(true);
+      }}
     />
   );
 
@@ -565,6 +586,18 @@ export default function RequestsScreen() {
         userId={user?.username || ''}
         onEditRequest={handleEditRequest}
         onDeleteRequest={handleDeleteRequest}
+      />
+
+      <ListingOptionsModal
+        visible={showOptionsModal}
+        onClose={() => setShowOptionsModal(false)}
+        requestId={selectedRequestForOptions?.id}
+        sellerUsername={selectedRequestForOptions?.requester_username || ''}
+        listingTitle={selectedRequestForOptions?.title || ''}
+        type="request"
+        onReport={refreshRequests}
+        onHide={refreshRequests}
+        onBlock={refreshRequests}
       />
     </SafeAreaView>
   );

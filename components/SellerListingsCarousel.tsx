@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,10 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
+import { ChevronRight, MoreVertical } from 'lucide-react-native';
 import NewRobustImage from './NewRobustImage';
 import { formatPriceWithUnit } from '@/utils/formatters';
+import ListingOptionsModal from './ListingOptionsModal';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 60) / 2.5; // Account for padding and gap
@@ -30,13 +31,25 @@ interface SellerListingsCarouselProps {
   listings: Listing[];
   onListingPress: (listingId: string) => void;
   sellerName: string;
+  sellerUsername?: string;
+  onReport?: () => void;
+  onHide?: () => void;
+  onBlock?: () => void;
 }
 
 const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo(({
   listings,
   onListingPress,
   sellerName,
+  sellerUsername,
+  onReport,
+  onHide,
+  onBlock,
 }) => {
+  // Options modal state
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [selectedListingForOptions, setSelectedListingForOptions] = useState<Listing | null>(null);
+
   // Memoize the listings data to prevent unnecessary re-renders
   const memoizedListings = useMemo(() => listings, [listings]);
 
@@ -47,42 +60,56 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
 
   // Render individual listing item
   const renderListingItem = useCallback(({ item }: { item: Listing }) => (
-    <TouchableOpacity
-      style={styles.listingItem}
-      onPress={() => handleListingPress(item.id)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.imageContainer}>
-        <NewRobustImage
-          thumbnailImages={item.thumbnail_images}
-          previewImages={item.preview_images}
-          imageFolderPath={item.image_folder_path}
-          size="thumbnail"
-          style={styles.carouselImage}
-          placeholderText="No Image"
-          title={item.title}
-        />
-        
-        {/* Status badge */}
-        <View style={[styles.statusBadge, item.is_active ? styles.activeBadge : styles.inactiveBadge]}>
-          <Text style={[styles.statusText, item.is_active ? styles.activeText : styles.inactiveText]}>
-            {item.is_active ? 'Active' : 'Inactive'}
+    <View style={styles.listingItem}>
+      <TouchableOpacity
+        style={styles.listingContent}
+        onPress={() => handleListingPress(item.id)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.imageContainer}>
+          <NewRobustImage
+            thumbnailImages={item.thumbnail_images}
+            previewImages={item.preview_images}
+            imageFolderPath={item.image_folder_path}
+            size="thumbnail"
+            style={styles.carouselImage}
+            placeholderText="No Image"
+            title={item.title}
+          />
+          
+          {/* 3-dots menu button */}
+          <TouchableOpacity
+            style={styles.optionsButton}
+            onPress={() => {
+              setSelectedListingForOptions(item);
+              setShowOptionsModal(true);
+            }}
+            activeOpacity={0.7}
+          >
+            <MoreVertical size={14} color="#64748B" />
+          </TouchableOpacity>
+          
+          {/* Status badge */}
+          <View style={[styles.statusBadge, item.is_active ? styles.activeBadge : styles.inactiveBadge]}>
+            <Text style={[styles.statusText, item.is_active ? styles.activeText : styles.inactiveText]}>
+              {item.is_active ? 'Active' : 'Inactive'}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.listingDetails}>
+          <Text style={styles.listingTitle} numberOfLines={2}>
+            {item.title}
+          </Text>
+          <Text style={styles.listingPrice}>
+            {formatPriceWithUnit(item.price.toString(), item.price_unit)}
+          </Text>
+          <Text style={styles.listingCategory}>
+            {item.category.charAt(0).toUpperCase() + item.category.slice(1).toLowerCase()}
           </Text>
         </View>
-      </View>
-
-      <View style={styles.listingContent}>
-        <Text style={styles.listingTitle} numberOfLines={2}>
-          {item.title}
-        </Text>
-        <Text style={styles.listingPrice}>
-          {formatPriceWithUnit(item.price.toString(), item.price_unit)}
-        </Text>
-        <Text style={styles.listingCategory}>
-          {item.category.charAt(0).toUpperCase() + item.category.slice(1).toLowerCase()}
-        </Text>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </View>
   ), [handleListingPress]);
 
   // Memoize the key extractor
@@ -125,6 +152,19 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
         decelerationRate="fast"
         snapToInterval={ITEM_WIDTH + 16}
         snapToAlignment="start"
+      />
+      
+      {/* Listing Options Modal */}
+      <ListingOptionsModal
+        visible={showOptionsModal}
+        onClose={() => setShowOptionsModal(false)}
+        listingId={selectedListingForOptions?.id || ''}
+        sellerUsername={sellerUsername || ''}
+        listingTitle={selectedListingForOptions?.title || ''}
+        type="listing"
+        onReport={onReport}
+        onHide={onHide}
+        onBlock={onBlock}
       />
     </View>
   );
@@ -177,6 +217,22 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  optionsButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    padding: 4,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
+  },
   statusBadge: {
     position: 'absolute',
     top: 8,
@@ -202,6 +258,9 @@ const styles = StyleSheet.create({
     color: '#EF4444',
   },
   listingContent: {
+    flex: 1,
+  },
+  listingDetails: {
     padding: 12,
   },
   listingTitle: {

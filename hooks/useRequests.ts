@@ -93,7 +93,17 @@ export function useRequests() {
       setLoading(true);
       setError(null);
 
-
+      // Get current user for filtering
+      const { data: { user } } = await supabase.auth.getUser();
+      let hiddenRequestIds: string[] = [];
+      
+      if (user) {
+        // Get hidden request IDs
+        const { data: hiddenData } = await supabase
+          .rpc('get_hidden_request_ids', { user_id: user.id });
+        // Extract request_id from the returned objects
+        hiddenRequestIds = (hiddenData || []).map((item: any) => item.request_id);
+      }
 
       // Use hierarchical location sorting for better performance and lower costs
       const { data, error } = await supabase
@@ -121,14 +131,26 @@ export function useRequests() {
         if (fallbackError) {
           throw fallbackError;
         }
-        const result = fallbackData || [];
+        let result = fallbackData || [];
+        
+        // Filter out hidden requests
+        if (hiddenRequestIds.length > 0) {
+          result = result.filter((request: any) => !hiddenRequestIds.includes(request.id));
+        }
+        
         // Cache the result using enhanced cache manager
         await enhancedCache.set(cacheKey, result);
         return result;
       }
 
 
-      const result = data || [];
+      let result = data || [];
+      
+      // Filter out hidden requests
+      if (hiddenRequestIds.length > 0) {
+        result = result.filter((request: any) => !hiddenRequestIds.includes(request.id));
+      }
+      
       // Cache the result using enhanced cache manager
       await enhancedCache.set(cacheKey, result);
       return result;

@@ -6,11 +6,16 @@ import {
   RefreshControl,
   ActivityIndicator,
   Text,
+  TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { MoreVertical } from 'lucide-react-native';
 import { supabase } from '@/utils/supabaseClient';
 import { imageCache } from '@/utils/imageCache';
+import { reportListing, hideListing, blockUser } from '@/utils/contentManagement';
+import { useAuth } from '@/hooks/useAuth';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -56,6 +61,7 @@ function ListingDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id, sellerData } = useLocalSearchParams();
+  const { user } = useAuth();
   
   // State management
   const [listing, setListing] = useState<Listing | null>(null);
@@ -206,6 +212,157 @@ function ListingDetailScreen() {
     router.push(`/listing-detail?id=${listingId}`);
   }, [router]);
 
+  // Handle report listing
+  const handleReport = useCallback(async () => {
+    if (!user || !listing) {
+      Alert.alert('Error', 'You must be logged in to report listings');
+      return;
+    }
+
+    try {
+      const result = await reportListing({
+        listing_id: listing.id,
+        seller_username: listing.username,
+        reason: 'inappropriate_content',
+        description: 'Reported via listing detail page'
+      });
+
+      if (!result.success) {
+        Alert.alert('Error', result.error || 'Failed to report listing. Please try again.');
+        return;
+      }
+
+      // Ask if user wants to hide the listing after reporting
+      Alert.alert(
+        'Report Submitted',
+        'Thank you for your report. We will review this listing and take appropriate action.\n\nWould you like to hide this listing from your feed?',
+        [
+          {
+            text: 'No, Keep Visible',
+            style: 'cancel'
+          },
+          {
+            text: 'Yes, Hide It',
+            onPress: async () => {
+              // Hide the listing
+              const hideResult = await hideListing(listing.id);
+              if (hideResult.success) {
+                Alert.alert(
+                  'Listing Hidden',
+                  'This listing has been hidden from your feed.',
+                  [{ text: 'OK', onPress: () => router.back() }]
+                );
+              } else {
+                Alert.alert(
+                  'Report Submitted',
+                  'Your report was submitted, but we couldn\'t hide the listing. You can hide it manually from the listing options.',
+                  [{ text: 'OK' }]
+                );
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error reporting listing:', error);
+      Alert.alert('Error', 'Failed to report listing. Please try again.');
+    }
+  }, [user, listing, router]);
+
+  // Handle hide listing
+  const handleHide = useCallback(async () => {
+    if (!user || !listing) {
+      Alert.alert('Error', 'You must be logged in to hide listings');
+      return;
+    }
+
+    try {
+      const result = await hideListing(listing.id);
+
+      if (!result.success) {
+        Alert.alert('Error', result.error || 'Failed to hide listing. Please try again.');
+        return;
+      }
+
+      Alert.alert(
+        'Listing Hidden',
+        'This listing has been hidden from your feed.',
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (error) {
+      console.error('Error hiding listing:', error);
+      Alert.alert('Error', 'Failed to hide listing. Please try again.');
+    }
+  }, [user, listing, router]);
+
+  // Handle block user
+  const handleBlock = useCallback(async () => {
+    if (!user || !listing) {
+      Alert.alert('Error', 'You must be logged in to block users');
+      return;
+    }
+
+    try {
+      // First, get the seller's user ID
+      const { data: sellerData, error: sellerError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', listing.username)
+        .single();
+
+      if (sellerError || !sellerData) {
+        console.error('Error finding seller:', sellerError);
+        Alert.alert('Error', 'Failed to find seller. Please try again.');
+        return;
+      }
+
+      const result = await blockUser(sellerData.id);
+
+      if (!result.success) {
+        Alert.alert('Error', result.error || 'Failed to block user. Please try again.');
+        return;
+      }
+
+      Alert.alert(
+        'User Blocked',
+        `You have blocked ${listing.username}. You will no longer see their listings.`,
+        [{ text: 'OK', onPress: () => router.back() }]
+      );
+    } catch (error) {
+      console.error('Error blocking user:', error);
+      Alert.alert('Error', 'Failed to block user. Please try again.');
+    }
+  }, [user, listing, router]);
+
+  // Show options menu
+  const showOptionsMenu = useCallback(() => {
+    Alert.alert(
+      'Listing Options',
+      `What would you like to do with this listing?`,
+      [
+        {
+          text: 'Report Listing',
+          style: 'destructive',
+          onPress: handleReport
+        },
+        {
+          text: 'Hide Listing',
+          onPress: handleHide
+        },
+        {
+          text: `Block ${listing?.username}`,
+          style: 'destructive',
+          onPress: handleBlock
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        }
+      ],
+      { cancelable: true }
+    );
+  }, [handleReport, handleHide, handleBlock, listing?.username]);
+
 
 
 
@@ -249,14 +406,25 @@ function ListingDetailScreen() {
         }
       >
         {/* Hero Image Section */}
-        <ListingHeroImage
-          images={listing.thumbnail_images} // Use thumbnail_images as fallback for images
-          thumbnailImages={listing.thumbnail_images}
-          previewImages={listing.preview_images}
-          imageFolderPath={listing.image_folder_path}
-          title={listing.title}
-          onBackPress={() => router.back()}
-        />
+        <View style={styles.heroImageContainer}>
+          <ListingHeroImage
+            images={listing.thumbnail_images} // Use thumbnail_images as fallback for images
+            thumbnailImages={listing.thumbnail_images}
+            previewImages={listing.preview_images}
+            imageFolderPath={listing.image_folder_path}
+            title={listing.title}
+            onBackPress={() => router.back()}
+          />
+          
+          {/* Floating Options Button */}
+          <TouchableOpacity
+            style={styles.optionsButton}
+            onPress={showOptionsMenu}
+            activeOpacity={0.8}
+          >
+            <MoreVertical size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
         
 
         
@@ -302,6 +470,19 @@ function ListingDetailScreen() {
             listings={sellerListings}
             onListingPress={handleListingPress}
             sellerName={sellerInfo?.name || 'Seller'}
+            sellerUsername={listing?.username}
+            onReport={() => {
+              // Refresh the page to hide reported item
+              router.replace(`/listing-detail?id=${listing?.id}`);
+            }}
+            onHide={() => {
+              // Refresh the page to hide the item
+              router.replace(`/listing-detail?id=${listing?.id}`);
+            }}
+            onBlock={() => {
+              // Navigate back to home as user is blocked
+              router.back();
+            }}
           />
         )}
       </ScrollView>
@@ -316,6 +497,28 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  heroImageContainer: {
+    position: 'relative',
+  },
+  optionsButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
   },
   loadingContainer: {
     flex: 1,

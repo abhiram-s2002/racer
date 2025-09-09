@@ -17,7 +17,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, MapPin, Phone, MessageCircle, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Check, Home, Star, Clock, Tag, Car, MoreHorizontal } from 'lucide-react-native';
+import { Search, MapPin, Phone, MessageCircle, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Check, Home, Star, Clock, Tag, Car, MoreHorizontal, MoreVertical } from 'lucide-react-native';
 import { Plus } from 'lucide-react-native';
 // Categories moved to inline definition for better performance
 const categories = [
@@ -36,6 +36,7 @@ import AddListingModal from '@/components/AddListingModal';
 import PingTemplateSelector from '@/components/PingTemplateSelector';
 import FeedbackModal from '@/components/FeedbackModal';
 import HomeRatingDisplay from '@/components/HomeRatingDisplay';
+import ListingOptionsModal from '@/components/ListingOptionsModal';
 
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import CategorySelectionModal from '@/components/CategorySelectionModal';
@@ -97,6 +98,8 @@ function HomeScreen() {
   const [existingPings, setExistingPings] = useState<Record<string, boolean>>({});
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   const [loadingStage, setLoadingStage] = useState<'initial' | 'loading' | 'error' | 'offline' | 'empty'>('initial');
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
+  const [selectedListingForOptions, setSelectedListingForOptions] = useState<any>(null);
   
 
   
@@ -107,6 +110,7 @@ function HomeScreen() {
     loadMoreListings, 
     hasMore, 
     refreshListings,
+    forceRefreshListings,
     toggleDistanceSort,
     sortByDistance: sortByDistanceState,
     maxDistance,
@@ -662,23 +666,37 @@ function HomeScreen() {
     
     return (
       <View style={styles.listingCard}>
-        <TouchableOpacity onPress={() => handleImageClick(item)}>
-        <NewRobustImage
-          thumbnailImages={item.thumbnail_images}
-          previewImages={item.preview_images}
-          imageFolderPath={item.image_folder_path}
-          size="thumbnail"
-          style={styles.listingImage}
-          placeholderText="No Image"
-          title={item.title}
-          onError={(error, imageSet, metadata) => {
-            // Error handling
-          }}
-          onLoad={(imageSet, metadata) => {
-            // Load handling
-          }}
-        />
-        </TouchableOpacity>
+        <View style={styles.imageContainer}>
+          <TouchableOpacity onPress={() => handleImageClick(item)}>
+            <NewRobustImage
+              thumbnailImages={item.thumbnail_images}
+              previewImages={item.preview_images}
+              imageFolderPath={item.image_folder_path}
+              size="thumbnail"
+              style={styles.listingImage}
+              placeholderText="No Image"
+              title={item.title}
+              onError={(error, imageSet, metadata) => {
+                // Error handling
+              }}
+              onLoad={(imageSet, metadata) => {
+                // Load handling
+              }}
+            />
+          </TouchableOpacity>
+          
+          {/* 3-dots menu button */}
+          <TouchableOpacity
+            style={styles.optionsButton}
+            onPress={() => {
+              setSelectedListingForOptions(item);
+              setShowOptionsModal(true);
+            }}
+            activeOpacity={0.7}
+          >
+            <MoreVertical size={16} color="#64748B" />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.listingContent}>
           <TouchableOpacity onPress={() => handleImageClick(item)}>
@@ -1335,6 +1353,28 @@ function HomeScreen() {
         onSubmit={handleSubmitFeedback}
       />
 
+      {/* Listing Options Modal */}
+      <ListingOptionsModal
+        visible={showOptionsModal}
+        onClose={() => setShowOptionsModal(false)}
+        listingId={selectedListingForOptions?.id || ''}
+        sellerUsername={selectedListingForOptions?.username || ''}
+        listingTitle={selectedListingForOptions?.title || ''}
+        type="listing"
+        onReport={() => {
+          // Force refresh listings to hide reported item
+          forceRefreshListings();
+        }}
+        onHide={() => {
+          // Force refresh listings to hide the item
+          forceRefreshListings();
+        }}
+        onBlock={() => {
+          // Force refresh listings to hide blocked user's items
+          forceRefreshListings();
+        }}
+      />
+
       {/* Location Check Popup is handled globally in _layout.tsx */}
 
 
@@ -1459,9 +1499,28 @@ const styles = StyleSheet.create({
     elevation: 3,
     overflow: 'hidden',
   },
+  imageContainer: {
+    position: 'relative',
+  },
   listingImage: {
     width: '100%',
     height: 150,
+  },
+  optionsButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 16,
+    padding: 6,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2,
   },
   favoriteButton: {
     position: 'absolute',

@@ -74,6 +74,7 @@ function ActivityScreen() {
   const [userToRate, setUserToRate] = useState<string>('');
   const [pingIdToRate, setPingIdToRate] = useState<string>('');
   const [pingRatings, setPingRatings] = useState<Record<string, { hasRated: boolean; rating: number; category: string }>>({});
+  
 
   useEffect(() => {
     async function fetchUser() {
@@ -436,6 +437,7 @@ function ActivityScreen() {
     return (
     <View style={styles.activityCard}>
       <View style={styles.listingHeader}>
+        <View style={styles.imageContainer}>
           <NewRobustImage 
             thumbnailImages={item.thumbnail_images}
             previewImages={item.preview_images}
@@ -445,6 +447,8 @@ function ActivityScreen() {
             size="thumbnail"
             title={item.title}
           />
+        </View>
+        
         <View style={styles.listingDetails}>
             <Text style={styles.listingTitle}>{title}</Text>
             <Text style={styles.listingPrice}>{formatPriceWithUnit(price || '0', (item as any).price_unit)}</Text>
@@ -906,6 +910,7 @@ function ActivityScreen() {
         pingId={pingIdToRate}
         onSubmit={handleRatingSubmit}
       />
+      
     </View>
   );
 }
@@ -1034,11 +1039,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     position: 'relative', // <-- add this
   },
+  imageContainer: {
+    position: 'relative',
+    marginRight: 12,
+  },
   listingImage: {
     width: 60,
     height: 60,
     borderRadius: 8,
-    marginRight: 12,
   },
   listingDetails: {
     flex: 1,

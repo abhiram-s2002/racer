@@ -15,7 +15,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Camera, MapPin, Phone, Mail, Settings, CircleHelp as HelpCircle, FileText, LogOut, CreditCard as Edit3, CircleCheck as CheckCircle, Circle as XCircle, ArrowRight, Lock } from 'lucide-react-native';
+import { Camera, MapPin, Phone, Mail, Settings, CircleHelp as HelpCircle, FileText, LogOut, CreditCard as Edit3, CircleCheck as CheckCircle, Circle as XCircle, ArrowRight, Lock, Flag, EyeOff, UserX } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { signOut } from '@/utils/auth';
 import defaultAvatar from '../../assets/images/icon.png';
@@ -747,6 +747,34 @@ function ProfileScreen() {
           >
             <FileText size={20} color="#64748B" />
             <Text style={styles.quickActionText}>Terms & Privacy</Text>
+            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
+          </TouchableOpacity>
+          
+          {/* New Quick Actions for Content Management */}
+          <TouchableOpacity 
+            style={styles.quickActionItem}
+            onPress={() => router.push('/reported-content')}
+          >
+            <Flag size={20} color="#EF4444" />
+            <Text style={styles.quickActionText}>Reported Content</Text>
+            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.quickActionItem}
+            onPress={() => router.push('/hidden-listings')}
+          >
+            <EyeOff size={20} color="#F59E0B" />
+            <Text style={styles.quickActionText}>Hidden Listings</Text>
+            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.quickActionItem}
+            onPress={() => router.push('/blocked-users')}
+          >
+            <UserX size={20} color="#DC2626" />
+            <Text style={styles.quickActionText}>Blocked Users</Text>
             <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
           </TouchableOpacity>
         </View>

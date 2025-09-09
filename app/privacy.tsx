@@ -98,7 +98,7 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• Prevent fraud and ensure security</Text>
             <Text style={styles.bullet}>• Analyze usage patterns and trends</Text>
             <Text style={styles.bullet}>• Implement verification systems</Text>
-            <Text style={styles.bullet}>• Manage rewards and leaderboard systems</Text>
+            <Text style={styles.bullet}>• Manage gamification rewards (OMNI tokens) and leaderboard systems</Text>
             <Text style={styles.bullet}>• Provide customer support</Text>
           </View>
         </View>
@@ -217,9 +217,28 @@ function PrivacyScreen() {
           </Text>
         </View>
 
+        {/* Virtual Currency and Gamification */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>9. Virtual Currency and Gamification</Text>
+          <Text style={styles.paragraph}>
+            GeoMart uses OMNI tokens as virtual currency for gamification and user engagement purposes only. These tokens:
+          </Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bullet}>• Have no monetary value and cannot be converted to real currency</Text>
+            <Text style={styles.bullet}>• Are earned through app engagement (check-ins, achievements, referrals)</Text>
+            <Text style={styles.bullet}>• Are used for gamification features like leaderboards and streaks</Text>
+            <Text style={styles.bullet}>• May be used for future in-app features (currently no spending functionality)</Text>
+            <Text style={styles.bullet}>• Are not securities, investments, or financial instruments</Text>
+            <Text style={styles.bullet}>• Cannot be transferred between users or sold</Text>
+          </View>
+          <Text style={styles.paragraph}>
+            We collect and process data related to OMNI token transactions solely for gamification purposes and to enhance user engagement within the app.
+          </Text>
+        </View>
+
         {/* Children's Privacy */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>9. Children&apos;s Privacy</Text>
+          <Text style={styles.sectionTitle}>10. Children&apos;s Privacy</Text>
           <Text style={styles.paragraph}>
             GeoMart is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are between 13 and 18 years old, you must have parental consent to use our services.
           </Text>
@@ -230,7 +249,7 @@ function PrivacyScreen() {
 
         {/* International Transfers */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>10. International Data Transfers</Text>
+          <Text style={styles.sectionTitle}>11. International Data Transfers</Text>
           <Text style={styles.paragraph}>
             Your information may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place to protect your data in accordance with this Privacy Policy and applicable laws.
           </Text>
@@ -241,7 +260,7 @@ function PrivacyScreen() {
 
         {/* Changes to Privacy Policy */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>11. Changes to This Policy</Text>
+          <Text style={styles.sectionTitle}>12. Changes to This Policy</Text>
           <Text style={styles.paragraph}>
             We may update this Privacy Policy from time to time. We will notify you of significant changes through the app or email. Your continued use of the service constitutes acceptance of the updated policy.
           </Text>

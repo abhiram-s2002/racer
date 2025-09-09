@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import { MapPin, Clock, MessageCircle, Bookmark, Phone, User, Star } from 'lucide-react-native';
+import { MapPin, Clock, MessageCircle, Bookmark, Phone, User, Star, MoreVertical } from 'lucide-react-native';
 import { Request } from '@/utils/types';
 import { getCategoryById, getCategoryIcon, getCategoryColor } from '@/utils/requestCategories';
 import VerificationBadge from './VerificationBadge';
@@ -14,11 +14,12 @@ interface RequestCardProps {
   onSave: () => void;
   onContact: () => void;
   onCall: () => void;
+  onOptions?: () => void; // Add options callback
 }
 
 const { width } = Dimensions.get('window');
 
-export function RequestCard({ request, requesterName, requesterVerified, requesterRating, onPress, onSave, onContact, onCall }: RequestCardProps) {
+export function RequestCard({ request, requesterName, requesterVerified, requesterRating, onPress, onSave, onContact, onCall, onOptions }: RequestCardProps) {
   const category = getCategoryById(request.category);
   const IconComponent = getCategoryIcon(request.category);
   const categoryColor = getCategoryColor(request.category);
@@ -90,7 +91,7 @@ export function RequestCard({ request, requesterName, requesterVerified, request
 
         {/* Content */}
         <View style={styles.content}>
-          {/* Header Row: Title + Urgency + Time */}
+          {/* Header Row: Title + Urgency + Time + Options */}
           <View style={styles.headerRow}>
             <Text style={styles.title} numberOfLines={1}>
               {request.title}
@@ -105,6 +106,15 @@ export function RequestCard({ request, requesterName, requesterVerified, request
                 <Clock size={10} color="#64748B" />
                 <Text style={styles.timeText}>{formatTimeAgo(request.updated_at)}</Text>
               </View>
+              {onOptions && (
+                <TouchableOpacity
+                  style={styles.optionsButton}
+                  onPress={onOptions}
+                  activeOpacity={0.7}
+                >
+                  <MoreVertical size={16} color="#64748B" />
+                </TouchableOpacity>
+              )}
             </View>
           </View>
 
@@ -250,6 +260,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  optionsButton: {
+    padding: 4,
+    marginLeft: 4,
   },
   timeContainer: {
     flexDirection: 'row',

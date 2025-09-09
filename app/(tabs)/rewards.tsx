@@ -867,23 +867,23 @@ function RewardsScreen() {
                 🎁 <Text style={styles.verificationRewardsBold}>Extra Allocation for Verified Users:</Text>
               </Text>
               <Text style={styles.verificationRewardsDetails}>
-                • <Text style={styles.verificationRewardsBold}>Company Shares:</Text> Verified users receive additional equity allocation based on their verification badge duration
+                • <Text style={styles.verificationRewardsBold}>Future App Features:</Text> Verified users get early access to new app features and premium functionality
               </Text>
               <Text style={styles.verificationRewardsDetails}>
-                • <Text style={styles.verificationRewardsBold}>Multiplier Effect:</Text> Each month of verified status increases your share allocation multiplier
+                • <Text style={styles.verificationRewardsBold}>Multiplier Effect:</Text> Each month of verified status increases your OMNI earning multiplier
               </Text>
               <Text style={styles.verificationRewardsDetails}>
                 • <Text style={styles.verificationRewardsBold}>Bonus OMNI Points:</Text> 2x OMNI points for all transactions when verified
               </Text>
               <Text style={styles.verificationRewardsFormula}>
-                <Text style={styles.verificationRewardsBold}>Formula:</Text> Base Allocation × (1 + 0.1 × Verified Months)
+                <Text style={styles.verificationRewardsBold}>Formula:</Text> Base OMNI × (1 + 0.1 × Verified Months)
               </Text>
               <Text style={styles.verificationRewardsNote}>
-                💡 The longer you stay verified, the more company shares you earn!
+                💡 The longer you stay verified, the more OMNI you earn for future features!
               </Text>
               <View style={styles.verificationRewardsDisclaimer}>
                 <Text style={styles.verificationRewardsDisclaimerText}>
-                  <Text style={styles.verificationRewardsBold}>Important:</Text> Verified user bonus allocations and company shares will only be calculated and made visible at the time of the company's successful exit or IPO. These rewards are not visible or claimable before the exit/IPO event.
+                  <Text style={styles.verificationRewardsBold}>Important:</Text> OMNI tokens are virtual currency for gamification and engagement. Future app features may allow spending OMNI tokens, but they have no current monetary value.
                 </Text>
               </View>
             </View>
@@ -896,7 +896,7 @@ function RewardsScreen() {
             <View style={styles.disclaimerContent}>
               <Text style={styles.disclaimerTitle}>Important Information</Text>
               <Text style={styles.disclaimerText}>
-                OMNI points earned through this rewards program are convertible to real equity shares in OmniMarketplace Inc. upon the company&apos;s successful exit or IPO. The conversion rate and terms are subject to the company&apos;s equity incentive plan and applicable securities laws. Past performance does not guarantee future results, and the value of shares may fluctuate.
+                OMNI tokens are virtual currency used for gamification and user engagement within the app. They have no monetary value and cannot be converted to real currency or company shares. Future app features may allow spending OMNI tokens for in-app benefits, but they are currently used only for tracking user engagement and achievements.
               </Text>
               <Text style={styles.disclaimerLegal}>
                 This is not a securities offering. Please consult with legal and financial advisors regarding your specific situation.
