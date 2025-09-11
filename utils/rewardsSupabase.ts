@@ -340,11 +340,10 @@ export async function getReferralsByUser(username: string): Promise<Referral[]> 
         referred_username, 
         referral_code, 
         status, 
-        omni_earned, 
+        omni_rewarded, 
         commission_rate, 
         total_commission_earned, 
         created_at,
-        omni_rewarded,
         completed_at
       `)
       .eq('referrer_username', username)

@@ -7,7 +7,6 @@ export interface WhatsAppMessageData {
   category?: string;
   budget?: string;
   location?: string;
-  urgency?: string;
   requesterName?: string;
   requesterUsername?: string;
   distance?: number;
@@ -45,10 +44,6 @@ export function formatRequestForWhatsApp(request: Request, requesterName?: strin
     lines.push(`I see your budget is up to ₹${request.budget_max}.`);
   }
   
-  // Urgency (if urgent)
-  if (request.urgency === 'urgent') {
-    lines.push(`I understand this is urgent, so I'll prioritize this.`);
-  }
   
   lines.push('');
   lines.push(`Would love to discuss the details with you! When would be a good time to chat?`);

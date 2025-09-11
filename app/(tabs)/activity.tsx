@@ -373,7 +373,6 @@ function ActivityScreen() {
       // Update cached data with new status
       updateActivity(pingId, { status: response });
     } catch (error) {
-      console.error('Error updating ping status:', error);
       Alert.alert('Error', 'Failed to update ping status. Please try again.');
     }
   };
@@ -594,16 +593,6 @@ function ActivityScreen() {
                 const userProfile = userProfiles[displayUser.username];
                 const isVerified = userProfile && isUserVerified(userProfile);
                 
-                // Debug logging (remove in production)
-                if (__DEV__) {
-                  console.log(`User ${displayUser.username} verification:`, {
-                    hasProfile: !!userProfile,
-                    verification_status: userProfile?.verification_status,
-                    verified_at: userProfile?.verified_at,
-                    expires_at: userProfile?.expires_at,
-                    isVerified
-                  });
-                }
                 
                 if (isVerified) {
                   return <VerificationBadge size="small" />;

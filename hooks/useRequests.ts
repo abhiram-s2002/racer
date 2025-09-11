@@ -36,6 +36,12 @@ export function useRequests() {
   // State management
   const isInitializedRef = useRef(false);
   const lastRefreshRef = useRef<number>(0);
+  const isFetchingRef = useRef(false);
+  const lastApiCallRef = useRef<number>(0);
+  const lastParamsRef = useRef<string>('');
+  
+  // API call throttling - minimum 2 seconds between calls
+  const API_CALL_THROTTLE = 2000;
 
   const getCacheKey = (userLat?: number, userLon?: number, category?: string) => {
     const roundedLat = userLat ? Math.round(userLat * 100) / 100 : 0;
@@ -43,14 +49,16 @@ export function useRequests() {
     return `${CACHE_KEYS.REQUESTS}_${roundedLat}-${roundedLon}-${category || 'all'}`;
   };
 
-  // Check if we should refresh based on last refresh time
+  // Check if we should refresh based on last refresh time - EXTENDED CACHE DURATION
   const shouldRefresh = useCallback(async (): Promise<boolean> => {
     try {
       const lastRefresh = await enhancedCache.get<number>(CACHE_KEYS.LAST_REFRESH);
       if (!lastRefresh) return true; // First time, should refresh
       
       const now = Date.now();
-      return (now - lastRefresh) > CACHE_DURATION;
+      // Extended cache duration - 5 minutes instead of default
+      const EXTENDED_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+      return (now - lastRefresh) > EXTENDED_CACHE_DURATION;
     } catch (error) {
       // Error checking refresh status
       return true; // On error, refresh to be safe
@@ -79,7 +87,18 @@ export function useRequests() {
   ) => {
     const cacheKey = getCacheKey(userLat, userLon, category);
     
-
+    // Create parameter signature for duplicate detection
+    const paramsSignature = `${pageNumber}-${userLat}-${userLon}-${category}-${JSON.stringify(userLocationData)}`;
+    
+    
+    // AGGRESSIVE THROTTLING: Check if we've made a call recently with same parameters
+    const now = Date.now();
+    if (!forceRefresh && 
+        lastApiCallRef.current > 0 && 
+        (now - lastApiCallRef.current) < API_CALL_THROTTLE &&
+        lastParamsRef.current === paramsSignature) {
+      return [];
+    }
     
     // Check cache first (unless force refresh)
     if (!forceRefresh) {
@@ -89,9 +108,20 @@ export function useRequests() {
       }
     }
 
+    // Prevent duplicate calls
+    if (isFetchingRef.current) {
+      return [];
+    }
+    
+    isFetchingRef.current = true;
+    lastApiCallRef.current = now;
+    lastParamsRef.current = paramsSignature;
+    
     try {
       setLoading(true);
       setError(null);
+      
+      // Skip connection test to minimize API calls
 
       // Get current user for filtering
       const { data: { user } } = await supabase.auth.getUser();
@@ -105,23 +135,33 @@ export function useRequests() {
         hiddenRequestIds = (hiddenData || []).map((item: any) => item.request_id);
       }
 
-      // Use hierarchical location sorting for better performance and lower costs
-      const { data, error } = await supabase
-        .rpc('get_requests_hierarchical', {
-          user_state: userLocationData?.location_state || null,
-          user_district: userLocationData?.location_district || null,
-          user_city: userLocationData?.location_name || null,
-          category_filter: category || null,
-          limit_count: getTotalItemsForPage(pageNumber),
-          offset_count: pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE
-        });
+      // Try hierarchical location sorting first, but fallback to simple query if it fails
+      let data, error;
+      
+      try {
+        const rpcResult = await supabase
+          .rpc('get_requests_hierarchical', {
+            user_state: userLocationData?.location_state || null,
+            user_district: userLocationData?.location_district || null,
+            user_city: userLocationData?.location_name || null,
+            category_filter: category || null,
+            limit_count: getTotalItemsForPage(pageNumber),
+            offset_count: pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE
+          });
+        data = rpcResult.data;
+        error = rpcResult.error;
+      } catch (rpcError) {
+        error = rpcError;
+        data = null;
+      }
 
       if (error) {
         // Error fetching requests with hierarchical sorting
-        // Fallback to simple query
+        
+        // Fallback to simple query - only use columns we know exist
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('requests')
-          .select('id, requester_username, title, description, category, latitude, longitude, created_at, updated_at, expires_at')
+          .select('id, requester_username, title, description, category, latitude, longitude, updated_at')
           .order('updated_at', { ascending: false })
           .range(
             pageNumber === 1 ? 0 : INITIAL_PAGE_SIZE + (pageNumber - 2) * SUBSEQUENT_PAGE_SIZE,
@@ -156,10 +196,12 @@ export function useRequests() {
       return result;
     } catch (err) {
       // Error fetching requests
-      setError(err instanceof Error ? err.message : 'Failed to fetch requests');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch requests';
+      setError(errorMessage);
       return [];
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   }, []);
 

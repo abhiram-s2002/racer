@@ -212,7 +212,6 @@ export async function getSentPings(username: string): Promise<Ping[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching sent pings:', error);
     throw error;
   }
 
@@ -239,10 +238,6 @@ export async function getSentPings(username: string): Promise<Ping[]> {
     };
   }));
   
-  // Debug logging
-  if (__DEV__ && pingsWithUserData.length > 0) {
-    console.log('Sent pings with user data sample:', JSON.stringify(pingsWithUserData[0], null, 2));
-  }
   
   return pingsWithUserData as unknown as Ping[];
 }
@@ -278,7 +273,6 @@ export async function getReceivedPings(username: string): Promise<Ping[]> {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching received pings:', error);
     throw error;
   }
 
@@ -305,10 +299,6 @@ export async function getReceivedPings(username: string): Promise<Ping[]> {
     };
   }));
   
-  // Debug logging
-  if (__DEV__ && pingsWithUserData.length > 0) {
-    console.log('Received pings with user data sample:', JSON.stringify(pingsWithUserData[0], null, 2));
-  }
   
   return pingsWithUserData as unknown as Ping[];
 }

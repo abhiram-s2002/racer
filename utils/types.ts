@@ -81,7 +81,6 @@ export interface Request {
   budget_min?: number;
   budget_max?: number;
   category: RequestCategory;
-  urgency: RequestUrgency;
   location?: string;
   location_name?: string;
   location_district?: string;
@@ -215,10 +214,6 @@ export type RequestCategory =
   | 'health_wellness'
   | 'others';
 
-/**
- * Request urgency levels
- */
-export type RequestUrgency = 'urgent' | 'normal' | 'flexible';
 
 /**
  * Chat status values
@@ -334,11 +329,10 @@ export interface Referral {
   referred_username: string;
   referral_code: string;
   status: ReferralStatus;
-  omni_earned: number;
+  omni_rewarded: number;
   commission_rate: number;
   total_commission_earned: number;
   created_at: string;
-  omni_rewarded?: boolean;
   completed_at?: string;
 }
 
@@ -624,7 +618,6 @@ export interface RequestFormData {
   budget_min?: number;
   budget_max?: number;
   category: RequestCategory;
-  urgency: RequestUrgency;
   location?: string;
 }
 

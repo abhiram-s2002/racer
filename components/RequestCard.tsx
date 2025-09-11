@@ -73,14 +73,6 @@ export function RequestCard({ request, requesterName, requesterVerified, request
     return 'Location not specified';
   };
 
-  const getUrgencyColor = () => {
-    switch (request.urgency) {
-      case 'urgent': return '#EF4444';
-      case 'normal': return '#F59E0B';
-      case 'flexible': return '#22C55E';
-      default: return '#6B7280';
-    }
-  };
 
   return (
     <View style={styles.card}>
@@ -98,11 +90,6 @@ export function RequestCard({ request, requesterName, requesterVerified, request
               {request.title}
             </Text>
             <View style={styles.headerRight}>
-              {request.urgency === 'urgent' && (
-                <View style={[styles.urgencyBadge, { backgroundColor: getUrgencyColor() }]}>
-                  <Text style={styles.urgencyText}>URGENT</Text>
-                </View>
-              )}
               <View style={styles.timeContainer}>
                 <Clock size={10} color="#64748B" />
                 <Text style={styles.timeText}>{formatTimeAgo(request.updated_at)}</Text>
@@ -278,16 +265,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: '#64748B',
     marginLeft: 2,
-  },
-  urgencyBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  urgencyText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
   description: {
     fontSize: 13,

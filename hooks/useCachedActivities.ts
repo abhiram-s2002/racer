@@ -231,14 +231,6 @@ export function useCachedActivities(username: string | null) {
               expires_at: ping.sender.expires_at,
             };
             
-            // Debug logging
-            if (__DEV__) {
-              console.log(`Added sender profile for ${ping.sender.username}:`, {
-                verification_status: ping.sender.verification_status,
-                verified_at: ping.sender.verified_at,
-                expires_at: ping.sender.expires_at,
-              });
-            }
           }
           if (ping.receiver) {
             userProfiles[ping.receiver.username] = {
@@ -250,14 +242,6 @@ export function useCachedActivities(username: string | null) {
               expires_at: ping.receiver.expires_at,
             };
             
-            // Debug logging
-            if (__DEV__) {
-              console.log(`Added receiver profile for ${ping.receiver.username}:`, {
-                verification_status: ping.receiver.verification_status,
-                verified_at: ping.receiver.verified_at,
-                expires_at: ping.receiver.expires_at,
-              });
-            }
           }
         });
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -67,8 +67,13 @@ export default function RequestsScreen() {
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [selectedRequestForOptions, setSelectedRequestForOptions] = useState<Request | null>(null);
   // Cache status removed - no UI monitoring needed
+  
+  // Debounce timer for refresh calls
+  const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const refreshCountRef = useRef<number>(0);
+  const MAX_AUTO_REFRESHES = 3; // Limit automatic refreshes
 
-  // Load initial data when component mounts
+  // Load initial data when component mounts - ONLY ONCE
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -97,8 +102,11 @@ export default function RequestsScreen() {
       }
     };
     
-    initializeData();
-  }, []);
+    // ONLY initialize once when component first mounts
+    if (!isInitialized) {
+      initializeData();
+    }
+  }, []); // Empty dependency array - only run once
 
   // Load requester ratings for all requests
   const loadRequesterRatings = async () => {
@@ -129,9 +137,11 @@ export default function RequestsScreen() {
   // Cache status monitoring removed - no UI display needed
 
 
-  // Reload data when category changes
+  // Reload data when category changes - ONLY when category actually changes
   useEffect(() => {
-    if (isInitialized) {
+    // Only refresh if already initialized AND not currently loading AND category actually changed AND under refresh limit
+    if (isInitialized && !loading && !refreshing && selectedCategory !== null && refreshCountRef.current < MAX_AUTO_REFRESHES) {
+      refreshCountRef.current++;
       refresh(
         latitude || undefined, 
         longitude || undefined, 
@@ -143,10 +153,41 @@ export default function RequestsScreen() {
         } : undefined
       );
     }
-  }, [selectedCategory, userLocationData, isInitialized]);
+  }, [selectedCategory]); // Only depend on selectedCategory
 
+  // Reload data when location changes - ONLY when location actually changes
+  useEffect(() => {
+    // Only refresh if already initialized AND not currently loading AND location actually changed AND under refresh limit
+    if (isInitialized && !loading && !refreshing && (latitude || longitude) && refreshCountRef.current < MAX_AUTO_REFRESHES) {
+      refreshCountRef.current++;
+      refresh(
+        latitude || undefined, 
+        longitude || undefined, 
+        selectedCategory || undefined,
+        userLocationData ? {
+          location_state: userLocationData.location_state,
+          location_district: userLocationData.location_district,
+          location_name: userLocationData.location_name,
+        } : undefined
+      );
+    }
+  }, [latitude, longitude]); // Only depend on location coordinates
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (refreshTimeoutRef.current) {
+        clearTimeout(refreshTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleRefresh = useCallback(async () => {
+    // Prevent duplicate refresh calls
+    if (refreshing || loading) return;
+    
+    refreshCountRef.current = 0; // Reset counter on manual refresh
+    
     setRefreshing(true);
     await refresh(
       latitude || undefined, 
@@ -159,7 +200,7 @@ export default function RequestsScreen() {
       } : undefined
     );
     setRefreshing(false);
-  }, [refresh, latitude, longitude, selectedCategory, userLocationData]);
+  }, [refresh, latitude, longitude, selectedCategory, userLocationData, refreshing, loading]);
 
   const handleLoadMore = useCallback(() => {
     if (hasMore && !loading) {
@@ -182,18 +223,20 @@ export default function RequestsScreen() {
 
   const handleLocationSelect = useCallback(async (locationData: LocationData) => {
     setUserLocationData(locationData);
-    // Refresh requests with new location data
-    await refresh(
-      latitude || undefined,
-      longitude || undefined,
-      selectedCategory || undefined,
-      {
-        location_state: locationData.location_state,
-        location_district: locationData.location_district,
-        location_name: locationData.location_name,
-      }
-    );
-  }, [refresh, latitude, longitude, selectedCategory]);
+    // Refresh requests with new location data (only if not already loading)
+    if (!loading && !refreshing) {
+      await refresh(
+        latitude || undefined,
+        longitude || undefined,
+        selectedCategory || undefined,
+        {
+          location_state: locationData.location_state,
+          location_district: locationData.location_district,
+          location_name: locationData.location_name,
+        }
+      );
+    }
+  }, [refresh, latitude, longitude, selectedCategory, loading, refreshing]);
 
   const handleEditRequest = useCallback((request: Request) => {
     // TODO: Implement edit functionality
@@ -206,32 +249,49 @@ export default function RequestsScreen() {
   }, []);
 
   const handleDeleteRequest = useCallback((requestId: string) => {
-    // Refresh the requests list after deletion
-    refresh(
-      latitude || undefined,
-      longitude || undefined,
-      selectedCategory || undefined,
-      userLocationData ? {
-        location_state: userLocationData.location_state,
-        location_district: userLocationData.location_district,
-        location_name: userLocationData.location_name,
-      } : undefined
-    );
-  }, [refresh, latitude, longitude, selectedCategory, userLocationData]);
+    // Refresh the requests list after deletion (only if not already loading)
+    if (!loading && !refreshing) {
+      refresh(
+        latitude || undefined,
+        longitude || undefined,
+        selectedCategory || undefined,
+        userLocationData ? {
+          location_state: userLocationData.location_state,
+          location_district: userLocationData.location_district,
+          location_name: userLocationData.location_name,
+        } : undefined
+      );
+    }
+  }, [refresh, latitude, longitude, selectedCategory, userLocationData, loading, refreshing]);
+
+  // Debounced refresh function to prevent rapid successive calls
+  const debouncedRefresh = useCallback(() => {
+    // Clear existing timeout
+    if (refreshTimeoutRef.current) {
+      clearTimeout(refreshTimeoutRef.current);
+    }
+    
+    // Set new timeout with longer debounce
+    refreshTimeoutRef.current = setTimeout(() => {
+      if (!loading && !refreshing) {
+        refresh(
+          latitude || undefined,
+          longitude || undefined,
+          selectedCategory || undefined,
+          userLocationData ? {
+            location_state: userLocationData.location_state,
+            location_district: userLocationData.location_district,
+            location_name: userLocationData.location_name,
+          } : undefined
+        );
+      }
+    }, 1000); // 1 second debounce to minimize API calls
+  }, [refresh, latitude, longitude, selectedCategory, userLocationData, loading, refreshing]);
 
   // Helper function to refresh requests with current parameters
   const refreshRequests = useCallback(() => {
-    refresh(
-      latitude || undefined,
-      longitude || undefined,
-      selectedCategory || undefined,
-      userLocationData ? {
-        location_state: userLocationData.location_state,
-        location_district: userLocationData.location_district,
-        location_name: userLocationData.location_name,
-      } : undefined
-    );
-  }, [refresh, latitude, longitude, selectedCategory, userLocationData]);
+    debouncedRefresh();
+  }, [debouncedRefresh]);
 
   const handleUseCurrentLocation = useCallback(async () => {
     const result = await RequestLocationUtils.getCurrentLocation();

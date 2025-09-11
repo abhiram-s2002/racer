@@ -43,7 +43,9 @@
         "EXPO_PUBLIC_GOOGLE_ANALYTICS_ID": "G-1RN9LQFY3G"
       },
       "android": {
-        "resourceClass": "medium"
+        "resourceClass": "medium",
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundlePlayRelease"
       }
     }
   },

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, MapPin, Navigation, Calendar } from 'lucide-react-native';
-import { Request, RequestCategory, RequestUrgency } from '@/utils/types';
+import { Request, RequestCategory } from '@/utils/types';
 import { requestCategories } from '@/utils/requestCategories';
 import { validateListingTitle, validateListingDescription, validatePrice } from '@/utils/validation';
 import { RequestLocationUtils, LocationData } from '@/utils/requestLocationUtils';

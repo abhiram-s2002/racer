@@ -95,6 +95,14 @@ android {
         versionCode 1
         versionName "1.0.0"
     }
+    
+    flavorDimensions "store"
+    productFlavors {
+        play {
+            dimension "store"
+            isDefault true
+        }
+    }
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -115,6 +123,13 @@ android {
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
             crunchPngs (findProperty('android.enablePngCrunchInReleaseBuilds')?.toBoolean() ?: true)
+        }
+    }
+    
+    // Ensure only Play Store variant is built
+    variantFilter { variant ->
+        if (variant.buildType.name == 'release' && !variant.flavors.any { it.name == 'play' }) {
+            setIgnore(true)
         }
     }
     packagingOptions {
@@ -150,6 +165,13 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    
+    // Force Play Store variant for react-native-iap
+    implementation(project(':react-native-iap')) {
+        attributes {
+            attribute(Attribute.of('store', String), 'play')
+        }
+    }
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
