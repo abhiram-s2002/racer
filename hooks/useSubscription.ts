@@ -17,6 +17,9 @@ interface UseSubscriptionReturn {
   subscriptions: Subscription[];
   currentSubscriptions: Purchase[];
   hasActiveSubscription: boolean;
+  isVerified: boolean;
+  verificationStatus: string | null;
+  verificationExpiresAt: string | null;
   error: string | null;
 
   // Actions
@@ -25,6 +28,7 @@ interface UseSubscriptionReturn {
   purchaseSubscription: (productId: string) => Promise<void>;
   restorePurchases: () => Promise<void>;
   checkSubscriptionStatus: (productId: string) => Promise<SubscriptionStatus | null>;
+  refreshVerificationStatus: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -34,6 +38,9 @@ export function useSubscription(): UseSubscriptionReturn {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [currentSubscriptions, setCurrentSubscriptions] = useState<Purchase[]>([]);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<string | null>(null);
+  const [verificationExpiresAt, setVerificationExpiresAt] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Initialize subscription service
@@ -50,6 +57,8 @@ export function useSubscription(): UseSubscriptionReturn {
         await loadSubscriptions();
         // Check current subscriptions
         await checkCurrentSubscriptions();
+        // Load verification status
+        await refreshVerificationStatus();
       }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to initialize subscriptions';
@@ -108,8 +117,9 @@ export function useSubscription(): UseSubscriptionReturn {
           [{ text: 'OK' }]
         );
         
-        // Refresh current subscriptions
+        // Refresh current subscriptions and verification status
         await checkCurrentSubscriptions();
+        await refreshVerificationStatus();
       } else {
         throw new Error('Purchase failed');
       }
@@ -183,6 +193,20 @@ export function useSubscription(): UseSubscriptionReturn {
     }
   }, []);
 
+  // Refresh verification status
+  const refreshVerificationStatus = useCallback(async () => {
+    try {
+      const verificationData = await subscriptionService.getVerificationStatus();
+      if (verificationData) {
+        setIsVerified(verificationData.isVerified);
+        setVerificationStatus(verificationData.verificationStatus);
+        setVerificationExpiresAt(verificationData.verificationExpiresAt);
+      }
+    } catch (err) {
+      console.error('Error refreshing verification status:', err);
+    }
+  }, []);
+
   // Clear error state
   const clearError = useCallback(() => {
     setError(null);
@@ -207,6 +231,9 @@ export function useSubscription(): UseSubscriptionReturn {
     subscriptions,
     currentSubscriptions,
     hasActiveSubscription,
+    isVerified,
+    verificationStatus,
+    verificationExpiresAt,
     error,
 
     // Actions
@@ -215,6 +242,7 @@ export function useSubscription(): UseSubscriptionReturn {
     purchaseSubscription,
     restorePurchases,
     checkSubscriptionStatus,
+    refreshVerificationStatus,
     clearError,
   };
 }

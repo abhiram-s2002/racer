@@ -8,14 +8,20 @@ import {
   Text,
   TouchableOpacity,
   Alert,
+  Linking,
+  TextInput,
+  Modal,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { MoreVertical } from 'lucide-react-native';
+import { MoreVertical, Phone, MessageCircle, X } from 'lucide-react-native';
 import { supabase } from '@/utils/supabaseClient';
 import { imageCache } from '@/utils/imageCache';
 import { reportListing, hideListing, blockUser } from '@/utils/contentManagement';
 import { useAuth } from '@/hooks/useAuth';
+import { createPing, checkExistingPing } from '@/utils/activitySupabase';
+import { usePingLimits } from '@/hooks/usePingLimits';
+import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -70,9 +76,32 @@ function ListingDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Ping-related state
+  const [showPingModal, setShowPingModal] = useState(false);
+  const [pingMessage, setPingMessage] = useState('Hi, is this still available?');
+  const [existingPing, setExistingPing] = useState(false);
+  const [isPinging, setIsPinging] = useState(false);
 
   // Memoized values to prevent unnecessary re-renders
   const listingId = useMemo(() => id as string, [id]);
+  
+  // Ping-related hooks
+  const { user: currentUser } = useAuth();
+  const { isOnline } = useOfflineQueue();
+  const { limitInfo } = usePingLimits(currentUser?.username || null);
+  
+  // Check for existing ping
+  const checkExistingPingStatus = useCallback(async () => {
+    if (!listing?.id || !currentUser?.username) return;
+    
+    try {
+      const hasExistingPing = await checkExistingPing(listing.id, currentUser.username);
+      setExistingPing(hasExistingPing);
+    } catch (error) {
+      console.error('Error checking existing ping:', error);
+    }
+  }, [listing?.id, currentUser?.username]);
   
   // Helper function to fetch seller data from database
   const fetchSellerFromDatabase = async (username: string) => {
@@ -206,6 +235,13 @@ function ListingDetailScreen() {
     // Always fetch fresh data from database
     fetchListingData();
   }, [fetchListingData, listingId]);
+
+  // Check for existing ping when listing and user are available
+  useEffect(() => {
+    if (listing && currentUser) {
+      checkExistingPingStatus();
+    }
+  }, [listing, currentUser, checkExistingPingStatus]);
 
   // Handle navigation to other listings
   const handleListingPress = useCallback((listingId: string) => {
@@ -363,8 +399,112 @@ function ListingDetailScreen() {
     );
   }, [handleReport, handleHide, handleBlock, listing?.username]);
 
+  // Handle phone call
+  const handleCall = useCallback(() => {
+    const phoneNumber = sellerInfo?.phone;
+    if (!phoneNumber) {
+      Alert.alert(
+        'No Phone Number',
+        'This seller has not provided a phone number.',
+        [{ text: 'OK', style: 'default' }]
+      );
+      return;
+    }
+
+    Alert.alert(
+      'Call Seller',
+      `Call ${sellerInfo?.name || 'seller'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Call', 
+          onPress: () => {
+            const phoneUrl = `tel:${phoneNumber}`;
+            Linking.openURL(phoneUrl);
+          }
+        }
+      ]
+    );
+  }, [sellerInfo]);
+
+  // Handle message/ping
+  const handleMessage = useCallback(() => {
+    if (!currentUser) {
+      Alert.alert('Login Required', 'Please log in to send a ping.');
+      return;
+    }
+
+    if (!listing) {
+      Alert.alert('Error', 'Listing information not available.');
+      return;
+    }
+
+    // Prevent users from pinging themselves
+    if (currentUser.username === listing.username) {
+      Alert.alert('Cannot Send Ping', 'You cannot ping yourself.');
+      return;
+    }
+
+    setShowPingModal(true);
+  }, [currentUser, listing]);
 
 
+  // Send ping
+  const sendPing = useCallback(async () => {
+    if (!currentUser || !listing || !sellerInfo) return;
+
+    if (pingMessage.trim().length === 0) {
+      Alert.alert('Message Required', 'Please enter a message for the seller.');
+      return;
+    }
+
+    if (pingMessage.length > 500) {
+      Alert.alert('Message Too Long', 'Ping message must be 500 characters or less.');
+      return;
+    }
+
+    setIsPinging(true);
+
+    try {
+      if (isOnline) {
+        await createPing({
+          listing_id: listing.id,
+          sender_username: currentUser.username,
+          receiver_username: listing.username,
+          message: pingMessage.trim(),
+          status: 'pending'
+        });
+      } else {
+        // Add to offline queue
+        const { addPingAction } = useOfflineQueue();
+        await addPingAction({
+          listing_id: listing.id,
+          sender_username: currentUser.username,
+          receiver_username: listing.username,
+          message: pingMessage.trim(),
+          status: 'pending'
+        }, 'high');
+      }
+
+      setExistingPing(true);
+      setShowPingModal(false);
+      setPingMessage('');
+
+      Alert.alert(
+        'Ping Sent!',
+        `Your ping has been sent to ${sellerInfo.name || 'the seller'}. You'll be able to chat once they accept your ping.`,
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      console.error('Error sending ping:', error);
+      Alert.alert(
+        'Error',
+        error instanceof Error ? error.message : 'Failed to send ping. Please try again.'
+      );
+    } finally {
+      setIsPinging(false);
+    }
+  }, [currentUser, listing, sellerInfo, pingMessage, isOnline]);
 
 
 
@@ -396,6 +536,7 @@ function ListingDetailScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView
         style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -449,11 +590,6 @@ function ListingDetailScreen() {
           />
         )}
 
-        {/* Action Buttons */}
-        <ListingActionButtons
-          listing={listing}
-          sellerInfo={sellerInfo}
-        />
 
         {/* Location Map */}
         {listing.latitude && listing.longitude && (
@@ -487,6 +623,111 @@ function ListingDetailScreen() {
           />
         )}
       </ScrollView>
+      
+      {/* Fixed Bottom Action Tab */}
+      <View style={[styles.fixedBottomTab, { paddingBottom: insets.bottom }]}>
+        <View style={styles.actionButtonsContainer}>
+          {/* Call Button */}
+          <TouchableOpacity
+            style={[styles.actionButton, !sellerInfo?.phone && styles.disabledButton]}
+            onPress={handleCall}
+            disabled={!sellerInfo?.phone}
+            activeOpacity={0.7}
+          >
+            <Phone size={20} color={sellerInfo?.phone ? '#FFFFFF' : '#94A3B8'} />
+            <Text style={[styles.actionButtonText, !sellerInfo?.phone && styles.disabledButtonText]}>
+              {sellerInfo?.phone ? 'Call' : 'No Phone'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Message Button */}
+          <TouchableOpacity
+            style={[
+              styles.actionButton, 
+              existingPing ? styles.disabledButton : styles.messageButton
+            ]}
+            onPress={existingPing ? undefined : handleMessage}
+            disabled={existingPing}
+            activeOpacity={0.7}
+          >
+            <MessageCircle size={20} color={existingPing ? "#94A3B8" : "#22C55E"} />
+            <Text style={[
+              styles.actionButtonText, 
+              existingPing ? styles.disabledButtonText : styles.messageButtonText
+            ]}>
+              {existingPing ? 'Ping Sent' : 'Ping'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+      
+      {/* Ping Modal */}
+      {showPingModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.pingModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Send Ping to {sellerInfo?.name || 'Seller'}</Text>
+              <TouchableOpacity onPress={() => setShowPingModal(false)}>
+                <X size={24} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+            
+            {/* Ping Limits Info */}
+            {!limitInfo.canPing && (
+              <View style={styles.limitsInfo}>
+                <Text style={styles.limitsText}>
+                  Daily ping limits reset at midnight. You can send more pings tomorrow.
+                </Text>
+              </View>
+            )}
+            
+            <View style={styles.messageSection}>
+              <Text style={styles.messageLabel}>Message to Seller:</Text>
+              
+              <TextInput
+                style={styles.messageInput}
+                value={pingMessage}
+                onChangeText={setPingMessage}
+                placeholder="Type your message here..."
+                multiline
+                numberOfLines={4}
+                maxLength={500}
+                textAlignVertical="top"
+              />
+              
+              <Text style={styles.characterCount}>
+                {pingMessage.length}/500 characters
+              </Text>
+            </View>
+            
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowPingModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.sendButton,
+                  (!limitInfo.canPing || isPinging || pingMessage.trim().length === 0) && styles.disabledButton
+                ]}
+                onPress={sendPing}
+                disabled={!limitInfo.canPing || isPinging || pingMessage.trim().length === 0}
+              >
+                <Text style={[
+                  styles.sendButtonText,
+                  (!limitInfo.canPing || isPinging || pingMessage.trim().length === 0) && styles.disabledButtonText
+                ]}>
+                  {isPinging ? 'Sending...' : 'Send Ping'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+      
     </View>
   );
 }
@@ -498,6 +739,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 100, // Add padding to account for fixed bottom tab
   },
   heroImageContainer: {
     position: 'relative',
@@ -546,8 +790,162 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontFamily: 'Inter-Medium',
   },
-  
-
+  fixedBottomTab: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  actionButtonsContainer: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    gap: 12,
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+    backgroundColor: '#1E293B',
+  },
+  actionButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    fontWeight: '500',
+    color: '#FFFFFF',
+  },
+  disabledButton: {
+    backgroundColor: '#F1F5F9',
+    opacity: 0.6,
+  },
+  disabledButtonText: {
+    color: '#94A3B8',
+  },
+  messageButton: {
+    backgroundColor: '#DCFCE7',
+    borderWidth: 1,
+    borderColor: '#22C55E',
+  },
+  messageButtonText: {
+    color: '#22C55E',
+  },
+  // Ping Modal Styles
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  pingModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    margin: 20,
+    maxHeight: '80%',
+    width: '90%',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    color: '#1E293B',
+    flex: 1,
+  },
+  limitsInfo: {
+    backgroundColor: '#FEF3C7',
+    padding: 12,
+    margin: 20,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#F59E0B',
+  },
+  limitsText: {
+    fontSize: 14,
+    color: '#92400E',
+    fontFamily: 'Inter-Medium',
+  },
+  messageSection: {
+    padding: 20,
+  },
+  messageLabel: {
+    fontSize: 14,
+    color: '#1E293B',
+    fontFamily: 'Inter-Medium',
+    marginBottom: 12,
+  },
+  messageInput: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#1E293B',
+    minHeight: 100,
+    maxHeight: 150,
+  },
+  characterCount: {
+    fontSize: 12,
+    color: '#64748B',
+    textAlign: 'right',
+    marginTop: 4,
+    fontFamily: 'Inter-Regular',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
+  },
+  sendButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#22C55E',
+    alignItems: 'center',
+  },
+  sendButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#FFFFFF',
+  },
 });
 
 // Wrap with Error Boundary for better error handling

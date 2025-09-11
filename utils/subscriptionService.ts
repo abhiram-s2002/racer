@@ -46,6 +46,16 @@ export interface SubscriptionError {
   userCancelled?: boolean;
 }
 
+// Extended Purchase interface to handle the actual properties we need
+export interface ExtendedPurchase {
+  productId: string;
+  purchaseToken?: string;
+  transactionId?: string;
+  purchaseTime?: number;
+  platform?: string;
+  [key: string]: any; // Allow additional properties
+}
+
 class SubscriptionService {
   private isInitialized = false;
   private purchaseUpdateSubscription: any = null;
@@ -182,23 +192,58 @@ class SubscriptionService {
   // Update subscription status in your backend
   private async updateSubscriptionStatus(purchase: Purchase) {
     try {
-      // This is where you'd update your Supabase database
-      // with the user's subscription status
       console.log('Updating subscription status for purchase:', purchase);
       
-      // Example: Update user's subscription in Supabase
-      // await supabase
-      //   .from('user_subscriptions')
-      //   .upsert({
-      //     user_id: currentUser.id,
-      //     product_id: purchase.productId,
-      //     purchase_token: purchase.purchaseToken,
-      //     purchase_time: purchase.purchaseTime,
-      //     is_active: true,
-      //     platform: purchase.platform
-      //   });
+      // Import supabase client
+      const { supabase } = await import('./supabaseClient');
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Cast to extended purchase to access additional properties
+      const extendedPurchase = purchase as ExtendedPurchase;
+      
+      // Calculate expiry time based on product type
+      let expiryTime: number | null = null;
+      if (purchase.productId === SUBSCRIPTION_PRODUCTS.MONTHLY_VERIFICATION) {
+        // 30 days from now
+        expiryTime = Date.now() + (30 * 24 * 60 * 60 * 1000);
+      } else if (purchase.productId === SUBSCRIPTION_PRODUCTS.ANNUAL_VERIFICATION) {
+        // 365 days from now
+        expiryTime = Date.now() + (365 * 24 * 60 * 60 * 1000);
+      }
+      
+      // Extract purchase token safely
+      const purchaseToken = extendedPurchase.purchaseToken || extendedPurchase.transactionId || '';
+      
+      // Call the database function to sync subscription with verification
+      const { data, error } = await supabase.rpc('sync_subscription_with_verification', {
+        p_user_id: user.id,
+        p_product_id: purchase.productId,
+        p_purchase_token: purchaseToken,
+        p_purchase_time: extendedPurchase.purchaseTime || Date.now(),
+        p_expiry_time: expiryTime,
+        p_platform: extendedPurchase.platform || 'android'
+      });
+      
+      if (error) {
+        console.error('Database sync error:', error);
+        throw new Error(`Failed to sync subscription: ${error.message}`);
+      }
+      
+      if (data && data.success) {
+        console.log('Subscription and verification status updated successfully:', data);
+      } else {
+        console.error('Subscription sync failed:', data);
+        throw new Error('Failed to sync subscription with verification status');
+      }
+      
     } catch (error) {
       console.error('Error updating subscription status:', error);
+      throw error;
     }
   }
 
@@ -250,6 +295,46 @@ class SubscriptionService {
       };
     } catch (error) {
       console.error('Error getting subscription status:', error);
+      return null;
+    }
+  }
+
+  // Get comprehensive verification status including subscription
+  async getVerificationStatus(): Promise<{
+    isVerified: boolean;
+    verificationStatus: string;
+    verifiedAt: string | null;
+    verificationExpiresAt: string | null;
+    hasActiveSubscription: boolean;
+    subscriptionProductId: string | null;
+  } | null> {
+    try {
+      const { supabase } = await import('./supabaseClient');
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        return null;
+      }
+
+      const { data, error } = await supabase.rpc('get_user_verification_status_complete', {
+        p_user_id: user.id
+      });
+
+      if (error) {
+        console.error('Error getting verification status:', error);
+        return null;
+      }
+
+      return {
+        isVerified: data?.is_verified || false,
+        verificationStatus: data?.verification_status || 'not_verified',
+        verifiedAt: data?.verified_at || null,
+        verificationExpiresAt: data?.verification_expires_at || null,
+        hasActiveSubscription: data?.has_active_subscription || false,
+        subscriptionProductId: data?.subscription_product_id || null,
+      };
+    } catch (error) {
+      console.error('Error getting verification status:', error);
       return null;
     }
   }

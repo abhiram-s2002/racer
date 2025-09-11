@@ -17,7 +17,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, MapPin, Phone, MessageCircle, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Check, Home, Star, Clock, Tag, Car, MoreHorizontal, MoreVertical } from 'lucide-react-native';
+import { Search, MapPin, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Home, Star, Clock, Tag, Car, MoreHorizontal, Heart } from 'lucide-react-native';
 import { Plus } from 'lucide-react-native';
 // Categories moved to inline definition for better performance
 const categories = [
@@ -33,20 +33,14 @@ const categories = [
 ];
 
 import AddListingModal from '@/components/AddListingModal';
-import PingTemplateSelector from '@/components/PingTemplateSelector';
 import FeedbackModal from '@/components/FeedbackModal';
 import HomeRatingDisplay from '@/components/HomeRatingDisplay';
-import ListingOptionsModal from '@/components/ListingOptionsModal';
 
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import CategorySelectionModal from '@/components/CategorySelectionModal';
 import DistanceFilterModal from '@/components/DistanceFilterModal';
 import { useListings } from '@/hooks/useListings';
-import { usePingLimits } from '@/hooks/usePingLimits';
-import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 import { supabase } from '@/utils/supabaseClient';
-import { advancedRateLimiter } from '../../utils/advancedRateLimiter';
-import { createPing, checkExistingPing } from '@/utils/activitySupabase';
 
 import { formatDistance } from '@/utils/distance';
 import { LocationUtils } from '@/utils/locationUtils';
@@ -81,10 +75,6 @@ function HomeScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const [showAddModal, setShowAddModal] = useState(false);
-  const [pingModalVisible, setPingModalVisible] = useState(false);
-  const [selectedListingForPing, setSelectedListingForPing] = useState<any>(null);
-  const [pingMessage, setPingMessage] = useState('Hi, I am interested in your listing!');
-  const [showTemplateSelector, setShowTemplateSelector] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [selectedCategoryForListing, setSelectedCategoryForListing] = useState<Category | undefined>(undefined);
   const [showDistanceFilterModal, setShowDistanceFilterModal] = useState(false);
@@ -95,11 +85,8 @@ function HomeScreen() {
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const [userActivityCount, setUserActivityCount] = useState(0);
   const [hasShownFeedbackPrompt, setHasShownFeedbackPrompt] = useState(false);
-  const [existingPings, setExistingPings] = useState<Record<string, boolean>>({});
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
   const [loadingStage, setLoadingStage] = useState<'initial' | 'loading' | 'error' | 'offline' | 'empty'>('initial');
-  const [showOptionsModal, setShowOptionsModal] = useState(false);
-  const [selectedListingForOptions, setSelectedListingForOptions] = useState<any>(null);
   
 
   
@@ -122,15 +109,8 @@ function HomeScreen() {
 
   
   const [refreshing, setRefreshing] = useState(false);
-  const { pingListingId } = useLocalSearchParams();
 
   // Location check is handled globally in _layout.tsx
-
-  // Ping limits for the selected listing
-  const { limitInfo, loading: limitLoading, getPingLimitMessage, getPingLimitColor, checkPingLimit, recordPing } = usePingLimits(username);
-
-  // Offline queue for handling network issues
-  const { addPingAction, isOnline } = useOfflineQueue();
 
   // Manage loading stages
   useEffect(() => {
@@ -201,36 +181,6 @@ function HomeScreen() {
 
 
 
-  // Load existing pings for current user
-  useEffect(() => {
-    async function loadExistingPings() {
-      if (!username || listings.length === 0) return;
-      
-      try {
-        const { data: pings, error } = await supabase
-          .from('pings')
-          .select('listing_id')
-          .eq('sender_username', username)
-          .eq('status', 'pending');
-        
-        if (error) {
-          return;
-        }
-        
-        // Create a map of listing IDs that have pending pings
-        const pingMap: Record<string, boolean> = {};
-        pings?.forEach(ping => {
-          pingMap[ping.listing_id] = true;
-        });
-        
-        setExistingPings(pingMap);
-      } catch (error) {
-        // Silent error handling
-      }
-    }
-    
-    loadExistingPings();
-  }, [username, listings]);
 
   // Load ratings for all users in listings
   useEffect(() => {
@@ -299,17 +249,6 @@ function HomeScreen() {
     }, [listings.length, markReturningFromNavigation])
   );
 
-  useEffect(() => {
-    if (pingListingId && listings.length > 0) {
-      const found = listings.find(l => l.id === pingListingId);
-      if (found) {
-        setSelectedListingForPing(found);
-        setPingModalVisible(true);
-        // Clear the param after handling
-        router.replace({ pathname: '/', params: {} });
-      }
-    }
-  }, [pingListingId, listings]);
 
   // Handle back button for modal
   useEffect(() => {
@@ -362,221 +301,8 @@ function HomeScreen() {
 
 
 
-  // Handler for the message (ping) button
-  const handlePingSeller = useCallback(async (listing: any) => {
-    try {
-      // Check network connectivity first
-      if (!networkMonitor.isOnline()) {
-        await errorHandler.handleError(
-          new Error('No internet connection available'),
-          {
-            operation: 'ping_seller',
-            component: 'HomeScreen',
-          }
-        );
-        return;
-      }
-
-      if (!username) {
-        await errorHandler.handleError(
-          new Error('Please log in to send pings'),
-          {
-            operation: 'ping_authentication',
-            component: 'HomeScreen',
-          }
-        );
-        return;
-      }
-
-      // Check if user already has a pending ping to this listing
-      const hasExistingPing = await checkExistingPing(listing.id, username);
-      if (hasExistingPing) {
-        await errorHandler.handleError(
-          new Error('You already have a pending ping for this listing. Please wait for the seller to respond.'),
-          {
-            operation: 'ping_already_sent',
-            component: 'HomeScreen',
-          }
-        );
-        return;
-      }
-
-      // Check ping limits using hybrid system (forces database check)
-      await checkPingLimit(listing.id, true);
-      
-      // Always open modal, let the modal handle the limit display
-      setSelectedListingForPing(listing);
-      setPingMessage('Hi, I am interested in your listing!');
-      setPingModalVisible(true);
-      
-    } catch (error) {
-      await errorHandler.handleError(error, {
-        operation: 'ping_seller_general',
-        component: 'HomeScreen',
-      });
-    }
-  }, [username, errorHandler, networkMonitor, checkExistingPing, checkPingLimit]);
-
-  const handleTemplateSelect = useCallback((template: any) => {
-    if (template.isCustom) {
-      // Keep current message for custom editing
-      setPingMessage(pingMessage);
-    } else {
-      setPingMessage(template.message);
-    }
-    setShowTemplateSelector(false);
-  }, [pingMessage]);
-
-  // Confirm sending the ping
-  const confirmSendPing = async () => {
-    try {
-      if (!selectedListingForPing || !username) {
-        await errorHandler.handleError(
-          new Error('Unable to send ping. Please try again.'),
-          {
-            operation: 'ping_validation',
-            component: 'HomeScreen',
-          }
-        );
-        return;
-      }
-
-      const listing = selectedListingForPing;
-      const currentUser = { username: username, name: 'You', avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400' };
-      const seller = { username: listing.username, name: listing.sellerName, avatar: listing.sellerAvatar };
-
-      // Check rate limiting first
-      const rateLimit = await advancedRateLimiter.checkPingRateLimit(username);
-      if (!rateLimit.allowed) {
-        const retrySeconds = Math.ceil((rateLimit.retryAfter || 0) / 1000);
-        await errorHandler.handleError(
-          new Error(`You're sending too many pings. Please try again in ${retrySeconds} seconds.`),
-          {
-            operation: 'ping_rate_limit',
-            component: 'HomeScreen',
-          }
-        );
-        return;
-      }
-
-      // Validate ping message
-      if (!pingMessage.trim()) {
-        await errorHandler.handleError(
-          new Error('Please enter a message before sending the ping.'),
-          {
-            operation: 'ping_message_validation',
-            component: 'HomeScreen',
-          }
-        );
-        return;
-      }
-
-      if (pingMessage.length > 500) {
-        await errorHandler.handleError(
-          new Error('Ping message must be 500 characters or less.'),
-          {
-            operation: 'ping_message_length',
-            component: 'HomeScreen',
-          }
-        );
-        return;
-      }
 
 
-
-      // Prevent users from pinging themselves
-      if (currentUser.username === seller.username) {
-        Alert.alert(
-          'Cannot Send Ping',
-          'You cannot ping yourself.',
-          [{ text: 'OK' }]
-        );
-        return;
-      }
-
-      // Try to create ping online first
-      if (isOnline) {
-        try {
-          await createPing({
-            listing_id: listing.id,
-            sender_username: currentUser.username,
-            receiver_username: seller.username,
-            message: pingMessage.trim(),
-            status: 'pending'
-          });
-
-          // Record ping in local limits and refresh
-          await recordPing(listing.id);
-
-          // Update existing pings state
-          setExistingPings(prev => ({
-            ...prev,
-            [listing.id]: true
-          }));
-
-          // Show success message
-          Alert.alert(
-            'Ping Sent!', 
-            `Your ping has been sent to ${seller.name || 'the seller'}. You'll be able to chat once they accept your ping.`,
-            [{ text: 'OK' }]
-          );
-          
-          trackUserActivity(); // Track meaningful activity
-          return;
-        } catch (error) {
-          // Fall through to offline queue
-        }
-      }
-
-      // Add to offline queue if online attempt failed or offline
-      await addPingAction({
-        listing_id: listing.id,
-        sender_username: currentUser.username,
-        receiver_username: seller.username,
-        message: pingMessage.trim(),
-        status: 'pending'
-      }, 'high');
-
-      // Record ping in local limits and refresh
-      await recordPing(listing.id);
-
-      // Update existing pings state
-      setExistingPings(prev => ({
-        ...prev,
-        [listing.id]: true
-      }));
-
-      if (isOnline) {
-        Alert.alert(
-          'Ping Queued', 
-          `Your ping has been queued and will be sent when the connection is stable.`
-        );
-      } else {
-        Alert.alert(
-          'Ping Saved', 
-          `Your ping has been saved and will be sent when you're back online.`
-        );
-      }
-      
-      trackUserActivity(); // Track meaningful activity
-
-    } catch (error) {
-      await errorHandler.handleError(error, {
-        operation: 'ping_creation',
-        component: 'HomeScreen',
-      });
-    } finally {
-      setPingModalVisible(false);
-      setSelectedListingForPing(null);
-      setPingMessage('Hi, I am interested in your listing!');
-    }
-  };
-
-  const cancelPing = () => {
-    setPingModalVisible(false);
-    setSelectedListingForPing(null);
-    setPingMessage('Hi, I am interested in your listing!');
-  };
 
 
 
@@ -685,34 +411,42 @@ function HomeScreen() {
             />
           </TouchableOpacity>
           
-          {/* 3-dots menu button */}
+          {/* Favorite Button */}
           <TouchableOpacity
-            style={styles.optionsButton}
+            style={styles.favoriteButton}
             onPress={() => {
-              setSelectedListingForOptions(item);
-              setShowOptionsModal(true);
+              // TODO: Implement favorite logic
             }}
             activeOpacity={0.7}
           >
-            <MoreVertical size={16} color="#64748B" />
+            <Heart size={16} color="#64748B" />
           </TouchableOpacity>
         </View>
 
         <View style={styles.listingContent}>
           <TouchableOpacity onPress={() => handleImageClick(item)}>
-            <View style={styles.titleAndDistanceRow}>
-              <Text style={styles.listingTitle}>{item.title}</Text>
-              <View style={styles.distanceContainer}>
-                <MapPin size={12} color="#64748B" />
-                {item.distance_km !== undefined && item.distance_km !== null ? (
-                  <Text style={styles.distance}>{formatDistance(item.distance_km)}</Text>
-                ) : seller.location_display ? (
-                  <Text style={styles.distance}>{LocationUtils.formatLocationDisplay(seller.location_display)}</Text>
-                ) : (
-                  <Text style={[styles.distance, styles.noLocationText]}>No location set</Text>
-                )}
-              </View>
+            {/* Distance at the top */}
+            <View style={styles.distanceContainer}>
+              <MapPin size={12} color="#64748B" />
+              {item.distance_km !== undefined && item.distance_km !== null ? (
+                <Text style={styles.distance}>{formatDistance(item.distance_km)}</Text>
+              ) : seller.location_display ? (
+                <Text style={styles.distance}>{LocationUtils.formatLocationDisplay(seller.location_display)}</Text>
+              ) : (
+                <Text style={[styles.distance, styles.noLocationText]}>No location set</Text>
+              )}
             </View>
+
+            {/* Seller Name with Verification Badge */}
+            <View style={styles.sellerInfo}>
+              <Text style={styles.sellerName}>{seller.name || 'Unknown Seller'}</Text>
+              {isUserVerified(seller) && <VerificationBadge size="small" />}
+            </View>
+
+            {/* Listing Title */}
+            <Text style={styles.listingTitle}>{item.title}</Text>
+
+            {/* Price with Unit Badge */}
             <View style={styles.priceContainer}>
               <Text style={styles.listingPrice}>₹{item.price}</Text>
               <View style={styles.priceUnitBadge}>
@@ -725,130 +459,38 @@ function HomeScreen() {
               </View>
             </View>
 
-            {/* Seller Name with Verification Badge */}
-            <View style={styles.sellerInfo}>
-              <Text style={styles.sellerName}>{seller.name || 'Unknown Seller'}</Text>
-              {isUserVerified(seller) && <VerificationBadge size="small" />}
-            </View>
-
-            {/* Additional Info Section */}
-            <View style={styles.additionalInfoContainer}>
-              {/* Category, Tags and Date Row */}
-              <View style={styles.categoryDateRow}>
-                <View style={styles.leftSection}>
-                  <View style={styles.categoryBadge}>
-                    <Tag size={10} color="#64748B" />
-                                      <Text style={styles.listingCategoryText}>
-                    {categories.find(cat => cat.id === item.category)?.name || item.category || 'General'}
-                  </Text>
-                  </View>
-                  {item.tags && item.tags.length > 0 && (
-                    <Text style={styles.tagsText}>
-                      #{item.tags.slice(0, 2).join(' #')}
-                    </Text>
-                  )}
-                </View>
-                <View style={styles.dateContainer}>
-                  <Clock size={10} color="#94A3B8" />
-                  <Text style={styles.dateText}>
-                    {formatTimeAgo(item.created_at)}
-                  </Text>
-                </View>
-              </View>
-
-
-
-              {/* Seller Rating */}
+            {/* Seller Rating - Only show if there are ratings */}
+            {getRealRating(item.username) && (
               <View style={styles.ratingRow}>
                 <View style={styles.ratingContainer}>
-                  {getRealRating(item.username) ? (
-                    <>
-                      <Star size={10} color="#F59E0B" fill="#F59E0B" />
-                      <Text style={styles.ratingText}>
-                        {getRealRating(item.username)?.rating}
-                      </Text>
-                      <Text style={styles.reviewCountText}>
-                        ({getRealRating(item.username)?.reviewCount} reviews)
-                      </Text>
-                    </>
-                  ) : userRatings[item.username] === undefined ? (
-                    <Text style={styles.loadingRatingText}>Loading...</Text>
-                  ) : (
-                    <Text style={styles.noRatingText}>No ratings yet</Text>
-                  )}
-                </View>
-                <View style={[styles.statusBadge, (item.is_active !== false) && styles.activeBadge]}>
-                  <Text style={[styles.statusText, (item.is_active !== false) && styles.activeText]}>
-                    {(item.is_active !== false) ? 'Active' : 'Inactive'}
+                  <Star size={10} color="#F59E0B" fill="#F59E0B" />
+                  <Text style={styles.ratingText}>
+                    {getRealRating(item.username)?.rating}
+                  </Text>
+                  <Text style={styles.reviewCountText}>
+                    ({getRealRating(item.username)?.reviewCount} reviews)
                   </Text>
                 </View>
               </View>
-            </View>
+            )}
+
+            {/* Location - City and District */}
+            {seller.location_display && (
+              <Text style={styles.locationText}>
+                {LocationUtils.formatLocationDisplay(seller.location_display)}
+              </Text>
+            )}
           
 
           </TouchableOpacity>
           
-          {getDescriptionText(item) ? (
-            <View style={styles.descriptionContainer}>
-              <TouchableOpacity 
-                style={styles.descriptionTextContainer}
-                onPress={() => toggleDescriptionExpansion(item.id)}
-                activeOpacity={0.7}
-              >
-                <Text 
-                  style={styles.descriptionText}
-                  numberOfLines={expandedDescriptions[item.id] ? undefined : 2}
-                >
-                  {getDescriptionText(item)}
-                </Text>
-                {getDescriptionText(item) && getDescriptionText(item)!.length > 100 && (
-                  <Text style={styles.expandIndicator}>
-                    {expandedDescriptions[item.id] ? 'Show less' : 'Show more'}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          ) : null}
 
 
 
-          <View style={styles.actionButtons}>
-            <TouchableOpacity 
-              style={styles.callButton}
-              onPress={() => {
-                // Always fetch phone number from sellerInfoMap (profile)
-                const sellerProfile = sellerInfoMap[item.username];
-                const phoneToCall = sellerProfile && sellerProfile.phone;
-                if (phoneToCall) {
-                  Linking.openURL(`tel:${phoneToCall}`);
-                } else {
-                  Alert.alert('No phone number available');
-                }
-              }}
-            >
-              <Phone size={16} color="#FFFFFF" />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[
-                styles.messageButton,
-                existingPings[item.id] && styles.messageButtonSent
-              ]} 
-              onPress={() => handlePingSeller(item)}
-              disabled={existingPings[item.id]}
-            >
-              {existingPings[item.id] ? (
-                <Check size={16} color="#22C55E" />
-              ) : (
-                <MessageCircle size={16} color={
-                  item.username === username ? "#94A3B8" : "#22C55E"
-                } />
-              )}
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
     );
-  }, [sellerInfoMap, username, existingPings, expandedDescriptions]);
+  }, [sellerInfoMap, username, expandedDescriptions]);
 
   // Handler for the floating add button
   const handleAddListing = useCallback(() => {
@@ -1060,175 +702,6 @@ function HomeScreen() {
         onSelectDistance={handleSelectDistance}
       />
 
-      {/* Ping Template Selector */}
-      <PingTemplateSelector
-        visible={showTemplateSelector}
-        onClose={() => setShowTemplateSelector(false)}
-        onSelectTemplate={handleTemplateSelect}
-        listingCategory={selectedListingForPing?.category}
-      />
-
-      {/* Enhanced Ping Confirmation Modal with Ping Limits */}
-      <Modal
-        visible={pingModalVisible}
-        transparent
-        animationType="slide"
-        onRequestClose={cancelPing}
-
-      >
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'center', alignItems: 'center' }}>
-          <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 28, width: 320, alignItems: 'stretch', elevation: 8 }}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10, textAlign: 'center', color: '#1E293B' }}>Send a Ping</Text>
-            <Text style={{ fontSize: 13, color: '#64748B', marginBottom: 18, textAlign: 'center' }}>
-              A <Text style={{ fontWeight: 'bold', color: '#22C55E' }}>Ping</Text> lets the seller know you are interested in their listing. You can add a message below. The seller can accept or reject your ping.
-              {selectedListingForPing?.username === username && (
-                <Text style={{ color: '#F59E0B', fontWeight: 'bold' }}> Note: You are pinging your own listing.</Text>
-              )}
-            </Text>
-            
-            {/* Ping Limit Indicator */}
-            {username && selectedListingForPing && (
-              <View style={{ 
-                backgroundColor: getPingLimitColor() + '15', 
-                borderWidth: 1.5, 
-                borderColor: getPingLimitColor() + '40',
-                borderRadius: 10, 
-                padding: 14, 
-                marginBottom: 18,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}>
-                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-                  <View style={{ 
-                    width: 8, 
-                    height: 8, 
-                    borderRadius: 4, 
-                    backgroundColor: getPingLimitColor(),
-                    marginRight: 10
-                  }} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={{ 
-                      fontSize: 13, 
-                      color: getPingLimitColor(), 
-                      fontWeight: '700',
-                      marginBottom: 2
-                    }}>
-                      {limitLoading ? 'Checking limits...' : getPingLimitMessage()}
-                    </Text>
-                    <Text style={{ fontSize: 11, color: '#64748B', fontWeight: '500' }}>
-                      Daily limit: {limitInfo.remainingPings}/{limitInfo.maxPingsPerDay}
-                    </Text>
-                  </View>
-                </View>
-                <View style={{ 
-                  width: 28, 
-                  height: 28, 
-                  borderRadius: 14, 
-                  backgroundColor: getPingLimitColor(),
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  shadowColor: getPingLimitColor(),
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.3,
-                  shadowRadius: 4,
-                  elevation: 3
-                }}>
-                  <Text style={{ color: '#fff', fontSize: 12, fontWeight: 'bold' }}>
-                    {limitInfo.remainingPings}
-                  </Text>
-                </View>
-              </View>
-            )}
-            
-            {/* Limit reached explanation */}
-            {username && selectedListingForPing && limitInfo.remainingPings === 0 && (
-              <View style={{ 
-                backgroundColor: '#FEF2F2', 
-                borderWidth: 1, 
-                borderColor: '#FECACA',
-                borderRadius: 8, 
-                padding: 10, 
-                marginBottom: 16
-              }}>
-                <Text style={{ 
-                  fontSize: 11, 
-                  color: '#DC2626', 
-                  textAlign: 'center',
-                  fontFamily: 'Inter-Medium'
-                }}>
-                  Daily ping limits reset at midnight. You can send more pings tomorrow.
-                </Text>
-              </View>
-            )}
-            
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-              <Text style={{ fontSize: 14, color: '#1E293B' }}>Message to Seller:</Text>
-              <TouchableOpacity 
-                style={{ 
-                  flexDirection: 'row', 
-                  alignItems: 'center', 
-                  backgroundColor: '#F1F5F9', 
-                  paddingHorizontal: 8, 
-                  paddingVertical: 4, 
-                  borderRadius: 12 
-                }}
-                onPress={() => setShowTemplateSelector(true)}
-              >
-                <MessageCircle size={14} color="#64748B" />
-                <Text style={{ fontSize: 12, color: '#64748B', marginLeft: 4, fontFamily: 'Inter-Medium' }}>
-                  Templates
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <TextInput
-              style={{
-                borderWidth: 1,
-                borderColor: '#E2E8F0',
-                borderRadius: 8,
-                padding: 10,
-                fontSize: 14,
-                color: '#1E293B',
-                marginBottom: 18,
-                minHeight: 40,
-                backgroundColor: '#F8FAFC',
-              }}
-              value={pingMessage}
-              onChangeText={setPingMessage}
-              placeholder="Type your message..."
-              maxLength={500}
-              multiline
-            />
-            <View style={{ flexDirection: 'row', gap: 16 }}>
-              <TouchableOpacity onPress={cancelPing} style={{ flex: 1, backgroundColor: '#F1F5F9', paddingVertical: 12, borderRadius: 8, alignItems: 'center' }}>
-                <Text style={{ color: '#64748B', fontWeight: 'bold', fontSize: 15 }}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                onPress={confirmSendPing} 
-                disabled={!limitInfo.canPing || limitLoading}
-                style={{ 
-                  flex: 1, 
-                  backgroundColor: limitInfo.canPing ? '#22C55E' : '#94A3B8', 
-                  paddingVertical: 12, 
-                  borderRadius: 8, 
-                  alignItems: 'center',
-                  opacity: (!limitInfo.canPing || limitLoading) ? 0.6 : 1
-                }}
-              >
-                <Text style={{ 
-                  color: '#fff', 
-                  fontWeight: 'bold', 
-                  fontSize: 15,
-                  opacity: (!limitInfo.canPing || limitLoading) ? 0.8 : 1
-                }}>
-                  {limitLoading ? 'Checking...' : 
-                   !limitInfo.canPing ? 'Limit Reached' : 'Send'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
 
       {/* Header */}
       <View style={styles.header}>
@@ -1282,11 +755,6 @@ function HomeScreen() {
 
       {/* Listings */}
       <View style={styles.listingsSection}>
-        <Text style={styles.sectionTitle}>
-          {sectionTitle}
-        </Text>
-        
-
         
         {loadingStage === 'loading' ? (
           <HomeLoadingStates 
@@ -1353,27 +821,6 @@ function HomeScreen() {
         onSubmit={handleSubmitFeedback}
       />
 
-      {/* Listing Options Modal */}
-      <ListingOptionsModal
-        visible={showOptionsModal}
-        onClose={() => setShowOptionsModal(false)}
-        listingId={selectedListingForOptions?.id || ''}
-        sellerUsername={selectedListingForOptions?.username || ''}
-        listingTitle={selectedListingForOptions?.title || ''}
-        type="listing"
-        onReport={() => {
-          // Force refresh listings to hide reported item
-          forceRefreshListings();
-        }}
-        onHide={() => {
-          // Force refresh listings to hide the item
-          forceRefreshListings();
-        }}
-        onBlock={() => {
-          // Force refresh listings to hide blocked user's items
-          forceRefreshListings();
-        }}
-      />
 
       {/* Location Check Popup is handled globally in _layout.tsx */}
 
@@ -1393,8 +840,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
   },
   searchContainer: {
     flex: 1,
@@ -1434,7 +879,6 @@ const styles = StyleSheet.create({
   categoriesSection: {
     backgroundColor: '#FFFFFF',
     paddingVertical: 8,
-    marginBottom: 2,
   },
   categoriesContainer: {
     paddingHorizontal: 16,
@@ -1495,8 +939,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 8,
     width: ITEM_WIDTH,
-    boxShadow: '0px 2px 6px rgba(0,0,0,0.1)',
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     overflow: 'hidden',
   },
   imageContainer: {
@@ -1505,22 +949,8 @@ const styles = StyleSheet.create({
   listingImage: {
     width: '100%',
     height: 150,
-  },
-  optionsButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 16,
-    padding: 6,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
   },
   favoriteButton: {
     position: 'absolute',
@@ -1545,15 +975,10 @@ const styles = StyleSheet.create({
     marginBottom: 1,
     minHeight: 24,
   },
-  titleAndDistanceRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 1,
-  },
   distanceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 6,
   },
   descriptionContainer: {
     flexDirection: 'row',
@@ -1694,7 +1119,7 @@ const styles = StyleSheet.create({
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 3,
+    marginBottom: 6,
     gap: 6,
   },
   priceUnit: {
@@ -1728,8 +1153,13 @@ const styles = StyleSheet.create({
   sellerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
-    marginTop: 2,
+    marginBottom: 4,
+  },
+  locationText: {
+    fontSize: 11,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+    marginTop: 4,
   },
   sellerAvatar: {
     width: 18,
@@ -1780,35 +1210,6 @@ const styles = StyleSheet.create({
   },
   activeText: {
     color: '#16A34A',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 3,
-    justifyContent: 'flex-end',
-    marginTop: 'auto',
-  },
-  callButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#22C55E',
-    paddingVertical: 4,
-    borderRadius: 3,
-  },
-  messageButton: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F0FDF4',
-    paddingVertical: 4,
-    borderRadius: 3,
-    borderWidth: 1,
-    borderColor: '#22C55E',
-  },
-  messageButtonSent: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#22C55E',
-    opacity: 0.8,
   },
   loadingContainer: {
     flex: 1,

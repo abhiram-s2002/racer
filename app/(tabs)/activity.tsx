@@ -937,8 +937,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 20,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
     position: 'relative',
   },
   title: {
@@ -955,8 +953,6 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
   },
   tab: {
     flex: 1,
@@ -984,8 +980,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
   },
   filterTitle: {
     fontSize: 14,
@@ -1042,8 +1036,8 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 12,
     padding: 16,
-    boxShadow: '0px 2px 8px rgba(0,0,0,0.1)',
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     position: 'relative', // <-- add this
   },
   listingHeader: {
@@ -1060,6 +1054,8 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#F8FAFC',
   },
   listingDetails: {
     flex: 1,
@@ -1220,6 +1216,8 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 8,
     marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#F8FAFC',
   },
   productDetails: {
     flex: 1,
@@ -1284,8 +1282,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
   },
   addListingButton: {
     flexDirection: 'row',
