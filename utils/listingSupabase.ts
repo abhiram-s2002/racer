@@ -12,7 +12,6 @@ export interface Listing {
   category: string;
   thumbnail_images?: string[];
   preview_images?: string[];
-  is_active: boolean;
   username: string;
   created_at?: string;
   latitude?: number;
@@ -28,7 +27,6 @@ export async function getListings(page = 1, pageSize = 10): Promise<Listing[]> {
   const { data, error } = await supabase
     .from('listings')
     .select('*')
-    .eq('is_active', true)
     .gt('expires_at', new Date().toISOString()) // Only non-expired listings
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -159,7 +157,6 @@ export async function getListingsByUsername(username: string): Promise<Listing[]
     .from('listings')
     .select('*')
     .eq('username', username)
-    .eq('is_active', true)
     .order('created_at', { ascending: false });
   
   if (error) throw error;
@@ -175,7 +172,6 @@ export async function getListingsByCategory(category: string, page = 1, pageSize
     .from('listings')
     .select('*')
     .eq('category', category)
-    .eq('is_active', true)
     .order('created_at', { ascending: false })
     .range(from, to);
   
@@ -192,7 +188,6 @@ export async function searchListings(query: string, page = 1, pageSize = 10): Pr
     .from('listings')
     .select('*')
     .or(`title.ilike.%${query}%,description.ilike.%${query}%`)
-    .eq('is_active', true)
     .gt('expires_at', new Date().toISOString()) // Only non-expired listings
     .order('created_at', { ascending: false })
     .range(from, to);
@@ -246,7 +241,6 @@ export async function getExpiringListings(username: string, daysUntilExpiry = 7)
     .from('listings')
     .select('*')
     .eq('username', username)
-    .eq('is_active', true)
     .lte('expires_at', expiryDate.toISOString())
     .gt('expires_at', new Date().toISOString()) // Still active
     .order('expires_at', { ascending: true });
@@ -261,7 +255,6 @@ export async function getExpiredListings(username: string): Promise<Listing[]> {
     .from('listings')
     .select('*')
     .eq('username', username)
-    .eq('is_active', true)
     .lte('expires_at', new Date().toISOString())
     .order('expires_at', { ascending: false });
   

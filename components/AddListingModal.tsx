@@ -17,7 +17,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { 
-  Mic, 
   Upload,
   Check,
   X,
@@ -96,7 +95,6 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
     description: string;
     thumbnailImages: string[];
     previewImages: string[];
-    isActive: boolean;
     expirationDays: number;
   }>({
     title: '',
@@ -106,11 +104,9 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
     description: '',
     thumbnailImages: [],
     previewImages: [],
-    isActive: true,
     expirationDays: 30,
   });
 
-  const [isRecording, setIsRecording] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pickedImageUri, setPickedImageUri] = useState<string | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
@@ -130,7 +126,6 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
           description: editListing.description || '',
           thumbnailImages: Array.isArray(editListing.thumbnail_images) ? editListing.thumbnail_images : [],
           previewImages: Array.isArray(editListing.preview_images) ? editListing.preview_images : [],
-          isActive: editListing.is_active !== undefined ? editListing.is_active : true,
           expirationDays: 30, // Default expiration days
         });
         
@@ -189,10 +184,8 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
       description: '',
       thumbnailImages: [],
       previewImages: [],
-      isActive: true,
       expirationDays: 30,
     });
-    setIsRecording(false);
     setPickedImageUri(null);
     setUploadedImageUrl(null);
   };
@@ -202,13 +195,6 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
     onClose();
   };
 
-  const handleVoiceInput = () => {
-    setIsRecording(!isRecording);
-    setTimeout(() => {
-      setIsRecording(false);
-      Alert.alert('Voice Input', 'Voice recording feature will be implemented with native speech recognition');
-    }, 2000);
-  };
 
   const getDefaultListingImage = async () => {
     // Fetch seller's avatar from Supabase users table
@@ -425,7 +411,6 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
         thumbnail_images: imageUrls.thumbnail_images,
         preview_images: imageUrls.preview_images,
         image_folder_path: `${encodeURIComponent(sellerUsername)}/${Date.now()}`, // Add encoded folder path
-        is_active: formData.isActive,
         username: sellerUsername,
         // Include location data if available
         latitude: location.latitude || undefined,
@@ -458,7 +443,6 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
         priceUnit: 'per_item',
         thumbnailImages: [],
         previewImages: [],
-        isActive: true,
         expirationDays: 30,
       });
       setPickedImageUri(null);
@@ -500,12 +484,6 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
                 placeholder="Enter product or service name"
                 placeholderTextColor="#94A3B8"
               />
-              <TouchableOpacity 
-                style={[styles.voiceButton, isRecording && styles.recordingButton]}
-                onPress={handleVoiceInput}
-              >
-                <Mic size={18} color={isRecording ? '#FFFFFF' : '#64748B'} />
-              </TouchableOpacity>
             </View>
           </View>
 
@@ -719,34 +697,6 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
             />
           </View>
 
-          {/* Availability Toggle */}
-          <View style={styles.formGroup}>
-            <Text style={styles.label}>Availability Status</Text>
-            <View style={styles.toggleContainer}>
-              <TouchableOpacity
-                style={[styles.toggleButton, formData.isActive && styles.activeToggle]}
-                onPress={() => setFormData(prev => ({ ...prev, isActive: true }))}
-              >
-                <View style={[styles.toggleIndicator, formData.isActive && styles.activeIndicator]}>
-                  {formData.isActive && <Check size={10} color="#FFFFFF" />}
-                </View>
-                <Text style={[styles.toggleText, formData.isActive && styles.activeToggleText]}>
-                  🟢 Active
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.toggleButton, !formData.isActive && styles.activeToggle]}
-                onPress={() => setFormData(prev => ({ ...prev, isActive: false }))}
-              >
-                <View style={[styles.toggleIndicator, !formData.isActive && styles.activeIndicator]}>
-                  {!formData.isActive && <Check size={10} color="#FFFFFF" />}
-                </View>
-                <Text style={[styles.toggleText, !formData.isActive && styles.activeToggleText]}>
-                  🔴 Not Active
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
 
           {/* Submit Button */}
           <TouchableOpacity 
@@ -831,15 +781,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#1E293B',
     padding: 10,
-  },
-  voiceButton: {
-    padding: 8,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 6,
-    margin: 2,
-  },
-  recordingButton: {
-    backgroundColor: '#EF4444',
   },
   categoryScrollContainer: {
     marginTop: 6,
@@ -1124,25 +1065,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     minHeight: 80,
   },
-  toggleButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 8,
-    borderRadius: 6,
-    backgroundColor: '#F1F5F9',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: 6,
-  },
-  activeToggle: {
-    backgroundColor: '#DCFCE7',
-    borderColor: '#22C55E',
-  },
-  toggleIndicator: {
-    width: 16,
-    height: 16,
-  },
 
   expirationOptions: {
     flexDirection: 'row',
@@ -1211,21 +1133,6 @@ const styles = StyleSheet.create({
     color: '#64748B',
     marginTop: 6,
     textAlign: 'center',
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  activeIndicator: {
-    backgroundColor: '#22C55E',
-  },
-  toggleText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
-    color: '#64748B',
-  },
-  activeToggleText: {
-    color: '#16A34A',
   },
   submitButton: {
     flexDirection: 'row',

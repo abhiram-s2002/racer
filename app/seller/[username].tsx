@@ -54,7 +54,6 @@ interface SellerListing {
   image_folder_path?: string;
   created_at: string;
   updated_at: string;
-  is_active: boolean;
 }
 
 export default function SellerProfileScreen() {
@@ -120,11 +119,9 @@ export default function SellerProfileScreen() {
           preview_images,
           image_folder_path,
           created_at,
-          updated_at,
-          is_active
+          updated_at
         `)
         .eq('username', username)
-        .eq('is_active', true)
         .order('updated_at', { ascending: false })
         .limit(12);
 

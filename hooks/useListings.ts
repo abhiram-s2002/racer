@@ -109,8 +109,7 @@ export function useListings() {
           
           let query = supabase
             .from('listings')
-            .select('id, username, title, description, price, price_unit, category, thumbnail_images, preview_images, image_folder_path, latitude, longitude, created_at, updated_at, is_active')
-            .eq('is_active', true);
+            .select('id, username, title, description, price, price_unit, category, thumbnail_images, preview_images, image_folder_path, latitude, longitude, created_at');
           
           // Filter out hidden listings
           if (hiddenListingIds.length > 0) {
@@ -235,8 +234,7 @@ export function useListings() {
         
         let query = supabase
           .from('listings')
-          .select('id, username, title, description, price, price_unit, category, thumbnail_images, preview_images, image_folder_path, latitude, longitude, created_at, updated_at, is_active')
-          .eq('is_active', true);
+          .select('id, username, title, description, price, price_unit, category, thumbnail_images, preview_images, image_folder_path, latitude, longitude, created_at');
         
         // Filter out hidden listings
         if (hiddenListingIds.length > 0) {

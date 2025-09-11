@@ -63,7 +63,13 @@ export function useSubscription(): UseSubscriptionReturn {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to initialize subscriptions';
       setError(errorMessage);
-      console.error('Subscription initialization error:', err);
+      
+      // Suppress IAP errors in development mode
+      if (__DEV__ && err instanceof Error && err.message.includes('E_IAP_NOT_AVAILABLE')) {
+        console.log('IAP not available in development mode - subscriptions disabled');
+      } else {
+        console.error('Subscription initialization error:', err);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +84,13 @@ export function useSubscription(): UseSubscriptionReturn {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load subscriptions';
       setError(errorMessage);
-      console.error('Error loading subscriptions:', err);
+      
+      // Suppress IAP errors in development mode
+      if (__DEV__ && err instanceof Error && err.message.includes('E_IAP_NOT_AVAILABLE')) {
+        console.log('IAP not available - subscriptions disabled');
+      } else {
+        console.error('Error loading subscriptions:', err);
+      }
     }
   }, []);
 
@@ -91,7 +103,13 @@ export function useSubscription(): UseSubscriptionReturn {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to check subscriptions';
       setError(errorMessage);
-      console.error('Error checking current subscriptions:', err);
+      
+      // Suppress IAP errors in development mode
+      if (__DEV__ && err instanceof Error && err.message.includes('E_IAP_NOT_AVAILABLE')) {
+        console.log('IAP not available - subscription check disabled');
+      } else {
+        console.error('Error checking current subscriptions:', err);
+      }
     }
   }, []);
 

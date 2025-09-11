@@ -24,6 +24,7 @@ import { usePingLimits } from '@/hooks/usePingLimits';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { Listing } from '@/utils/types';
 
 // Import our optimized components
 import ListingHeroImage from '@/components/ListingHeroImage';
@@ -32,24 +33,6 @@ import SellerInfoSection from '@/components/SellerInfoSection';
 import ListingLocationMap from '@/components/ListingLocationMap';
 import SellerListingsCarousel from '@/components/SellerListingsCarousel';
 import ListingActionButtons from '@/components/ListingActionButtons';
-
-// Types
-interface Listing {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  price_unit: string;
-  category: string;
-  thumbnail_images: string[];
-  preview_images: string[];
-  image_folder_path: string;
-  username: string;
-  latitude: number;
-  longitude: number;
-  created_at: string;
-  is_active: boolean;
-}
 
 interface SellerInfo {
   username: string;
@@ -171,7 +154,6 @@ function ListingDetailScreen() {
         .select('*')
         .eq('username', listingData.username)
         .neq('id', listingId)
-        .eq('is_active', true)
         .order('created_at', { ascending: false })
         .limit(10);
       
@@ -223,7 +205,7 @@ function ListingDetailScreen() {
             latitude: 0,
             longitude: 0,
             created_at: '',
-            is_active: true
+            updated_at: ''
           } as Listing);
           setLoading(false);
         }
@@ -552,7 +534,7 @@ function ListingDetailScreen() {
             images={listing.thumbnail_images} // Use thumbnail_images as fallback for images
             thumbnailImages={listing.thumbnail_images}
             previewImages={listing.preview_images}
-            imageFolderPath={listing.image_folder_path}
+            imageFolderPath={listing.image_folder_path || ''}
             title={listing.title}
             onBackPress={() => router.back()}
           />
@@ -574,12 +556,11 @@ function ListingDetailScreen() {
         {/* Listing Information */}
         <ListingInfoCard
           title={listing.title}
-          description={listing.description}
+          description={listing.description || ''}
           price={listing.price}
           priceUnit={listing.price_unit}
           category={listing.category}
           createdAt={listing.created_at}
-          isActive={listing.is_active}
         />
 
         {/* Seller Information */}

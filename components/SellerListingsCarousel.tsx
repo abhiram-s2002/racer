@@ -22,9 +22,8 @@ interface Listing {
   price_unit: string;
   thumbnail_images: string[];
   preview_images: string[];
-  image_folder_path: string;
+  image_folder_path?: string;
   category: string;
-  is_active: boolean;
 }
 
 interface SellerListingsCarouselProps {
@@ -70,7 +69,7 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
           <NewRobustImage
             thumbnailImages={item.thumbnail_images}
             previewImages={item.preview_images}
-            imageFolderPath={item.image_folder_path}
+            imageFolderPath={item.image_folder_path || ''}
             size="thumbnail"
             style={styles.carouselImage}
             placeholderText="No Image"
@@ -88,13 +87,6 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
           >
             <MoreVertical size={14} color="#64748B" />
           </TouchableOpacity>
-          
-          {/* Status badge */}
-          <View style={[styles.statusBadge, item.is_active ? styles.activeBadge : styles.inactiveBadge]}>
-            <Text style={[styles.statusText, item.is_active ? styles.activeText : styles.inactiveText]}>
-              {item.is_active ? 'Active' : 'Inactive'}
-            </Text>
-          </View>
         </View>
 
         <View style={styles.listingDetails}>
@@ -232,30 +224,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 2,
     elevation: 2,
-  },
-  statusBadge: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  activeBadge: {
-    backgroundColor: '#DCFCE7',
-  },
-  inactiveBadge: {
-    backgroundColor: '#FEF2F2',
-  },
-  statusText: {
-    fontSize: 10,
-    fontFamily: 'Inter-Medium',
-  },
-  activeText: {
-    color: '#16A34A',
-  },
-  inactiveText: {
-    color: '#EF4444',
   },
   listingContent: {
     flex: 1,

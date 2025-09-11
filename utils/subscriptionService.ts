@@ -78,7 +78,12 @@ class SubscriptionService {
       this.isInitialized = true;
       return true;
     } catch (error) {
-      console.error('Failed to initialize subscription service:', error);
+      // Suppress IAP errors in development mode
+      if (__DEV__ && error instanceof Error && error.message.includes('E_IAP_NOT_AVAILABLE')) {
+        console.log('IAP not available in development mode - subscription service disabled');
+      } else {
+        console.error('Failed to initialize subscription service:', error);
+      }
       return false;
     }
   }
@@ -370,7 +375,12 @@ class SubscriptionService {
       await endConnection();
       this.isInitialized = false;
     } catch (error) {
-      console.error('Error cleaning up subscription service:', error);
+      // Suppress IAP errors in development mode
+      if (__DEV__ && error instanceof Error && error.message.includes('E_IAP_NOT_AVAILABLE')) {
+        console.log('IAP cleanup skipped in development mode');
+      } else {
+        console.error('Error cleaning up subscription service:', error);
+      }
     }
   }
 }

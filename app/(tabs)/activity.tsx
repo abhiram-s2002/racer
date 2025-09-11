@@ -12,12 +12,9 @@ import {
   Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Package, MessageCircle, Send, Eye, EyeOff, Trash2, Check, X, Plus, MapPin, Star } from 'lucide-react-native';
-import AddListingModal from '@/components/AddListingModal';
-import CategorySelectionModal from '@/components/CategorySelectionModal';
+import { MessageCircle, Send, Trash2, Check, X, MapPin, Star } from 'lucide-react-native';
 import RatingModal from '@/components/RatingModal';
 import { Activity, deleteActivity } from '@/utils/activitySupabase';
-import { deleteListing as deleteListingWithImages } from '../../utils/listingSupabase';
 import { supabase } from '@/utils/supabaseClient';
 import { useIsFocused } from '@react-navigation/native';
 import { useCachedActivities } from '@/hooks/useCachedActivities';
@@ -29,7 +26,6 @@ import { useRouter } from 'expo-router';
 // Removed react-native-expo-image-cache import - using standard Image component
 
 import { formatPriceWithUnit } from '@/utils/formatters';
-import { Category } from '@/utils/types';
 
 import NewRobustImage from '@/components/NewRobustImage';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
@@ -58,10 +54,7 @@ const openInGoogleMaps = (latitude: number, longitude: number) => {
 function ActivityScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'listings' | 'received' | 'sent'>('listings');
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedCategoryForListing, setSelectedCategoryForListing] = useState<Category | undefined>(undefined);
+  const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   const [refreshing, setRefreshing] = useState(false);
   const isFocused = useIsFocused();
   const [username, setUsername] = useState<string | null>(null);
@@ -86,16 +79,13 @@ function ActivityScreen() {
 
   // Use the new caching hook
   const {
-    activities,
     sentPings,
     receivedPings,
-    myListings,
     userProfiles,
     loading,
     refresh,
     updateActivity,
     removeActivity,
-    addActivity,
   } = useCachedActivities(username);
 
   // Load existing user ratings
@@ -199,44 +189,10 @@ function ActivityScreen() {
     }
   };
 
-  // Handle back button
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
 
-    const backAction = () => {
-      if (showAddModal) {
-        setShowAddModal(false);
-        return true;
-      }
-      if (showCategoryModal) {
-        setShowCategoryModal(false);
-        return true;
-      }
-      return false;
-    };
-
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-
-    return () => backHandler.remove();
-  }, [showAddModal, showCategoryModal]);
-
-  const handleCategorySelect = (categoryId: string) => {
-    setSelectedCategoryForListing(categoryId as Category);
-    setShowAddModal(true);
-  };
-
-  // Type guards using imported types
-  function isListingActivity(activity: Activity): activity is Activity {
-    return activity.type === 'listing';
-  }
-  function isPingActivity(activity: Activity): activity is Activity {
-    return activity.type === 'received_ping' || activity.type === 'sent_ping';
-  }
 
   const filteredActivities = (() => {
-    if (activeTab === 'listings') {
-      return myListings;
-    } else if (activeTab === 'received') {
+    if (activeTab === 'received') {
       return receivedPings.filter(activity => {
         if (statusFilter !== 'all' && activity.status !== statusFilter) {
           return false;
@@ -254,59 +210,6 @@ function ActivityScreen() {
     return [];
   })();
 
-  // Toggle listing status (active/inactive) and update persistent storage
-  const toggleListingStatus = async (id: string) => {
-    if (!currentUsername) return;
-    
-    // Find the listing to toggle
-    const listing = myListings.find(listing => listing.id === id);
-    if (!listing) return;
-    
-    const newStatus = !listing.is_active;
-    
-    try {
-      // Update in Supabase
-      await supabase.from('listings').update({ is_active: newStatus }).eq('id', id);
-      
-      // Update cached data
-      updateActivity(id, { is_active: newStatus });
-      
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update listing status. Please try again.');
-    }
-  };
-
-  // Edit listing handler (opens AddListingModal in edit mode)
-  const deleteListing = (id: string) => {
-    if (!currentUsername) return;
-    Alert.alert(
-      'Delete Listing',
-      'Are you sure you want to permanently delete this listing? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // 1. Delete from Supabase listings table and storage
-              await deleteListingWithImages(id);
-
-              // 2. Delete related activities from local storage
-              await deleteActivity(id);
-
-              // 3. Remove from cached data
-              removeActivity(id);
-
-              Alert.alert('Success', 'Listing deleted successfully!');
-                    } catch (error) {
-          Alert.alert('Error', 'Failed to delete listing. Please try again.');
-        }
-          },
-        },
-      ]
-    );
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -428,62 +331,6 @@ function ActivityScreen() {
     }
   };
 
-  const renderListingItem = ({ item }: { item: Activity }) => {
-    // Check for different possible image field names
-    const anyItem = item as any; // Type assertion to bypass strict typing
-    
-    const { is_active, title, price, id } = item;
-    return (
-    <View style={styles.activityCard}>
-      <View style={styles.listingHeader}>
-        <View style={styles.imageContainer}>
-          <NewRobustImage 
-            thumbnailImages={item.thumbnail_images}
-            previewImages={item.preview_images}
-            imageFolderPath={item.image_folder_path}
-            style={styles.listingImage}
-            placeholderText="No Image"
-            size="thumbnail"
-            title={item.title}
-          />
-        </View>
-        
-        <View style={styles.listingDetails}>
-            <Text style={styles.listingTitle}>{title}</Text>
-            <Text style={styles.listingPrice}>{formatPriceWithUnit(price || '0', (item as any).price_unit)}</Text>
-        </View>
-        {/* Status badge absolutely positioned inside card */}
-        <View style={styles.listingStatusBadgeContainer}>
-            <View style={[styles.statusBadge, is_active ? styles.activeBadge : styles.inactiveBadge]}>
-              <Text style={[styles.statusText, is_active ? styles.activeText : styles.inactiveText]}>
-                {is_active ? 'Active' : 'Inactive'}
-            </Text>
-          </View>
-        </View>
-      </View>
-      <View style={styles.listingActions}>
-        <TouchableOpacity 
-          style={styles.actionButton}
-            onPress={() => toggleListingStatus(id)}
-        >
-            {is_active ? (
-            <EyeOff size={16} color="#64748B" />
-          ) : (
-            <Eye size={16} color="#64748B" />
-          )}
-            <Text style={styles.actionText}>{is_active ? 'Deactivate' : 'Activate'}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.actionButton}
-            onPress={() => deleteListing(id)}
-        >
-          <Trash2 size={16} color="#EF4444" />
-          <Text style={[styles.actionText, styles.deleteText]}>Delete</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-  };
 
   const renderPingItem = ({ item }: { item: Activity }) => {
     const handleChatPress = async () => {
@@ -772,20 +619,10 @@ function ActivityScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
         <Text style={styles.title}>Activity</Text>
-        <Text style={styles.subtitle}>Manage your listings and pings</Text>
+        <Text style={styles.subtitle}>Manage your pings</Text>
       </View>
 
       <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'listings' && styles.activeTab]}
-          onPress={() => {
-            setActiveTab('listings');
-            setStatusFilter('all');
-          }}
-        >
-          <Package size={20} color={activeTab === 'listings' ? '#22C55E' : '#64748B'} />
-          <Text style={[styles.tabText, activeTab === 'listings' && styles.activeTabText]}>My Listings</Text>
-        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'received' && styles.activeTab]}
           onPress={() => {
@@ -809,7 +646,6 @@ function ActivityScreen() {
       </View>
 
       {/* Filter Options */}
-      {activeTab !== 'listings' && (
         <View style={styles.filterOptions}>
           <Text style={styles.filterTitle}>Filter by Status:</Text>
           <View style={styles.filterButtons}>
@@ -847,19 +683,6 @@ function ActivityScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      )}
-      {/* Add Listing Button for My Listings Tab */}
-      {activeTab === 'listings' && (
-        <View style={styles.addListingSection}>
-          <TouchableOpacity 
-            style={styles.addListingButton}
-            onPress={() => setShowCategoryModal(true)}
-          >
-            <Plus size={20} color="#FFFFFF" />
-            <Text style={styles.addListingButtonText}>Add New Listing</Text>
-          </TouchableOpacity>
-        </View>
-      )}
       {loading ? (
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading activities...</Text>
@@ -867,13 +690,7 @@ function ActivityScreen() {
       ) : (
         <FlatList
           data={filteredActivities}
-          renderItem={({ item }) => {
-            if (activeTab === 'listings') {
-              return renderListingItem({ item });
-            } else {
-              return renderPingItem({ item });
-            }
-          }}
+          renderItem={({ item }) => renderPingItem({ item })}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.activityList}
           showsVerticalScrollIndicator={false}
@@ -882,14 +699,12 @@ function ActivityScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                {activeTab === 'listings' 
-                  ? 'No listings found'
-                  : statusFilter !== 'all' 
+                {statusFilter !== 'all' 
                     ? `No ${statusFilter} pings found` 
                     : 'No activities found'
                 }
               </Text>
-              {activeTab !== 'listings' && statusFilter !== 'all' && (
+              {statusFilter !== 'all' && (
                 <TouchableOpacity 
                   style={styles.clearFiltersButton}
                   onPress={() => setStatusFilter('all')}
@@ -901,19 +716,6 @@ function ActivityScreen() {
           }
         />
       )}
-      {/* Add Listing Modal */}
-      <AddListingModal 
-        visible={showAddModal} 
-        onClose={() => { setShowAddModal(false); }}
-        preSelectedCategory={selectedCategoryForListing}
-        sellerUsername={username || ''}
-      />
-      {/* Category Selection Modal */}
-      <CategorySelectionModal
-        visible={showCategoryModal}
-        onClose={() => setShowCategoryModal(false)}
-        onSelectCategory={handleCategorySelect}
-      />
       
       {/* Rating Modal */}
       <RatingModal
@@ -1040,109 +842,11 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     position: 'relative', // <-- add this
   },
-  listingHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-    position: 'relative', // <-- add this
-  },
-  imageContainer: {
-    position: 'relative',
-    marginRight: 12,
-  },
-  listingImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#F8FAFC',
-  },
-  listingDetails: {
-    flex: 1,
-  },
-  listingTitle: {
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
-    color: '#1E293B',
-    marginBottom: 4,
-  },
-  listingPrice: {
-    fontSize: 18,
-    fontFamily: 'Inter-Bold',
-    color: '#22C55E',
-    marginBottom: 8,
-  },
-  listingStats: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    color: '#64748B',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  activeBadge: {
-    backgroundColor: '#DCFCE7',
-  },
-  inactiveBadge: {
-    backgroundColor: '#F1F5F9',
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
-  },
-  activeText: {
-    color: '#16A34A',
-  },
-  inactiveText: {
-    color: '#64748B',
-  },
-  listingStatusBadgeContainer: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
-    zIndex: 2,
-  },
   pingStatusBadgeContainer: {
     position: 'absolute',
     top: 12,
     right: 12,
     zIndex: 2,
-  },
-  listingActions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    gap: 4,
-  },
-  actionText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
-    color: '#64748B',
-  },
-  deleteText: {
-    color: '#EF4444',
   },
   pingHeader: {
     flexDirection: 'row',
@@ -1275,25 +979,6 @@ const styles = StyleSheet.create({
   },
   acceptButtonText: {
     fontSize: 14,
-    fontFamily: 'Inter-Medium',
-    color: '#FFFFFF',
-  },
-  addListingSection: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
-  },
-  addListingButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#22C55E',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    gap: 8,
-  },
-  addListingButtonText: {
-    fontSize: 16,
     fontFamily: 'Inter-Medium',
     color: '#FFFFFF',
   },

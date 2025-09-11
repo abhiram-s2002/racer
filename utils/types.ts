@@ -54,8 +54,8 @@ export interface Listing {
   category: Category;
   thumbnail_images: string[];
   preview_images: string[];
+  image_folder_path?: string; // Image folder path for organized storage
   image_url?: string; // Legacy field for backward compatibility
-  is_active: boolean;
   latitude?: number;
   longitude?: number;
   location?: any; // PostGIS geography type
@@ -65,7 +65,6 @@ export interface Listing {
   view_count?: number;
   ping_count?: number;
   created_at: string;
-  updated_at: string;
 }
 
 /**

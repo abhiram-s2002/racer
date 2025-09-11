@@ -15,7 +15,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Camera, MapPin, Phone, Mail, Settings, CircleHelp as HelpCircle, FileText, LogOut, CreditCard as Edit3, CircleCheck as CheckCircle, Circle as XCircle, ArrowRight, Lock, Flag, EyeOff, UserX } from 'lucide-react-native';
+import { Camera, MapPin, Phone, Mail, Settings, CircleHelp as HelpCircle, FileText, LogOut, CreditCard as Edit3, CircleCheck as CheckCircle, Circle as XCircle, ArrowRight, Lock, Flag, EyeOff, UserX, Package } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { signOut } from '@/utils/auth';
 import defaultAvatar from '../../assets/images/icon.png';
@@ -719,6 +719,20 @@ function ProfileScreen() {
               thumbColor="#FFFFFF"
             />
           </View>
+        </View>
+
+        {/* My Listings */}
+        <View style={styles.quickActionsSection}>
+          <Text style={styles.sectionTitle}>My Listings</Text>
+          
+          <TouchableOpacity 
+            style={styles.quickActionItem}
+            onPress={() => router.push('/my-listings')}
+          >
+            <Package size={20} color="#64748B" />
+            <Text style={styles.quickActionText}>Manage Listings</Text>
+            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
+          </TouchableOpacity>
         </View>
 
         {/* Quick Actions */}

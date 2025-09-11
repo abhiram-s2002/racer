@@ -5,7 +5,7 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
-import { CheckCircle, XCircle, Package, Calendar } from 'lucide-react-native';
+import { Package, Calendar } from 'lucide-react-native';
 
 
 const { width } = Dimensions.get('window');
@@ -17,7 +17,6 @@ interface ListingInfoCardProps {
   priceUnit: string;
   category: string;
   createdAt: string;
-  isActive: boolean;
 }
 
 const ListingInfoCard: React.FC<ListingInfoCardProps> = React.memo(({
@@ -27,7 +26,6 @@ const ListingInfoCard: React.FC<ListingInfoCardProps> = React.memo(({
   priceUnit,
   category,
   createdAt,
-  isActive,
 }) => {
 
 
@@ -70,16 +68,6 @@ const ListingInfoCard: React.FC<ListingInfoCardProps> = React.memo(({
           <Text style={styles.title} numberOfLines={2}>
             {title || 'Untitled Listing'}
           </Text>
-          <View style={[styles.statusBadge, isActive ? styles.activeBadge : styles.inactiveBadge]}>
-            {isActive ? (
-              <CheckCircle size={16} color="#16A34A" />
-            ) : (
-              <XCircle size={16} color="#EF4444" />
-            )}
-            <Text style={[styles.statusText, isActive ? styles.activeText : styles.inactiveText]}>
-              {isActive ? 'Active' : 'Inactive'}
-            </Text>
-          </View>
         </View>
         
         {/* New Pricing Component */}
@@ -180,34 +168,6 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     lineHeight: 34,
     marginRight: 16,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 6,
-  },
-  activeBadge: {
-    backgroundColor: '#DCFCE7',
-    borderWidth: 1,
-    borderColor: '#16A34A',
-  },
-  inactiveBadge: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#EF4444',
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: 'Inter-SemiBold',
-  },
-  activeText: {
-    color: '#16A34A',
-  },
-  inactiveText: {
-    color: '#EF4444',
   },
 
 

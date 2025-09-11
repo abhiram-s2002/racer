@@ -285,8 +285,7 @@ function HomeScreen() {
     return listings.filter((listing: any) => {
       const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || listing.category === selectedCategory;
-      const isActive = listing.is_active !== false;
-      return matchesSearch && matchesCategory && isActive;
+      return matchesSearch && matchesCategory;
     });
   }, [listings, searchQuery, selectedCategory]);
 

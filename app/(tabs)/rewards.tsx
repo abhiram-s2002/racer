@@ -30,7 +30,6 @@ import {
   CheckCircle,
   Copy,
   Share2,
-  ArrowLeft,
   Flame,
   Star,
   ShoppingBag,
@@ -338,9 +337,6 @@ function RewardsScreen() {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <ArrowLeft size={24} color="#1E293B" />
-          </TouchableOpacity>
           <View style={styles.titleSection}>
             <Gift size={24} color="#22C55E" />
             <View style={styles.titleText}>
@@ -348,7 +344,6 @@ function RewardsScreen() {
               <Text style={styles.subtitle}>Earn OMNI tokens</Text>
             </View>
           </View>
-          <View style={{ width: 24 }} />
         </View>
       </View>
 
@@ -929,11 +924,8 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  backButton: {
-    padding: 4,
   },
   titleSection: {
     flexDirection: 'row',
@@ -955,16 +947,17 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     padding: 16,
+    paddingBottom: 8,
   },
   statsRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   statCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    padding: 16,
+    padding: 12,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
@@ -994,6 +987,7 @@ const styles = StyleSheet.create({
   referralCodeSection: {
     backgroundColor: '#FFFFFF',
     margin: 16,
+    marginTop: 8,
     padding: 20,
     borderRadius: 12,
     borderWidth: 1,
@@ -1003,12 +997,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   referralCodeCard: {
     backgroundColor: '#F8FAFC',
     borderRadius: 8,
-    padding: 16,
+    padding: 12,
     borderWidth: 1,
     borderColor: '#E2E8F0',
     borderStyle: 'dashed',
@@ -1069,6 +1063,7 @@ const styles = StyleSheet.create({
   howItWorksSection: {
     backgroundColor: '#FFFFFF',
     margin: 16,
+    marginTop: 8,
     padding: 20,
     borderRadius: 12,
     borderWidth: 1,
@@ -1077,7 +1072,7 @@ const styles = StyleSheet.create({
   stepCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   stepNumber: {
     width: 32,
@@ -1110,6 +1105,7 @@ const styles = StyleSheet.create({
   checkInSection: {
     backgroundColor: '#FFFFFF',
     margin: 16,
+    marginTop: 8,
     padding: 20,
     borderRadius: 12,
     borderWidth: 1,
@@ -1119,7 +1115,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   checkInTitleSection: {
     flexDirection: 'row',
@@ -1160,7 +1156,7 @@ const styles = StyleSheet.create({
   streakStats: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   streakCard: {
     flex: 1,
@@ -1183,7 +1179,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   calendarSection: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   calendarTitle: {
     fontSize: 16,
@@ -1257,6 +1253,7 @@ const styles = StyleSheet.create({
   achievementsSection: {
     backgroundColor: '#FFFFFF',
     margin: 16,
+    marginTop: 8,
     padding: 20,
     borderRadius: 12,
     borderWidth: 1,
@@ -1266,7 +1263,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   achievementsStats: {
     flexDirection: 'row',
@@ -1288,8 +1285,8 @@ const styles = StyleSheet.create({
   achievementCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
+    padding: 10,
+    marginBottom: 6,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
@@ -1382,6 +1379,7 @@ const styles = StyleSheet.create({
   historySection: {
     backgroundColor: '#FFFFFF',
     margin: 16,
+    marginTop: 8,
     padding: 20,
     borderRadius: 12,
     borderWidth: 1,
@@ -1391,7 +1389,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   historyStats: {
     flexDirection: 'row',
@@ -1567,7 +1565,8 @@ const styles = StyleSheet.create({
   },
   networkAnalyticsSection: {
     margin: 16,
-    marginBottom: 24,
+    marginTop: 8,
+    marginBottom: 16,
   },
   networkOverviewCard: {
     backgroundColor: '#FFFFFF',
@@ -1657,7 +1656,8 @@ const styles = StyleSheet.create({
   },
   leaderboardSection: {
     margin: 16,
-    marginBottom: 24,
+    marginTop: 8,
+    marginBottom: 16,
   },
   leaderboardHeader: {
     flexDirection: 'row',
@@ -1947,7 +1947,8 @@ const styles = StyleSheet.create({
   },
   disclaimerSection: {
     margin: 16,
-    marginBottom: 30,
+    marginTop: 8,
+    marginBottom: 16,
   },
   disclaimerCard: {
     backgroundColor: '#F8FAFC',
