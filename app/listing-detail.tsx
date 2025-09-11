@@ -445,6 +445,7 @@ function ListingDetailScreen() {
         {sellerInfo && (
           <SellerInfoSection
             seller={sellerInfo}
+            onPress={() => router.push(`/seller/${sellerInfo.username}` as any)}
           />
         )}
 

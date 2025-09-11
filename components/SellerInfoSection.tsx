@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   Image,
+  TouchableOpacity,
 } from 'react-native';
 import { MapPin, User } from 'lucide-react-native';
 import { LocationUtils } from '@/utils/locationUtils';
@@ -25,10 +26,12 @@ interface SellerInfo {
 
 interface SellerInfoSectionProps {
   seller: SellerInfo;
+  onPress?: () => void;
 }
 
 const SellerInfoSection: React.FC<SellerInfoSectionProps> = React.memo(({
   seller,
+  onPress,
 }) => {
   // Memoize formatted location to prevent unnecessary recalculations
   const formattedLocation = useMemo(() => {
@@ -43,7 +46,11 @@ const SellerInfoSection: React.FC<SellerInfoSectionProps> = React.memo(({
   }, [seller.bio]);
 
   return (
-    <View style={styles.container}>
+    <TouchableOpacity 
+      style={styles.container}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
       <View style={styles.header}>
         <View style={styles.sellerInfo}>
           <Image
@@ -87,7 +94,7 @@ const SellerInfoSection: React.FC<SellerInfoSectionProps> = React.memo(({
       )}
 
              <View style={styles.divider} />
-     </View>
+     </TouchableOpacity>
    );
 });
 

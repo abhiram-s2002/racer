@@ -338,6 +338,8 @@ export interface Referral {
   commission_rate: number;
   total_commission_earned: number;
   created_at: string;
+  omni_rewarded?: boolean;
+  completed_at?: string;
 }
 
 /**

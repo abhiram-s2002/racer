@@ -42,7 +42,8 @@ module.exports = {
         "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE",
         "android.permission.VIBRATE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "com.android.vending.BILLING"
       ]
     },
     plugins: [

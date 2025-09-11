@@ -197,7 +197,9 @@ function RewardsScreen() {
         <View style={styles.referralDetails}>
           <View style={styles.referralNameRow}>
             <Text style={styles.referralName}>{item.referred_username}</Text>
-            {/* Verification badge removed - referral data doesn't include verification status */}
+            {item.referred_user && isUserVerified(item.referred_user) && (
+              <VerificationBadge size="small" />
+            )}
           </View>
           <Text style={styles.referralDate}>
             {new Date(item.created_at).toLocaleDateString()}

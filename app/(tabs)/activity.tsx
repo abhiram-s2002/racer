@@ -580,18 +580,42 @@ function ActivityScreen() {
     return (
     <View style={styles.activityCard}>
       <View style={styles.pingHeader}>
-        <View style={styles.pingUser}>
+        <TouchableOpacity 
+          style={styles.pingUser}
+          onPress={() => router.push(`/seller/${displayUser.username}` as any)}
+          activeOpacity={0.7}
+        >
           <Image source={{ uri: displayUser.avatar || '' }} style={styles.userAvatar} resizeMode="cover" />
           <View style={styles.pingDetails}>
             <View style={styles.pingUserNameRow}>
               <Text style={styles.pingUserName}>{displayUser.name}</Text>
-              {/* Verification badge removed - ping data doesn't include verification status */}
+              {(() => {
+                // Get verification data from userProfiles
+                const userProfile = userProfiles[displayUser.username];
+                const isVerified = userProfile && isUserVerified(userProfile);
+                
+                // Debug logging (remove in production)
+                if (__DEV__) {
+                  console.log(`User ${displayUser.username} verification:`, {
+                    hasProfile: !!userProfile,
+                    verification_status: userProfile?.verification_status,
+                    verified_at: userProfile?.verified_at,
+                    expires_at: userProfile?.expires_at,
+                    isVerified
+                  });
+                }
+                
+                if (isVerified) {
+                  return <VerificationBadge size="small" />;
+                }
+                return null;
+              })()}
             </View>
             <Text style={styles.pingUserLabel}>
               {item.type === 'sent_ping' ? 'Sent to' : 'From'} @{displayUser.username}
             </Text>
           </View>
-        </View>
+        </TouchableOpacity>
         {/* Status badge absolutely positioned inside card */}
         <View style={styles.pingStatusBadgeContainer}>
           <View style={[styles.pingStatusBadge, { backgroundColor: getStatusColor(item.status || '') + '20' }]}> 

@@ -60,11 +60,17 @@ export interface Ping {
     username: string;
     name: string;
     avatar_url?: string;
+    verification_status?: 'verified' | 'not_verified';
+    verified_at?: string;
+    expires_at?: string;
   };
   receiver?: {
     username: string;
     name: string;
     avatar_url?: string;
+    verification_status?: 'verified' | 'not_verified';
+    verified_at?: string;
+    expires_at?: string;
   };
 }
 
@@ -200,18 +206,45 @@ export async function getSentPings(username: string): Promise<Ping[]> {
         username,
         latitude,
         longitude
-      ),
-      sender:sender_username(username, name, avatar_url),
-      receiver:receiver_username(username, name, avatar_url)
+      )
     `)
     .eq('sender_username', username)
     .order('created_at', { ascending: false });
 
   if (error) {
+    console.error('Error fetching sent pings:', error);
     throw error;
   }
+
+  // Fetch user data separately for better control
+  const pingsWithUserData = await Promise.all((data || []).map(async (ping) => {
+    // Fetch sender data
+    const { data: senderData } = await supabase
+      .from('users')
+      .select('username, name, avatar_url, verification_status, verified_at, expires_at')
+      .eq('username', ping.sender_username)
+      .single();
+
+    // Fetch receiver data
+    const { data: receiverData } = await supabase
+      .from('users')
+      .select('username, name, avatar_url, verification_status, verified_at, expires_at')
+      .eq('username', ping.receiver_username)
+      .single();
+
+    return {
+      ...ping,
+      sender: senderData,
+      receiver: receiverData
+    };
+  }));
   
-  return data as unknown as Ping[];
+  // Debug logging
+  if (__DEV__ && pingsWithUserData.length > 0) {
+    console.log('Sent pings with user data sample:', JSON.stringify(pingsWithUserData[0], null, 2));
+  }
+  
+  return pingsWithUserData as unknown as Ping[];
 }
 
 // Get pings received by a user
@@ -239,18 +272,45 @@ export async function getReceivedPings(username: string): Promise<Ping[]> {
         username,
         latitude,
         longitude
-      ),
-      sender:sender_username(username, name, avatar_url),
-      receiver:receiver_username(username, name, avatar_url)
+      )
     `)
     .eq('receiver_username', username)
     .order('created_at', { ascending: false });
 
   if (error) {
+    console.error('Error fetching received pings:', error);
     throw error;
   }
+
+  // Fetch user data separately for better control
+  const pingsWithUserData = await Promise.all((data || []).map(async (ping) => {
+    // Fetch sender data
+    const { data: senderData } = await supabase
+      .from('users')
+      .select('username, name, avatar_url, verification_status, verified_at, expires_at')
+      .eq('username', ping.sender_username)
+      .single();
+
+    // Fetch receiver data
+    const { data: receiverData } = await supabase
+      .from('users')
+      .select('username, name, avatar_url, verification_status, verified_at, expires_at')
+      .eq('username', ping.receiver_username)
+      .single();
+
+    return {
+      ...ping,
+      sender: senderData,
+      receiver: receiverData
+    };
+  }));
   
-  return data as unknown as Ping[];
+  // Debug logging
+  if (__DEV__ && pingsWithUserData.length > 0) {
+    console.log('Received pings with user data sample:', JSON.stringify(pingsWithUserData[0], null, 2));
+  }
+  
+  return pingsWithUserData as unknown as Ping[];
 }
 
 // Update ping status in the new pings table

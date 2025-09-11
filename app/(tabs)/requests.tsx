@@ -392,6 +392,7 @@ export default function RequestsScreen() {
         setSelectedRequestForOptions(item);
         setShowOptionsModal(true);
       }}
+      onNamePress={() => router.push(`/seller/${item.requester_username}` as any)}
     />
   );
 

@@ -15,11 +15,12 @@ interface RequestCardProps {
   onContact: () => void;
   onCall: () => void;
   onOptions?: () => void; // Add options callback
+  onNamePress?: () => void; // Add name click callback
 }
 
 const { width } = Dimensions.get('window');
 
-export function RequestCard({ request, requesterName, requesterVerified, requesterRating, onPress, onSave, onContact, onCall, onOptions }: RequestCardProps) {
+export function RequestCard({ request, requesterName, requesterVerified, requesterRating, onPress, onSave, onContact, onCall, onOptions, onNamePress }: RequestCardProps) {
   const category = getCategoryById(request.category);
   const IconComponent = getCategoryIcon(request.category);
   const categoryColor = getCategoryColor(request.category);
@@ -120,7 +121,11 @@ export function RequestCard({ request, requesterName, requesterVerified, request
 
           {/* Requester Row: Name + Rating */}
           {requesterName && (
-            <View style={styles.requesterRow}>
+            <TouchableOpacity 
+              style={styles.requesterRow}
+              onPress={onNamePress}
+              activeOpacity={0.7}
+            >
               <View style={styles.requesterInfo}>
                 <User size={12} color="#64748B" />
                 <Text style={styles.requesterName}>{requesterName}</Text>
@@ -133,7 +138,7 @@ export function RequestCard({ request, requesterName, requesterVerified, request
                   <Text style={styles.reviewCountText}>({requesterRating.reviewCount})</Text>
                 </View>
               )}
-            </View>
+            </TouchableOpacity>
           )}
 
           {/* Description */}

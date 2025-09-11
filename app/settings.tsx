@@ -40,11 +40,19 @@ import { supabase } from '@/utils/supabaseClient';
 import { signOut } from '@/utils/auth';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
+import { useSubscription } from '@/hooks/useSubscription';
+import { SUBSCRIPTION_PRODUCTS } from '@/utils/subscriptionService';
 
 function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { settings, loading, saving, updateSetting, resetSettings, refreshSettings } = useAppSettings();
+  const { 
+    hasActiveSubscription, 
+    currentSubscriptions, 
+    restorePurchases, 
+    isLoading: subscriptionLoading 
+  } = useSubscription();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
@@ -285,7 +293,68 @@ function SettingsScreen() {
           />
         </View>
 
-
+        {/* Subscription Management */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Subscription</Text>
+          
+          {hasActiveSubscription ? (
+            <View style={styles.subscriptionActiveContainer}>
+              <View style={styles.subscriptionStatus}>
+                <View style={styles.subscriptionIcon}>
+                  <Shield size={20} color="#22C55E" />
+                </View>
+                <View style={styles.subscriptionInfo}>
+                  <Text style={styles.subscriptionTitle}>Verified Account</Text>
+                  <Text style={styles.subscriptionSubtitle}>
+                    {currentSubscriptions.length > 0 
+                      ? `Active subscription (${currentSubscriptions[0].productId.includes('monthly') ? 'Monthly' : 'Annual'})`
+                      : 'Subscription active'
+                    }
+                  </Text>
+                </View>
+                <View style={styles.verifiedBadge}>
+                  <Text style={styles.verifiedBadgeText}>✓</Text>
+                </View>
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.restorePurchasesButton}
+                onPress={restorePurchases}
+                disabled={subscriptionLoading}
+              >
+                {subscriptionLoading ? (
+                  <ActivityIndicator size="small" color="#22C55E" />
+                ) : (
+                  <RefreshCw size={16} color="#22C55E" />
+                )}
+                <Text style={styles.restorePurchasesText}>
+                  {subscriptionLoading ? 'Restoring...' : 'Restore Purchases'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <View style={styles.subscriptionInactiveContainer}>
+              <View style={styles.subscriptionStatus}>
+                <View style={styles.subscriptionIcon}>
+                  <Shield size={20} color="#64748B" />
+                </View>
+                <View style={styles.subscriptionInfo}>
+                  <Text style={styles.subscriptionTitle}>Get Verified</Text>
+                  <Text style={styles.subscriptionSubtitle}>
+                    Unlock premium features and build trust
+                  </Text>
+                </View>
+              </View>
+              
+              <TouchableOpacity 
+                style={styles.getVerifiedButton}
+                onPress={() => router.push('/(tabs)/profile')}
+              >
+                <Text style={styles.getVerifiedButtonText}>View Plans</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
 
         {/* Data & Storage */}
         <View style={styles.section}>
@@ -636,6 +705,92 @@ const styles = StyleSheet.create({
   deleteConfirmButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
+    color: '#FFFFFF',
+  },
+  
+  // Subscription Management Styles
+  subscriptionActiveContainer: {
+    backgroundColor: '#F0FDF4',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  subscriptionInactiveContainer: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  subscriptionStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  subscriptionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#E2E8F0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  subscriptionInfo: {
+    flex: 1,
+  },
+  subscriptionTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  subscriptionSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+  },
+  verifiedBadge: {
+    backgroundColor: '#22C55E',
+    borderRadius: 12,
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  verifiedBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+  },
+  restorePurchasesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#22C55E',
+  },
+  restorePurchasesText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#22C55E',
+    marginLeft: 6,
+  },
+  getVerifiedButton: {
+    backgroundColor: '#22C55E',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  getVerifiedButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Bold',
     color: '#FFFFFF',
   },
 }); 

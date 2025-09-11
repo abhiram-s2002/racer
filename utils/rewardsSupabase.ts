@@ -45,6 +45,14 @@ export interface Referral {
   omni_rewarded: number;
   completed_at: string | null;
   created_at: string;
+  referred_user?: {
+    username: string;
+    name: string;
+    avatar_url?: string;
+    verification_status?: 'verified' | 'not_verified';
+    verified_at?: string;
+    expires_at?: string;
+  };
 }
 
 export interface UserReferralCode {
@@ -326,7 +334,19 @@ export async function getReferralsByUser(username: string): Promise<Referral[]> 
   try {
     const { data, error } = await supabase
       .from('referrals')
-      .select('id, referrer_username, referred_username, referral_code, status, omni_rewarded, completed_at, created_at')
+      .select(`
+        id, 
+        referrer_username, 
+        referred_username, 
+        referral_code, 
+        status, 
+        omni_earned, 
+        commission_rate, 
+        total_commission_earned, 
+        created_at,
+        omni_rewarded,
+        completed_at
+      `)
       .eq('referrer_username', username)
       .order('created_at', { ascending: false });
 
