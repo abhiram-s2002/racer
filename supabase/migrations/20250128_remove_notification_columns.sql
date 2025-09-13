@@ -38,6 +38,15 @@ ALTER TABLE users DROP COLUMN IF EXISTS verified_at;
 DROP TABLE IF EXISTS phone_verifications CASCADE;
 
 -- ============================================================================
+-- STEP 5: REMOVE UNUSED ERROR LOGGING TABLES
+-- ============================================================================
+
+-- Remove unused crash reporting and error logging tables
+-- These tables were created but never implemented in the application code
+DROP TABLE IF EXISTS crash_reports CASCADE;
+DROP TABLE IF EXISTS error_logs CASCADE;
+
+-- ============================================================================
 -- STEP 4: VERIFICATION
 -- ============================================================================
 
@@ -131,11 +140,43 @@ SELECT
         ) 
         THEN '✅ phone_verifications table removed'
         ELSE '❌ phone_verifications table still exists'
-    END as phone_verifications_table_status;
+    END as phone_verifications_table_status,
+    CASE 
+        WHEN NOT EXISTS (
+            SELECT 1 FROM information_schema.tables 
+            WHERE table_name = 'crash_reports'
+        ) 
+        THEN '✅ crash_reports table removed'
+        ELSE '❌ crash_reports table still exists'
+    END as crash_reports_table_status,
+    CASE 
+        WHEN NOT EXISTS (
+            SELECT 1 FROM information_schema.tables 
+            WHERE table_name = 'error_logs'
+        ) 
+        THEN '✅ error_logs table removed'
+        ELSE '❌ error_logs table still exists'
+    END as error_logs_table_status;
 
 -- ============================================================================
 -- COMMENTS FOR DOCUMENTATION
 -- ============================================================================
 
 COMMENT ON TABLE users IS 'Users table - cleaned up by removing unused notification, phone verification, and verification columns';
+
+-- ============================================================================
+-- MIGRATION SUMMARY
+-- ============================================================================
+
+-- This migration removes:
+-- 1. Notification-related columns from users table (not implemented)
+-- 2. Phone verification system (not implemented)
+-- 3. Verification status columns (not implemented)
+-- 4. Unused error logging tables (not implemented in app code)
+-- 
+-- Error handling is now handled by:
+-- - In-memory error logging (ErrorHandler class)
+-- - Sentry integration for crash reporting
+-- - Security event logging for critical errors
+-- - Google Analytics for user interaction tracking
  

@@ -93,9 +93,7 @@ SELECT 'Expired Cache Entries', COUNT(*)
 FROM query_cache 
 WHERE expires_at < now()
 UNION ALL
-SELECT 'Expired OTPs', COUNT(*)
-FROM phone_verifications 
-WHERE expires_at < now();
+SELECT 'Expired OTPs', 0 -- phone_verifications table removed
 
 -- 9. Check recent activity in key tables
 SELECT 'Recent Listings (last 24h)' as activity, COUNT(*) as count
