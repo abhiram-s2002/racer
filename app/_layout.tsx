@@ -32,7 +32,6 @@ export async function upsertUserProfile(authUser: any) {
   if (!authUser) return;
   const { id, email, phone, user_metadata } = authUser;
   const name = user_metadata?.full_name || user_metadata?.name || '';
-  const avatar_url = user_metadata?.avatar_url || '';
   const username = user_metadata?.username || '';
   const missingFields = validateUserProfileFields({ id, username, email, name });
   if (missingFields.length > 0) {
@@ -44,18 +43,24 @@ export async function upsertUserProfile(authUser: any) {
   
   // Handle phone number validation and formatting
   let phoneValue = null;
+  let existingAvatarUrl = null;
   
-  // First, check if user already exists in database and preserve existing phone
+  // First, check if user already exists in database and preserve existing phone and avatar
   try {
     const { data: existingUser } = await supabase
       .from('users')
-      .select('phone')
+      .select('phone, avatar_url')
       .eq('id', id)
       .single();
     
     if (existingUser?.phone) {
       // Preserve existing phone number from database
       phoneValue = existingUser.phone;
+    }
+    
+    if (existingUser?.avatar_url) {
+      // Preserve existing avatar URL from database
+      existingAvatarUrl = existingUser.avatar_url;
     }
   } catch (error) {
     // User doesn't exist yet, continue with phone validation
@@ -74,6 +79,17 @@ export async function upsertUserProfile(authUser: any) {
       }
       phoneValue = phoneValidation.sanitizedValue || trimmedPhone;
     }
+  }
+  
+  // Determine which avatar URL to use
+  // Priority: existing uploaded avatar > user_metadata avatar > empty
+  let finalAvatarUrl = '';
+  if (existingAvatarUrl) {
+    // If user has an existing avatar (uploaded or pixel art), keep it
+    finalAvatarUrl = existingAvatarUrl;
+  } else if (user_metadata?.avatar_url) {
+    // Only use user_metadata avatar if no existing avatar in database
+    finalAvatarUrl = user_metadata.avatar_url;
   }
   
   // Check network connectivity before database operation
@@ -98,7 +114,7 @@ export async function upsertUserProfile(authUser: any) {
         email,
         phone: phoneValue,
         name,
-        avatar_url,
+        avatar_url: finalAvatarUrl,
         created_at: new Date().toISOString(),
       }
     ], { onConflict: 'id' });
@@ -140,7 +156,7 @@ export async function upsertUserProfile(authUser: any) {
           email,
           phone: phoneValue,
           name,
-          avatar_url,
+          avatar_url: finalAvatarUrl,
           created_at: new Date().toISOString(),
         }
       ]);

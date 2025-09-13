@@ -26,45 +26,33 @@ import { Button } from 'react-native';
 import { validatePhoneNumber, formatPhoneNumberForDisplay } from '@/utils/validation';
 import RatingDisplay from '@/components/RatingDisplay';
 import VerificationBadge from '@/components/VerificationBadge';
-import VerificationPricingCard from '@/components/VerificationPricingCard';
 import { isUserVerified } from '@/utils/verificationUtils';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuth } from '@/hooks/useAuth';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { getAvatarSource } from '@/utils/avatarUtils';
+import { useCachedProfile } from '@/hooks/useCachedProfile';
 
 
 
-// Add a helper to generate a random seed
-function getRandomSeed() {
-  return Math.random().toString(36).substring(2, 10);
-}
 
 
 function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useAuth();
-  const [profileData, setProfileData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    locationDisplay: '',
-    bio: '',
-    avatar: '',
-    isAvailable: true,
-    username: '',
-    verification_status: 'not_verified' as 'verified' | 'not_verified',
-    verified_at: undefined as string | undefined,
-    expires_at: undefined as string | undefined,
-  });
-
-  const [notifications, setNotifications] = useState({
-    newMessages: true,
-    listingUpdates: true,
-    marketingEmails: false,
-  });
+  
+  // Use cached profile hook for better performance
+  const {
+    profileData,
+    notifications,
+    loading: profileLoading,
+    error: profileError,
+    refreshProfile,
+    updateProfile,
+    updateNotifications,
+  } = useCachedProfile();
 
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editProfile, setEditProfile] = useState({
@@ -77,7 +65,6 @@ function ProfileScreen() {
     isAvailable: true,
     username: '',
   });
-  const [avatarSeed, setAvatarSeed] = useState(getRandomSeed());
   const [mapModalVisible, setMapModalVisible] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState<{latitude: number, longitude: number} | null>(null);
   const mapRef = useRef<MapView>(null);
@@ -100,44 +87,7 @@ function ProfileScreen() {
     return () => backHandler.remove();
   }, []);
 
-  // Fetch user profile when component mounts
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  // Fetch user profile from Supabase
-  async function fetchUserProfile() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      // Fetch profile from 'users' table
-      const { data: profile } = await supabase.from('users').select('*').eq('id', user.id).single();
-      
-      if (profile) {
-        const newProfileData = {
-          name: profile.name || '',
-          username: profile.username || '',
-          email: profile.email || user.email || '',
-          phone: profile.phone || '',
-          locationDisplay: profile.location_display || '',
-          bio: profile.bio || '',
-          avatar: profile.avatar_url || '',
-          isAvailable: profile.isAvailable !== undefined ? profile.isAvailable : true,
-          verification_status: profile.verification_status,
-          verified_at: profile.verified_at,
-          expires_at: profile.expires_at,
-        };
-        
-        setProfileData(newProfileData);
-
-        // Load notification settings
-        setNotifications({
-          newMessages: profile.notification_new_messages !== false, // Default to true
-          listingUpdates: profile.notification_listing_updates !== false, // Default to true
-          marketingEmails: profile.notification_marketing_emails === true, // Default to false
-        });
-      }
-    }
-  }
+  // Profile data is now automatically loaded by the useCachedProfile hook
 
   // When setting location (GPS or map), reverse geocode and store display name
   const setLocationFromCoords = async (coords: { latitude: number; longitude: number }) => {
@@ -273,11 +223,8 @@ function ProfileScreen() {
           return;
         }
 
-        // Update local state
-        setProfileData(prev => ({
-          ...prev,
-          avatar: avatarUrl
-        }));
+        // Update profile using cached hook
+        await updateProfile({ avatar: avatarUrl });
 
         Alert.alert('Success', 'Profile image updated successfully!');
       }
@@ -291,53 +238,15 @@ function ProfileScreen() {
 
   const toggleAvailability = async () => {
     const newAvailability = !profileData.isAvailable;
-    setProfileData(prev => ({
-      ...prev,
-      isAvailable: newAvailability
-    }));
-
-    // Save to database
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { error } = await supabase
-          .from('users')
-          .update({
-            isAvailable: newAvailability,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user.id);
-
-        if (error) {
-          Alert.alert('Error', 'Failed to save availability status');
-        }
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save availability status');
-    }
+    await updateProfile({ isAvailable: newAvailability });
   };
 
 
-  // Save notification settings to database
+  // Save notification settings using cached hook
   const saveNotificationSettings = async (newSettings: typeof notifications) => {
     setSavingNotifications(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { error } = await supabase
-          .from('users')
-          .update({
-            notification_new_messages: newSettings.newMessages,
-            notification_listing_updates: newSettings.listingUpdates,
-            notification_marketing_emails: newSettings.marketingEmails,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user.id);
-
-        if (error) {
-          Alert.alert('Error', 'Failed to save notification settings');
-        }
-      }
+      await updateNotifications(newSettings);
     } catch (error) {
       Alert.alert('Error', 'Failed to save notification settings');
     } finally {
@@ -398,8 +307,8 @@ function ProfileScreen() {
         Alert.alert('Error', 'Failed to save profile. Please try again.');
         return;
       }
-      // Re-fetch updated profile
-      await fetchUserProfile();
+      // Refresh profile data
+      await refreshProfile();
     }
     setEditModalVisible(false);
   };
@@ -427,9 +336,33 @@ function ProfileScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchUserProfile();
+    await refreshProfile();
     setRefreshing(false);
   };
+
+  // Show loading state
+  if (profileLoading) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ fontSize: 16, color: '#64748B' }}>Loading profile...</Text>
+      </View>
+    );
+  }
+
+  // Show error state
+  if (profileError) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ fontSize: 16, color: '#EF4444', marginBottom: 16 }}>Error loading profile</Text>
+        <TouchableOpacity 
+          style={{ backgroundColor: '#22C55E', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}
+          onPress={refreshProfile}
+        >
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -789,25 +722,44 @@ function ProfileScreen() {
         </View>
 
         {/* Phone Privacy Management */}
-        <View style={styles.phoneSharingSection}>
-          <Text style={styles.sectionTitle}>Phone Privacy</Text>
-          <View style={styles.phoneSharingInfo}>
-            <Text style={styles.phoneSharingDescription}>
-              Manage how your phone number is shared with other users
-            </Text>
+        <TouchableOpacity 
+          style={styles.phoneSharingSection}
+          onPress={() => router.push('/phone-privacy')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.phonePrivacyContent}>
+            <View style={styles.phonePrivacyLeft}>
+              <Phone size={20} color="#22C55E" />
+              <View style={styles.phonePrivacyTextContainer}>
+                <Text style={styles.phonePrivacyTitle}>Phone Privacy</Text>
+                <Text style={styles.phonePrivacyDescription}>
+                  Manage how your phone number is shared with other users
+                </Text>
+              </View>
+            </View>
+            <ArrowRight size={20} color="#94A3B8" />
           </View>
-          <TouchableOpacity 
-            style={styles.phonePrivacyButton}
-            onPress={() => router.push('/phone-privacy')}
-          >
-            <Shield size={20} color="#22C55E" />
-            <Text style={styles.phonePrivacyButtonText}>Manage Phone Privacy</Text>
-            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-        </View>
+        </TouchableOpacity>
 
         {/* Verification Section */}
-        <VerificationPricingCard userName={profileData.name || 'Your Name'} />
+        <TouchableOpacity 
+          style={styles.verificationSection}
+          onPress={() => router.push('/verification')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.verificationContent}>
+            <View style={styles.verificationLeft}>
+              <Shield size={20} color="#22C55E" />
+              <View style={styles.verificationTextContainer}>
+                <Text style={styles.verificationTitle}>Verification</Text>
+                <Text style={styles.verificationDescription}>
+                  {isUserVerified(profileData) ? 'View your verification status' : 'Get verified to build trust'}
+                </Text>
+              </View>
+            </View>
+            <ArrowRight size={20} color="#94A3B8" />
+          </View>
+        </TouchableOpacity>
 
         {/* Availability Toggle */}
         <View style={styles.availabilitySection}>
@@ -845,7 +797,6 @@ function ProfileScreen() {
               value={notifications.newMessages}
               onValueChange={async (value) => {
                 const newSettings = { ...notifications, newMessages: value };
-                setNotifications(newSettings);
                 await saveNotificationSettings(newSettings);
               }}
               trackColor={{ false: '#E2E8F0', true: '#22C55E' }}
@@ -861,7 +812,6 @@ function ProfileScreen() {
               value={notifications.listingUpdates}
               onValueChange={async (value) => {
                 const newSettings = { ...notifications, listingUpdates: value };
-                setNotifications(newSettings);
                 await saveNotificationSettings(newSettings);
               }}
               trackColor={{ false: '#E2E8F0', true: '#22C55E' }}
@@ -877,7 +827,6 @@ function ProfileScreen() {
               value={notifications.marketingEmails}
               onValueChange={async (value) => {
                 const newSettings = { ...notifications, marketingEmails: value };
-                setNotifications(newSettings);
                 await saveNotificationSettings(newSettings);
               }}
               trackColor={{ false: '#E2E8F0', true: '#22C55E' }}
@@ -887,18 +836,24 @@ function ProfileScreen() {
         </View>
 
         {/* My Listings */}
-        <View style={styles.quickActionsSection}>
-          <Text style={styles.sectionTitle}>My Listings</Text>
-          
-          <TouchableOpacity 
-            style={styles.quickActionItem}
-            onPress={() => router.push('/my-listings')}
-          >
-            <Package size={20} color="#64748B" />
-            <Text style={styles.quickActionText}>Manage Listings</Text>
-            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity 
+          style={styles.listingsSection}
+          onPress={() => router.push('/my-listings')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.listingsContent}>
+            <View style={styles.listingsLeft}>
+              <Package size={20} color="#22C55E" />
+              <View style={styles.listingsTextContainer}>
+                <Text style={styles.listingsTitle}>Manage Listings</Text>
+                <Text style={styles.listingsDescription}>
+                  View and manage your marketplace listings
+                </Text>
+              </View>
+            </View>
+            <ArrowRight size={20} color="#94A3B8" />
+          </View>
+        </TouchableOpacity>
 
         {/* Quick Actions */}
         <View style={styles.quickActionsSection}>
@@ -1160,32 +1115,97 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
-  phoneSharingInfo: {
-    paddingVertical: 8,
+  phonePrivacyContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  phoneSharingDescription: {
+  phonePrivacyLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  phonePrivacyTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  phonePrivacyTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  phonePrivacyDescription: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: '#64748B',
     lineHeight: 20,
-    marginBottom: 12,
   },
-  phonePrivacyButton: {
+  verificationSection: {
+    backgroundColor: '#FFFFFF',
+    marginTop: 8,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  verificationContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#22C55E',
-    gap: 12,
+    justifyContent: 'space-between',
   },
-  phonePrivacyButtonText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+  verificationLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
+  },
+  verificationTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  verificationTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  verificationDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+    lineHeight: 20,
+  },
+  listingsSection: {
+    backgroundColor: '#FFFFFF',
+    marginTop: 8,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  listingsContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  listingsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  listingsTextContainer: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  listingsTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    color: '#1E293B',
+    marginBottom: 2,
+  },
+  listingsDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+    lineHeight: 20,
   },
   toggleInfo: {
     flex: 1,
