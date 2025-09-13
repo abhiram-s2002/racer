@@ -9,7 +9,6 @@ export interface ImageSet {
 }
 
 export interface ImageMetadata {
-  folderPath: string;
   username: string;
   timestamp: string;
   imageCount: number;
@@ -29,38 +28,15 @@ class NewImageService {
     };
   }
 
-  static extractImageMetadata(imageFolderPath?: string | null): ImageMetadata {
-    if (!imageFolderPath) {
-      return {
-        folderPath: '',
-        username: '',
-        timestamp: '',
-        imageCount: 0,
-        hasImages: false
-      };
-    }
-
-    // Extract metadata from folder path
-    const parts = imageFolderPath.split('/');
-    const username = parts[1] || '';
-    const timestamp = parts[2] || '';
-    
+  static extractImageMetadata(): ImageMetadata {
     return {
-      folderPath: imageFolderPath,
-      username,
-      timestamp,
-      imageCount: 1, // Assuming 1 image per listing
-      hasImages: true
+      username: '',
+      timestamp: '',
+      imageCount: 0,
+      hasImages: false
     };
   }
 
-  static generateImageUrlsFromFolder(imageFolderPath: string): ImageSet {
-    const baseUrl = 'https://your-supabase-url.supabase.co/storage/v1/object/public/images';
-    return {
-      thumbnail: `${baseUrl}/${imageFolderPath}/thumbnail.jpg`,
-      preview: `${baseUrl}/${imageFolderPath}/preview.jpg`
-    };
-  }
 
   static getBestImageUrl(thumbnailImages?: string[] | null, previewImages?: string[] | null, size: 'thumbnail' | 'preview' = 'thumbnail'): string {
     if (size === 'thumbnail') {
@@ -86,7 +62,6 @@ class NewImageService {
 interface NewRobustImageProps {
   thumbnailImages?: string[] | null;
   previewImages?: string[] | null;
-  imageFolderPath?: string | null;
   size?: 'thumbnail' | 'preview';
   style?: any;
   placeholder?: React.ReactNode;
@@ -105,7 +80,6 @@ interface NewRobustImageProps {
 export const NewRobustImage: React.FC<NewRobustImageProps> = ({
   thumbnailImages,
   previewImages,
-  imageFolderPath,
   size = 'thumbnail',
   style,
   placeholder,
@@ -125,7 +99,6 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
     preview: NewImageService.getFallbackImageUrl()
   });
   const [metadata, setMetadata] = useState<ImageMetadata>({
-    folderPath: '',
     username: '',
     timestamp: '',
     imageCount: 0,
@@ -155,11 +128,7 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
     // Always use the image arrays from database if available (they have the actual URLs)
     if (thumbnailImages || previewImages) {
       newImageSet = NewImageService.getImageSet(thumbnailImages, previewImages);
-      newMetadata = NewImageService.extractImageMetadata(imageFolderPath);
-    } else if (imageFolderPath) {
-      // Fallback to generating URLs from folder path if no arrays available
-      newImageSet = NewImageService.generateImageUrlsFromFolder(imageFolderPath);
-      newMetadata = NewImageService.extractImageMetadata(imageFolderPath);
+      newMetadata = NewImageService.extractImageMetadata();
     } else {
       // No images available
       newImageSet = {
@@ -167,7 +136,6 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
         preview: NewImageService.getFallbackImageUrl()
       };
       newMetadata = {
-        folderPath: '',
         username: '',
         timestamp: '',
         imageCount: 0,
@@ -198,7 +166,7 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
     setIsLoading(true);
     setHasError(false);
     setRetryAttempts(0);
-  }, [thumbnailImages, previewImages, imageFolderPath, size, title]);
+  }, [thumbnailImages, previewImages, size, title]);
 
   const handleLoad = () => {
     setIsLoading(false);

@@ -18,7 +18,6 @@ interface SellerListing {
   category: string;
   thumbnail_images?: string[];
   preview_images?: string[];
-  image_folder_path?: string;
   created_at: string;
   view_count?: number;
   ping_count?: number;
@@ -44,7 +43,6 @@ const SingleColumnListingItem: React.FC<SingleColumnListingItemProps> = React.me
         <NewRobustImage
           thumbnailImages={listing.thumbnail_images}
           previewImages={listing.preview_images}
-          imageFolderPath={listing.image_folder_path}
           style={styles.image}
           placeholderText="No Image"
           size="thumbnail"

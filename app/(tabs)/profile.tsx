@@ -46,12 +46,10 @@ function ProfileScreen() {
   // Use cached profile hook for better performance
   const {
     profileData,
-    notifications,
     loading: profileLoading,
     error: profileError,
     refreshProfile,
     updateProfile,
-    updateNotifications,
   } = useCachedProfile();
 
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -69,7 +67,6 @@ function ProfileScreen() {
   const [selectedCoords, setSelectedCoords] = useState<{latitude: number, longitude: number} | null>(null);
   const mapRef = useRef<MapView>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [savingNotifications, setSavingNotifications] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -242,17 +239,6 @@ function ProfileScreen() {
   };
 
 
-  // Save notification settings using cached hook
-  const saveNotificationSettings = async (newSettings: typeof notifications) => {
-    setSavingNotifications(true);
-    try {
-      await updateNotifications(newSettings);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save notification settings');
-    } finally {
-      setSavingNotifications(false);
-    }
-  };
 
   const handleEditProfile = () => {
     // When opening edit mode, show the raw phone number (not formatted) for editing
@@ -780,60 +766,6 @@ function ProfileScreen() {
           </View>
         </View>
 
-        {/* Notification Settings */}
-        <View style={styles.notificationSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Notification Settings</Text>
-            {savingNotifications && (
-              <Text style={styles.savingIndicator}>Saving...</Text>
-            )}
-          </View>
-          <View style={styles.notificationItem}>
-            <View style={styles.notificationInfo}>
-              <Text style={styles.notificationLabel}>New Messages</Text>
-              <Text style={styles.notificationDescription}>Get notified when you receive new messages</Text>
-            </View>
-            <Switch
-              value={notifications.newMessages}
-              onValueChange={async (value) => {
-                const newSettings = { ...notifications, newMessages: value };
-                await saveNotificationSettings(newSettings);
-              }}
-              trackColor={{ false: '#E2E8F0', true: '#22C55E' }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-          <View style={styles.notificationItem}>
-            <View style={styles.notificationInfo}>
-              <Text style={styles.notificationLabel}>Listing Updates</Text>
-              <Text style={styles.notificationDescription}>Get notified about your listing activity</Text>
-            </View>
-            <Switch
-              value={notifications.listingUpdates}
-              onValueChange={async (value) => {
-                const newSettings = { ...notifications, listingUpdates: value };
-                await saveNotificationSettings(newSettings);
-              }}
-              trackColor={{ false: '#E2E8F0', true: '#22C55E' }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-          <View style={styles.notificationItem}>
-            <View style={styles.notificationInfo}>
-              <Text style={styles.notificationLabel}>Marketing Emails</Text>
-              <Text style={styles.notificationDescription}>Receive promotional emails and offers</Text>
-            </View>
-            <Switch
-              value={notifications.marketingEmails}
-              onValueChange={async (value) => {
-                const newSettings = { ...notifications, marketingEmails: value };
-                await saveNotificationSettings(newSettings);
-              }}
-              trackColor={{ false: '#E2E8F0', true: '#22C55E' }}
-              thumbColor="#FFFFFF"
-            />
-          </View>
-        </View>
 
         {/* My Listings */}
         <TouchableOpacity 

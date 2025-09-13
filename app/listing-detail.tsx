@@ -41,8 +41,6 @@ interface SellerInfo {
   phone: string;
   location_display: string;
   bio: string;
-  verification_status?: 'verified' | 'not_verified';
-  verified_at?: string;
   expires_at?: string;
 }
 
@@ -94,7 +92,7 @@ function ListingDetailScreen() {
   const fetchSellerFromDatabase = async (username: string) => {
     const { data: sellerData, error: sellerError } = await supabase
       .from('users')
-      .select('username, name, avatar_url, phone, location_display, bio, verification_status, verified_at, expires_at')
+      .select('username, name, avatar_url, phone, location_display, bio, expires_at')
       .eq('username', username)
       .single();
     
@@ -159,7 +157,6 @@ function ListingDetailScreen() {
       if (cachedImages) {
         listingData.thumbnail_images = cachedImages.thumbnail_images;
         listingData.preview_images = cachedImages.preview_images;
-        listingData.image_folder_path = cachedImages.image_folder_path;
       }
       
       setListing(listingData);
@@ -236,7 +233,6 @@ function ListingDetailScreen() {
             category: 'other',
             thumbnail_images: cachedImages.thumbnail_images,
             preview_images: cachedImages.preview_images,
-            image_folder_path: cachedImages.image_folder_path,
             username: '',
             latitude: 0,
             longitude: 0,
@@ -579,7 +575,6 @@ function ListingDetailScreen() {
             images={listing.thumbnail_images} // Use thumbnail_images as fallback for images
             thumbnailImages={listing.thumbnail_images}
             previewImages={listing.preview_images}
-            imageFolderPath={listing.image_folder_path || ''}
             title={listing.title}
             onBackPress={() => router.back()}
           />

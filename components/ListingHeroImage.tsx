@@ -17,7 +17,6 @@ interface ListingHeroImageProps {
   images: string[];
   thumbnailImages: string[];
   previewImages: string[];
-  imageFolderPath: string;
   title: string;
   onBackPress?: () => void;
 }
@@ -26,7 +25,6 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
   images,
   thumbnailImages,
   previewImages,
-  imageFolderPath,
   title,
   onBackPress,
 }) => {
@@ -77,7 +75,6 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
         <NewRobustImage
           thumbnailImages={thumbnailImages}
           previewImages={previewImages}
-          imageFolderPath={imageFolderPath}
           size="thumbnail"
           style={styles.mainImage}
           placeholderText={title}

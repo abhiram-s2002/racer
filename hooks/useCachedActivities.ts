@@ -153,7 +153,6 @@ export function useCachedActivities(username: string | null) {
             images: ping.listings?.images || undefined,
             thumbnail_images: ping.listings?.thumbnail_images || undefined,
             preview_images: ping.listings?.preview_images || undefined,
-            image_folder_path: ping.listings?.image_folder_path || undefined,
             image_metadata: ping.listings?.image_metadata || undefined,
             username: ping.receiver_username,
             user_name: '',
@@ -184,7 +183,6 @@ export function useCachedActivities(username: string | null) {
             images: ping.listings?.images || undefined,
             thumbnail_images: ping.listings?.thumbnail_images || undefined,
             preview_images: ping.listings?.preview_images || undefined,
-            image_folder_path: ping.listings?.image_folder_path || undefined,
             image_metadata: ping.listings?.image_metadata || undefined,
             username: ping.sender_username,
             user_name: '',
@@ -276,7 +274,7 @@ export function useCachedActivities(username: string | null) {
     try {
       const { data: listings, error } = await supabase
         .from('listings')
-        .select('id, title, description, price, price_unit, category, thumbnail_images, preview_images, image_folder_path, latitude, longitude, created_at, updated_at, is_active')
+        .select('id, title, description, price, price_unit, category, thumbnail_images, preview_images, latitude, longitude, created_at, updated_at, is_active')
         .eq('username', username)
         .order('updated_at', { ascending: false })
         .order('created_at', { ascending: false });

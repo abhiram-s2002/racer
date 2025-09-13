@@ -396,7 +396,6 @@ function HomeScreen() {
             <NewRobustImage
               thumbnailImages={item.thumbnail_images}
               previewImages={item.preview_images}
-              imageFolderPath={item.image_folder_path}
               size="thumbnail"
               style={styles.listingImage}
               placeholderText="No Image"

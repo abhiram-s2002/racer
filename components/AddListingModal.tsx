@@ -410,7 +410,6 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
         price_unit: formData.priceUnit,
         thumbnail_images: imageUrls.thumbnail_images,
         preview_images: imageUrls.preview_images,
-        image_folder_path: `${encodeURIComponent(sellerUsername)}/${Date.now()}`, // Add encoded folder path
         username: sellerUsername,
         // Include location data if available
         latitude: location.latitude || undefined,

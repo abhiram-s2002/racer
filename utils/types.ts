@@ -18,27 +18,13 @@ export interface User {
   avatar_url?: string;
   phone?: string;
   bio?: string;
-  location?: string;
   location_display?: string;
   latitude?: number;
   longitude?: number;
   isAvailable: boolean;
-  verification_status?: 'verified' | 'not_verified';
-  verified_at?: string;
   expires_at?: string;
-  stats?: Record<string, any>;
-  notification_settings?: NotificationSettings;
   created_at: string;
   updated_at: string;
-}
-
-/**
- * Notification settings for users
- */
-export interface NotificationSettings {
-  new_messages: boolean;
-  listing_updates: boolean;
-  marketplace_notifications: boolean;
 }
 
 /**
@@ -54,7 +40,6 @@ export interface Listing {
   category: Category;
   thumbnail_images: string[];
   preview_images: string[];
-  image_folder_path?: string; // Image folder path for organized storage
   image_url?: string; // Legacy field for backward compatibility
   latitude?: number;
   longitude?: number;

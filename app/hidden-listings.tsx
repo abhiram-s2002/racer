@@ -184,7 +184,6 @@ const HiddenListingsScreen = () => {
           <NewRobustImage
             thumbnailImages={item.listing.thumbnail_images || []}
             previewImages={item.listing.preview_images || []}
-            imageFolderPath={item.listing.image_folder_path || ''}
             size="thumbnail"
             style={styles.listingImage}
             placeholderText="No Image"

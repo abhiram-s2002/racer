@@ -172,7 +172,7 @@ export class RequestBatcher {
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('username, name, avatar_url, email, phone, location, location_display, bio, verification_status, verified_at, expires_at')
+        .select('username, name, avatar_url, email, phone, location_display, bio, expires_at')
         .in('username', usernames);
 
       if (error) {

@@ -50,8 +50,8 @@ const UnifiedSellerProfileCard: React.FC<UnifiedSellerProfileCardProps> = React.
   }, [seller.created_at]);
 
   const formattedLocation = useMemo(() => {
-    return seller.location_display || seller.location || 'Location not specified';
-  }, [seller.location_display, seller.location]);
+    return seller.location_display || 'Location not specified';
+  }, [seller.location_display]);
 
   const truncatedBio = useMemo(() => {
     if (!seller.bio) return null;

@@ -48,7 +48,6 @@ interface SellerListing {
   category: string;
   thumbnail_images?: string[];
   preview_images?: string[];
-  image_folder_path?: string;
   created_at: string;
   view_count?: number;
   ping_count?: number;
@@ -116,7 +115,6 @@ export default function SellerProfileScreen() {
           category,
           thumbnail_images,
           preview_images,
-          image_folder_path,
           created_at,
           view_count,
           ping_count,

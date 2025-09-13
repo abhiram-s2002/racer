@@ -485,7 +485,6 @@ function ActivityScreen() {
         <NewRobustImage 
           thumbnailImages={item.thumbnail_images}
           previewImages={item.preview_images}
-          imageFolderPath={item.image_folder_path}
           style={styles.productImage}
           placeholderText="No Image"
           size="preview"

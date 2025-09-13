@@ -116,7 +116,7 @@ const VerificationPage = () => {
             <View style={styles.successIcon}>
               <CheckCircle size={48} color="#22C55E" />
             </View>
-            <Text style={styles.successTitle}>You're Verified! 🎉</Text>
+            <Text style={styles.successTitle}>You&apos;re Verified! 🎉</Text>
             <Text style={styles.successSubtitle}>
               Congratulations! You have an active verification subscription.
             </Text>
@@ -249,7 +249,7 @@ const VerificationPage = () => {
 
         {/* How You'll Appear */}
         <View style={styles.appearanceContainer}>
-          <Text style={styles.sectionTitle}>How You'll Appear to Others</Text>
+          <Text style={styles.sectionTitle}>How You&apos;ll Appear to Others</Text>
           <View style={styles.demoProfile}>
             <View style={styles.demoProfileInfo}>
               <Text style={styles.demoName}>{profileData.name || 'Your Name'}</Text>

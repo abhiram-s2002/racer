@@ -98,7 +98,6 @@ function MyListingsScreen() {
             <NewRobustImage 
               thumbnailImages={item.thumbnail_images}
               previewImages={item.preview_images}
-              imageFolderPath={item.image_folder_path}
               style={styles.listingImage}
               placeholderText="No Image"
               size="thumbnail"

@@ -22,7 +22,6 @@ interface Listing {
   price_unit: string;
   thumbnail_images: string[];
   preview_images: string[];
-  image_folder_path?: string;
   category: string;
 }
 
@@ -69,7 +68,6 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
           <NewRobustImage
             thumbnailImages={item.thumbnail_images}
             previewImages={item.preview_images}
-            imageFolderPath={item.image_folder_path || ''}
             size="thumbnail"
             style={styles.carouselImage}
             placeholderText="No Image"

@@ -3,7 +3,6 @@ import { Listing } from './types';
 interface CachedImageData {
   thumbnail_images: string[];
   preview_images: string[];
-  image_folder_path?: string; // Make optional since it might not exist
 }
 
 class ImageCache {
@@ -68,7 +67,6 @@ class ImageCache {
       this.cache.set(listingId, {
         thumbnail_images: listing.thumbnail_images || [],
         preview_images: listing.preview_images || [],
-        image_folder_path: (listing as any).image_folder_path || '', // Cast to any for optional property
       });
     } catch (error) {
       // Silent error handling

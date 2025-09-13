@@ -16,7 +16,6 @@ export interface Activity {
   images?: string[];
   thumbnail_images?: string[];
   preview_images?: string[];
-  image_folder_path?: string;
   image_metadata?: any;
   is_active?: boolean;
   username: string;
@@ -47,13 +46,12 @@ export interface Ping {
   response_message?: string;
   listings?: {
     title: string;
-    price: number;
-    images: string[];
-    thumbnail_images?: string[];
-    preview_images?: string[];
-    image_folder_path?: string;
-    image_metadata?: any;
-    username: string;
+  price: number;
+  images: string[];
+  thumbnail_images?: string[];
+  preview_images?: string[];
+  image_metadata?: any;
+  username: string;
     latitude?: number;
     longitude?: number;
   };
@@ -202,7 +200,6 @@ export async function getSentPings(username: string): Promise<Ping[]> {
         images, 
         thumbnail_images, 
         preview_images, 
-        image_folder_path, 
         image_metadata, 
         username,
         latitude,
@@ -263,7 +260,6 @@ export async function getReceivedPings(username: string): Promise<Ping[]> {
         images, 
         thumbnail_images, 
         preview_images, 
-        image_folder_path, 
         image_metadata, 
         username,
         latitude,
