@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { Phone, MessageCircle, MapPin } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
+import { getPhoneWithPermission } from '@/utils/phoneSharingUtils';
+import { supabase } from '@/utils/supabaseClient';
 
 interface Listing {
   id: string;
@@ -32,10 +34,56 @@ const ListingActionButtons: React.FC<ListingActionButtonsProps> = React.memo(({
   sellerInfo,
 }) => {
   const router = useRouter();
+  const [phoneSharingInfo, setPhoneSharingInfo] = useState<{
+    phone: string | null;
+    canShare: boolean;
+  }>({ phone: null, canShare: false });
+
+  // Check phone sharing permission
+  useEffect(() => {
+    const checkPhoneSharing = async () => {
+      if (!sellerInfo?.username) return;
+
+      try {
+        // Get current user ID and seller's user ID
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) return;
+
+        const { data: sellerUser, error } = await supabase
+          .from('users')
+          .select('id')
+          .eq('username', sellerInfo.username)
+          .single();
+
+        if (error || !sellerUser) return;
+
+        // Check phone sharing permission using unlock system
+        const phoneInfo = await getPhoneWithPermission(
+          sellerUser.id,
+          currentUser.id
+        );
+
+        setPhoneSharingInfo(phoneInfo);
+      } catch (error) {
+        console.error('Error checking phone sharing permission:', error);
+      }
+    };
+
+    checkPhoneSharing();
+  }, [sellerInfo?.username]);
 
   // Handle phone call
   const handleCall = useCallback(() => {
-    const phoneNumber = sellerInfo?.phone;
+    if (!phoneSharingInfo.canShare) {
+      Alert.alert(
+        'Phone Not Available',
+        'Phone number will be available after ping is accepted.',
+        [{ text: 'OK', style: 'default' }]
+      );
+      return;
+    }
+
+    const phoneNumber = phoneSharingInfo.phone;
     if (!phoneNumber) {
       Alert.alert(
         'No Phone Number',
@@ -87,14 +135,14 @@ const ListingActionButtons: React.FC<ListingActionButtonsProps> = React.memo(({
       <View style={styles.buttonRow}>
         {/* Call Button */}
         <TouchableOpacity
-          style={[styles.actionButton, !sellerInfo?.phone && styles.disabledButton]}
+          style={[styles.actionButton, !phoneSharingInfo.canShare && styles.disabledButton]}
           onPress={handleCall}
-          disabled={!sellerInfo?.phone}
+          disabled={!phoneSharingInfo.canShare}
           activeOpacity={0.7}
         >
-          <Phone size={20} color={sellerInfo?.phone ? '#FFFFFF' : '#94A3B8'} />
-          <Text style={[styles.buttonText, !sellerInfo?.phone && styles.disabledButtonText]}>
-            {sellerInfo?.phone ? 'Call' : 'No Phone'}
+          <Phone size={20} color={phoneSharingInfo.canShare ? '#FFFFFF' : '#94A3B8'} />
+          <Text style={[styles.buttonText, !phoneSharingInfo.canShare && styles.disabledButtonText]}>
+            {phoneSharingInfo.canShare ? 'Call' : 'Phone Hidden'}
           </Text>
         </TouchableOpacity>
 

@@ -702,6 +702,7 @@ function HomeScreen() {
       />
 
 
+
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.searchContainer}>

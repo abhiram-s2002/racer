@@ -22,17 +22,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { createPing, checkExistingPing } from '@/utils/activitySupabase';
 import { usePingLimits } from '@/hooks/usePingLimits';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
+import { incrementViewCount } from '@/utils/listingMetrics';
+import { getPhoneWithPermission } from '@/utils/phoneSharingUtils';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Listing } from '@/utils/types';
 
 // Import our optimized components
 import ListingHeroImage from '@/components/ListingHeroImage';
-import ListingInfoCard from '@/components/ListingInfoCard';
-import SellerInfoSection from '@/components/SellerInfoSection';
-import ListingLocationMap from '@/components/ListingLocationMap';
+import UnifiedListingCard from '@/components/UnifiedListingCard';
+import CompactLocationCard from '@/components/CompactLocationCard';
 import SellerListingsCarousel from '@/components/SellerListingsCarousel';
-import ListingActionButtons from '@/components/ListingActionButtons';
 
 interface SellerInfo {
   username: string;
@@ -59,6 +59,10 @@ function ListingDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phoneSharingInfo, setPhoneSharingInfo] = useState<{
+    phone: string | null;
+    canShare: boolean;
+  }>({ phone: null, canShare: false });
   
   // Ping-related state
   const [showPingModal, setShowPingModal] = useState(false);
@@ -97,6 +101,31 @@ function ListingDetailScreen() {
     if (sellerError) throw sellerError;
     setSellerInfo(sellerData);
   };
+
+  // Check phone sharing permission
+  const checkPhoneSharingPermission = async (sellerUsername: string) => {
+    if (!user?.id || !sellerUsername) return;
+
+    try {
+      const { data: sellerUser, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('username', sellerUsername)
+        .single();
+
+      if (error || !sellerUser) return;
+
+      // Check phone sharing permission using unlock system
+      const phoneInfo = await getPhoneWithPermission(
+        sellerUser.id,
+        user.id
+      );
+
+      setPhoneSharingInfo(phoneInfo);
+    } catch (error) {
+      console.error('Error checking phone sharing permission:', error);
+    }
+  };
   
   // Fetch listing data
   const fetchListingData = useCallback(async () => {
@@ -116,10 +145,10 @@ function ListingDetailScreen() {
         console.warn('Failed to get cached images:', error);
       }
       
-      // Fetch listing details
+      // Fetch listing details including engagement metrics
       const { data: listingData, error: listingError } = await supabase
         .from('listings')
-        .select('*')
+        .select('*, view_count, ping_count, expires_at')
         .eq('id', listingId)
         .single();
       
@@ -135,17 +164,24 @@ function ListingDetailScreen() {
       
       setListing(listingData);
       
+      // Increment view count
+      await incrementViewCount(listingId);
+      
       // Use passed seller data if available, otherwise fetch from database
       if (sellerData) {
         try {
           const parsedSellerData = JSON.parse(sellerData as string);
           setSellerInfo(parsedSellerData);
+          // Check phone sharing permission
+          await checkPhoneSharingPermission(parsedSellerData.username);
         } catch (error) {
           // If parsing fails, fall back to database fetch
           await fetchSellerFromDatabase(listingData.username);
+          await checkPhoneSharingPermission(listingData.username);
         }
       } else {
         await fetchSellerFromDatabase(listingData.username);
+        await checkPhoneSharingPermission(listingData.username);
       }
       
       // Fetch seller's other listings
@@ -383,7 +419,16 @@ function ListingDetailScreen() {
 
   // Handle phone call
   const handleCall = useCallback(() => {
-    const phoneNumber = sellerInfo?.phone;
+    if (!phoneSharingInfo.canShare) {
+      Alert.alert(
+        'Phone Not Available',
+        'Phone number will be available after ping is accepted.',
+        [{ text: 'OK', style: 'default' }]
+      );
+      return;
+    }
+
+    const phoneNumber = phoneSharingInfo.phone;
     if (!phoneNumber) {
       Alert.alert(
         'No Phone Number',
@@ -553,28 +598,26 @@ function ListingDetailScreen() {
         
 
 
-        {/* Listing Information */}
-        <ListingInfoCard
-          title={listing.title}
-          description={listing.description || ''}
-          price={listing.price}
-          priceUnit={listing.price_unit}
-          category={listing.category}
-          createdAt={listing.created_at}
-        />
-
-        {/* Seller Information */}
+        {/* Unified Listing Information */}
         {sellerInfo && (
-          <SellerInfoSection
+          <UnifiedListingCard
+            title={listing.title}
+            description={listing.description || ''}
+            price={listing.price}
+            priceUnit={listing.price_unit}
+            category={listing.category}
+            createdAt={listing.created_at}
             seller={sellerInfo}
-            onPress={() => router.push(`/seller/${sellerInfo.username}` as any)}
+            viewCount={listing.view_count}
+            pingCount={listing.ping_count}
+            expiresAt={listing.expires_at}
+            onSellerPress={() => router.push(`/seller/${sellerInfo.username}` as any)}
           />
         )}
 
-
-        {/* Location Map */}
+        {/* Compact Location Map */}
         {listing.latitude && listing.longitude && (
-          <ListingLocationMap
+          <CompactLocationCard
             latitude={listing.latitude}
             longitude={listing.longitude}
             title={listing.title}
@@ -610,14 +653,14 @@ function ListingDetailScreen() {
         <View style={styles.actionButtonsContainer}>
           {/* Call Button */}
           <TouchableOpacity
-            style={[styles.actionButton, !sellerInfo?.phone && styles.disabledButton]}
+            style={[styles.actionButton, !phoneSharingInfo.canShare && styles.disabledButton]}
             onPress={handleCall}
-            disabled={!sellerInfo?.phone}
+            disabled={!phoneSharingInfo.canShare}
             activeOpacity={0.7}
           >
-            <Phone size={20} color={sellerInfo?.phone ? '#FFFFFF' : '#94A3B8'} />
-            <Text style={[styles.actionButtonText, !sellerInfo?.phone && styles.disabledButtonText]}>
-              {sellerInfo?.phone ? 'Call' : 'No Phone'}
+            <Phone size={20} color={phoneSharingInfo.canShare ? '#FFFFFF' : '#94A3B8'} />
+            <Text style={[styles.actionButtonText, !phoneSharingInfo.canShare && styles.disabledButtonText]}>
+              {phoneSharingInfo.canShare ? 'Call' : 'Phone Hidden'}
             </Text>
           </TouchableOpacity>
 
@@ -716,13 +759,14 @@ function ListingDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F9FAFB',
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingBottom: 100, // Add padding to account for fixed bottom tab
+    backgroundColor: '#F9FAFB', // Light background like Amazon
   },
   heroImageContainer: {
     position: 'relative',

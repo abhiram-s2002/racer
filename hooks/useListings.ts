@@ -60,15 +60,16 @@ export function useListings() {
   const fetchListings = useCallback(async (pageNumber = 1, userLat?: number, userLon?: number) => {
     const cacheKey = getCacheKey(pageNumber, userLat, userLon);
     
+    
       // Check cache first - extended cache duration to reduce database queries
   const cached = cacheRef.current.get(cacheKey);
-  if (cached) {
-    // Check if cache is still valid (extend cache duration to 2 hours)
-    const cacheAge = Date.now() - (cached.timestamp || 0);
-    if (cacheAge < 3 * 60 * 60 * 1000) { // 3 hours
-      return cached.data;
+    if (cached) {
+      // Check if cache is still valid (extend cache duration to 2 hours)
+      const cacheAge = Date.now() - (cached.timestamp || 0);
+      if (cacheAge < 3 * 60 * 60 * 1000) { // 3 hours
+        return cached.data;
+      }
     }
-  }
 
     try {
       
@@ -78,6 +79,7 @@ export function useListings() {
         
         // Calculate the total limit needed for pagination
         const totalLimit = getTotalItemsForPage(pageNumber);
+        
         
         const { data, error } = await supabase
           .rpc('get_listings_with_distance', {

@@ -28,6 +28,7 @@ import { batchRatingService } from '@/utils/batchRatingService';
 import { Request, RequestCategory } from '@/utils/types';
 import { getCategoryById } from '@/utils/requestCategories';
 import { RequestCard } from '@/components/RequestCard';
+import { getPhoneWithPermission } from '@/utils/phoneSharingUtils';
 import { CreateRequestModal } from '@/components/CreateRequestModal';
 import { CategoryFilterModal } from '@/components/CategoryFilterModal';
 import { RequestLocationPicker } from '@/components/RequestLocationPicker';
@@ -336,19 +337,40 @@ export default function RequestsScreen() {
     }
 
     try {
-      // Fetch the requester's phone number from their profile
-      const { data: requesterProfile, error } = await supabase
+      // Get current user ID and requester's user ID
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) {
+        Alert.alert('Error', 'Please log in to continue.');
+        return;
+      }
+
+      const { data: requesterUser, error: requesterError } = await supabase
         .from('users')
-        .select('phone, name')
+        .select('id, name')
         .eq('username', request.requester_username)
         .single();
 
-      if (error || !requesterProfile) {
+      if (requesterError || !requesterUser) {
         Alert.alert('Error', 'Unable to find requester information.');
         return;
       }
 
-      if (!requesterProfile.phone) {
+      // Check phone sharing permission using unlock system
+      const { phone, canShare } = await getPhoneWithPermission(
+        requesterUser.id,
+        currentUser.id
+      );
+
+      if (!canShare) {
+        Alert.alert(
+          'Phone Not Available',
+          'Phone number will be available after ping is accepted.',
+          [{ text: 'OK', style: 'default' }]
+        );
+        return;
+      }
+
+      if (!phone) {
         Alert.alert(
           'No Phone Number',
           'This requester has not provided a phone number for WhatsApp.',
@@ -358,19 +380,19 @@ export default function RequestsScreen() {
       }
 
       // Format request details for WhatsApp message
-      const requestMessage = formatRequestForWhatsApp(request, requesterProfile.name);
+      const requestMessage = formatRequestForWhatsApp(request, requesterUser.name);
 
       // Show confirmation dialog
       Alert.alert(
         'Open WhatsApp',
-        `Start a WhatsApp chat with ${requesterProfile.name || request.requester_username} about their request?`,
+        `Start a WhatsApp chat with ${requesterUser.name || request.requester_username} about their request?`,
         [
           { text: 'Cancel', style: 'cancel' },
           { 
             text: 'Open WhatsApp', 
             onPress: () => {
               // Format phone number for WhatsApp (remove any non-digit characters except +)
-              const phoneNumber = requesterProfile.phone.replace(/[^\d+]/g, '');
+              const phoneNumber = phone.replace(/[^\d+]/g, '');
               // Open WhatsApp with the phone number and pre-filled message
               const whatsappUrl = createWhatsAppURL(phoneNumber, requestMessage);
               Linking.openURL(whatsappUrl).catch(() => {
@@ -395,19 +417,40 @@ export default function RequestsScreen() {
     }
 
     try {
-      // Fetch the requester's phone number from their profile
-      const { data: requesterProfile, error } = await supabase
+      // Get current user ID and requester's user ID
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) {
+        Alert.alert('Error', 'Please log in to continue.');
+        return;
+      }
+
+      const { data: requesterUser, error: requesterError } = await supabase
         .from('users')
-        .select('phone, name')
+        .select('id, name')
         .eq('username', request.requester_username)
         .single();
 
-      if (error || !requesterProfile) {
+      if (requesterError || !requesterUser) {
         Alert.alert('Error', 'Unable to find requester information.');
         return;
       }
 
-      if (!requesterProfile.phone) {
+      // Check phone sharing permission using unlock system
+      const { phone, canShare } = await getPhoneWithPermission(
+        requesterUser.id,
+        currentUser.id
+      );
+
+      if (!canShare) {
+        Alert.alert(
+          'Phone Not Available',
+          'Phone number will be available after ping is accepted.',
+          [{ text: 'OK', style: 'default' }]
+        );
+        return;
+      }
+
+      if (!phone) {
         Alert.alert(
           'No Phone Number',
           'This requester has not provided a phone number.',
@@ -419,14 +462,14 @@ export default function RequestsScreen() {
       // Show confirmation dialog
       Alert.alert(
         'Call Request Creator',
-        `Call ${requesterProfile.name || request.requester_username}?`,
+        `Call ${requesterUser.name || request.requester_username}?`,
         [
           { text: 'Cancel', style: 'cancel' },
           { 
             text: 'Call', 
             onPress: () => {
               // Open the phone app with the number
-              const phoneUrl = `tel:${requesterProfile.phone}`;
+              const phoneUrl = `tel:${phone}`;
               Linking.openURL(phoneUrl);
             }
           }

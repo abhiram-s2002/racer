@@ -16,6 +16,7 @@ import { formatPriceWithUnit } from '@/utils/formatters';
 import { updatePingStatusNew } from '@/utils/activitySupabase';
 import { useRouter } from 'expo-router';
 import { formatPingForWhatsApp, createWhatsAppURL, createWhatsAppWebURL } from '@/utils/whatsappMessageFormatter';
+import { getPhoneWithPermission } from '@/utils/phoneSharingUtils';
 
 import { supabase } from '@/utils/supabaseClient';
 
@@ -70,19 +71,39 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
       // Get the other participant's username (not the current user)
       const otherUsername = item.sender_username === username ? item.receiver_username : item.sender_username;
       
-      // Fetch the other participant's phone number from their profile
-      const { data: participantProfile, error } = await supabase
+      // Get current user ID and other participant's user ID
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) {
+        RNAlert.alert('Error', 'Please log in to continue.');
+        return;
+      }
+
+      const { data: otherUser, error: otherUserError } = await supabase
         .from('users')
-        .select('phone, name')
+        .select('id, name')
         .eq('username', otherUsername)
         .single();
 
-      if (error || !participantProfile) {
+      if (otherUserError || !otherUser) {
         RNAlert.alert('Error', 'Unable to find participant information.');
         return;
       }
 
-      if (!participantProfile.phone) {
+      // Check phone sharing permission using unlock system
+      const { phone, canShare } = await getPhoneWithPermission(
+        otherUser.id,
+        currentUser.id
+      );
+
+      if (!canShare) {
+        RNAlert.alert(
+          'Phone Not Available',
+          'Phone number will be available after ping is accepted.'
+        );
+        return;
+      }
+
+      if (!phone) {
         RNAlert.alert(
           'No Phone Number',
           'This user has not provided a phone number for WhatsApp.'
@@ -97,7 +118,7 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
         category: item.category,
         price: item.price,
         location: item.location,
-        sellerName: participantProfile.name,
+        sellerName: otherUser.name,
         sellerUsername: otherUsername,
         distance: item.distance_km,
         message: item.message
@@ -106,14 +127,14 @@ export default function PingItem({ item, username, onStatusChange }: PingItemPro
       // Show confirmation dialog
       RNAlert.alert(
         'Open WhatsApp',
-        `Start a WhatsApp chat with ${participantProfile.name || otherUsername} about this listing?`,
+        `Start a WhatsApp chat with ${otherUser.name || otherUsername} about this listing?`,
         [
           { text: 'Cancel', style: 'cancel' },
           { 
             text: 'Open WhatsApp', 
             onPress: () => {
               // Format phone number for WhatsApp (remove any non-digit characters except +)
-              const phoneNumber = participantProfile.phone.replace(/[^\d+]/g, '');
+              const phoneNumber = phone.replace(/[^\d+]/g, '');
               // Open WhatsApp with the phone number and pre-filled message
               const whatsappUrl = createWhatsAppURL(phoneNumber, pingMessage);
               Linking.openURL(whatsappUrl).catch(() => {

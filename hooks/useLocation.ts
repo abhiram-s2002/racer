@@ -47,6 +47,7 @@ export function useLocation() {
       const { latitude, longitude } = position.coords;
       const timestamp = Date.now();
 
+
       // Save to state
       setState({
         latitude,
@@ -80,6 +81,7 @@ export function useLocation() {
         if (cachedLocationJson) {
           const cachedLocation = JSON.parse(cachedLocationJson);
           const now = Date.now();
+          
           
           // Use cached location if it's recent enough
           if (now - cachedLocation.timestamp < LOCATION_CACHE_EXPIRY) {

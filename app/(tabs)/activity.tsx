@@ -26,6 +26,7 @@ import { useRouter } from 'expo-router';
 // Removed react-native-expo-image-cache import - using standard Image component
 
 import { formatPriceWithUnit } from '@/utils/formatters';
+import { getPhoneWithPermission } from '@/utils/phoneSharingUtils';
 
 import NewRobustImage from '@/components/NewRobustImage';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
@@ -229,20 +230,11 @@ function ActivityScreen() {
     if (!currentUsername) return;
     
     try {
-      // Update ping status in database
-      const { error } = await supabase
-        .from('pings')
-        .update({ 
-          status: response,
-          responded_at: new Date().toISOString()
-        })
-        .eq('id', pingId);
+      // Import the function that handles ping status updates and phone access granting
+      const { updatePingStatusNew } = await import('@/utils/activitySupabase');
       
-      if (error) {
-        // Error updating ping status
-        Alert.alert('Error', 'Failed to update ping status. Please try again.');
-        return;
-      }
+      // Update ping status using the new function (this will also grant phone access if accepted)
+      await updatePingStatusNew(pingId, response);
       
       // If ping is accepted, create chat and send acceptance message
       if (response === 'accepted') {
@@ -338,19 +330,40 @@ function ActivityScreen() {
         // Get the other participant's username (not the current user)
         const otherUsername = item.sender_username === username ? item.receiver_username : item.sender_username;
         
-        // Fetch the other participant's phone number from their profile
-        const { data: participantProfile, error } = await supabase
+        // Get current user ID and other participant's user ID
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        if (!currentUser) {
+          Alert.alert('Error', 'Please log in to continue.');
+          return;
+        }
+
+        const { data: otherUser, error: otherUserError } = await supabase
           .from('users')
-          .select('phone, name, verification_status, verified_at, expires_at')
+          .select('id, name, verification_status, verified_at, expires_at')
           .eq('username', otherUsername)
           .single();
 
-        if (error || !participantProfile) {
+        if (otherUserError || !otherUser) {
           Alert.alert('Error', 'Unable to find participant information.');
           return;
         }
 
-        if (!participantProfile.phone) {
+        // Check phone sharing permission using unlock system
+        const { phone, canShare } = await getPhoneWithPermission(
+          otherUser.id,
+          currentUser.id
+        );
+
+        if (!canShare) {
+          Alert.alert(
+            'Phone Not Available',
+            'Phone number will be available after ping is accepted.',
+            [{ text: 'OK', style: 'default' }]
+          );
+          return;
+        }
+
+        if (!phone) {
           Alert.alert(
             'No Phone Number',
             'This user has not provided a phone number for WhatsApp.',
@@ -367,7 +380,7 @@ function ActivityScreen() {
           category: (item as any).category,
           price: item.price ? parseFloat(item.price) : undefined,
           location: (item as any).location,
-          userName: participantProfile.name,
+          userName: otherUser.name,
           userUsername: otherUsername,
           distance: (item as any).distance_km,
           message: item.message
@@ -376,14 +389,14 @@ function ActivityScreen() {
         // Show confirmation dialog
         Alert.alert(
           'Open WhatsApp',
-          `Start a WhatsApp chat with ${participantProfile.name || otherUsername} about this activity?`,
+          `Start a WhatsApp chat with ${otherUser.name || otherUsername} about this activity?`,
           [
             { text: 'Cancel', style: 'cancel' },
             { 
               text: 'Open WhatsApp', 
               onPress: () => {
                 // Format phone number for WhatsApp (remove any non-digit characters except +)
-                const phoneNumber = participantProfile.phone.replace(/[^\d+]/g, '');
+                const phoneNumber = phone.replace(/[^\d+]/g, '');
                 // Open WhatsApp with the phone number and pre-filled message
                 const whatsappUrl = createWhatsAppURL(phoneNumber, activityMessage);
                 Linking.openURL(whatsappUrl).catch(() => {

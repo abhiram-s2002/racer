@@ -11,20 +11,19 @@ import {
 import { MapPin, Navigation } from 'lucide-react-native';
 import MapView, { Marker } from 'react-native-maps';
 
-interface ListingLocationMapProps {
+interface CompactLocationCardProps {
   latitude: number;
   longitude: number;
   title: string;
   sellerName: string;
 }
 
-const ListingLocationMap: React.FC<ListingLocationMapProps> = React.memo(({
+const CompactLocationCard: React.FC<CompactLocationCardProps> = React.memo(({
   latitude,
   longitude,
   title,
   sellerName,
 }) => {
-  // Memoize map region to prevent unnecessary re-renders
   const mapRegion = useMemo(() => ({
     latitude,
     longitude,
@@ -32,13 +31,11 @@ const ListingLocationMap: React.FC<ListingLocationMapProps> = React.memo(({
     longitudeDelta: 0.01,
   }), [latitude, longitude]);
 
-  // Memoize marker coordinate
   const markerCoordinate = useMemo(() => ({
     latitude,
     longitude,
   }), [latitude, longitude]);
 
-  // Handle get directions
   const handleGetDirections = useCallback(() => {
     const label = encodeURIComponent(`${title} - ${sellerName}`);
     
@@ -68,7 +65,7 @@ const ListingLocationMap: React.FC<ListingLocationMapProps> = React.memo(({
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <MapPin size={20} color="#3B82F6" />
+          <MapPin size={16} color="#6B7280" />
           <Text style={styles.title}>Location</Text>
         </View>
         <TouchableOpacity
@@ -76,7 +73,7 @@ const ListingLocationMap: React.FC<ListingLocationMapProps> = React.memo(({
           onPress={handleGetDirections}
           activeOpacity={0.7}
         >
-          <Navigation size={16} color="#3B82F6" />
+          <Navigation size={14} color="#3B82F6" />
           <Text style={styles.directionsText}>Directions</Text>
         </TouchableOpacity>
       </View>
@@ -101,15 +98,6 @@ const ListingLocationMap: React.FC<ListingLocationMapProps> = React.memo(({
           />
         </MapView>
       </View>
-
-      <View style={styles.locationInfo}>
-        <Text style={styles.locationText}>
-          {title} is located at this address
-        </Text>
-        <Text style={styles.coordinatesText}>
-          {latitude.toFixed(6)}, {longitude.toFixed(6)}
-        </Text>
-      </View>
     </View>
   );
 });
@@ -117,72 +105,54 @@ const ListingLocationMap: React.FC<ListingLocationMapProps> = React.memo(({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    marginBottom: 8,
+    padding: 16,
+    marginBottom: 12,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   title: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Inter-SemiBold',
-    color: '#1E293B',
+    color: '#111827',
   },
   directionsButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#DBEAFE',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 6,
-    gap: 6,
+    gap: 4,
   },
   directionsText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter-Medium',
     color: '#3B82F6',
   },
   mapContainer: {
-    borderRadius: 12,
+    borderRadius: 8,
     overflow: 'hidden',
-    marginBottom: 16,
-    elevation: 2,
+    elevation: 1,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   map: {
     width: '100%',
-    height: 200,
-  },
-  locationInfo: {
-    alignItems: 'center',
-  },
-  locationText: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: '#64748B',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  coordinatesText: {
-    fontSize: 12,
-    fontFamily: 'monospace',
-    color: '#94A3B8',
+    height: 140,
   },
 });
 
-ListingLocationMap.displayName = 'ListingLocationMap';
+CompactLocationCard.displayName = 'CompactLocationCard';
 
-export default ListingLocationMap;
-
-
+export default CompactLocationCard;

@@ -29,6 +29,8 @@ import VerificationBadge from '@/components/VerificationBadge';
 import VerificationPricingCard from '@/components/VerificationPricingCard';
 import { isUserVerified } from '@/utils/verificationUtils';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
+import PhonePrivacyManager from '@/components/PhonePrivacyManager';
+import { useAuth } from '@/hooks/useAuth';
 
 
 
@@ -41,6 +43,7 @@ function getRandomSeed() {
 function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user } = useAuth();
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
@@ -181,6 +184,7 @@ function ProfileScreen() {
       Alert.alert('Error', 'Failed to save availability status');
     }
   };
+
 
   // Save notification settings to database
   const saveNotificationSettings = async (newSettings: typeof notifications) => {
@@ -641,6 +645,21 @@ function ProfileScreen() {
           </View>
         </View>
 
+        {/* Phone Sharing Info */}
+        <View style={styles.phoneSharingSection}>
+          <Text style={styles.sectionTitle}>Phone Sharing</Text>
+          <View style={styles.phoneSharingInfo}>
+            <Text style={styles.phoneSharingDescription}>
+              Your phone number is shared only when you accept pings. You can manage who has access below.
+            </Text>
+          </View>
+        </View>
+
+        {/* Phone Privacy Management */}
+        {user?.id && (
+          <PhonePrivacyManager userId={user.id} />
+        )}
+
         {/* Verification Section */}
         <VerificationPricingCard userName={profileData.name || 'Your Name'} />
 
@@ -987,6 +1006,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  phoneSharingSection: {
+    backgroundColor: '#FFFFFF',
+    marginTop: 8,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  phoneSharingInfo: {
+    paddingVertical: 8,
+  },
+  phoneSharingDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
+    lineHeight: 20,
   },
   toggleInfo: {
     flex: 1,

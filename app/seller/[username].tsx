@@ -22,11 +22,8 @@ import {
   Shield
 } from 'lucide-react-native';
 import { supabase } from '@/utils/supabaseClient';
-import VerificationBadge from '@/components/VerificationBadge';
-import { isUserVerified } from '@/utils/verificationUtils';
-import { formatPriceWithUnit } from '@/utils/formatters';
-import NewRobustImage from '@/components/NewRobustImage';
-import HomeRatingDisplay from '@/components/HomeRatingDisplay';
+import UnifiedSellerProfileCard from '@/components/UnifiedSellerProfileCard';
+import SingleColumnListingItem from '@/components/SingleColumnListingItem';
 
 interface SellerProfile {
   username: string;
@@ -53,7 +50,9 @@ interface SellerListing {
   preview_images?: string[];
   image_folder_path?: string;
   created_at: string;
-  updated_at: string;
+  view_count?: number;
+  ping_count?: number;
+  expires_at?: string;
 }
 
 export default function SellerProfileScreen() {
@@ -119,10 +118,12 @@ export default function SellerProfileScreen() {
           preview_images,
           image_folder_path,
           created_at,
-          updated_at
+          view_count,
+          ping_count,
+          expires_at
         `)
         .eq('username', username)
-        .order('updated_at', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(12);
 
       if (error) {
@@ -166,31 +167,10 @@ export default function SellerProfileScreen() {
 
   // Render listing item
   const renderListingItem = ({ item }: { item: SellerListing }) => (
-    <TouchableOpacity 
-      style={styles.listingItem}
-      onPress={() => router.push(`/listing-detail?id=${item.id}`)}
-    >
-      <NewRobustImage
-        thumbnailImages={item.thumbnail_images}
-        previewImages={item.preview_images}
-        imageFolderPath={item.image_folder_path}
-        style={styles.listingImage}
-        placeholderText="No Image"
-        size="thumbnail"
-        title={item.title}
-      />
-      <View style={styles.listingDetails}>
-        <Text style={styles.listingTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.listingPrice}>
-          {formatPriceWithUnit(item.price.toString(), item.price_unit)}
-        </Text>
-        <Text style={styles.listingCategory}>
-          {item.category}
-        </Text>
-      </View>
-    </TouchableOpacity>
+    <SingleColumnListingItem
+      listing={item}
+      onPress={(listingId) => router.push(`/listing-detail?id=${listingId}`)}
+    />
   );
 
   if (loading) {
@@ -253,90 +233,8 @@ export default function SellerProfileScreen() {
           />
         }
       >
-        {/* Seller Info Section */}
-        <View style={styles.sellerInfoSection}>
-          <View style={styles.sellerHeader}>
-            <Image 
-              source={{ uri: sellerProfile.avatar_url || 'https://api.dicebear.com/7.x/pixel-art/png?seed=default' }}
-              style={styles.sellerAvatar}
-            />
-            <View style={styles.sellerDetails}>
-              <View style={styles.sellerNameRow}>
-                <Text style={styles.sellerName}>{sellerProfile.name}</Text>
-                {isUserVerified(sellerProfile) && <VerificationBadge size="medium" />}
-              </View>
-              <Text style={styles.sellerUsername}>@{sellerProfile.username}</Text>
-              
-              {/* Seller Stats */}
-              <View style={styles.sellerStats}>
-                <View style={styles.statItem}>
-                  <Calendar size={12} color="#64748B" />
-                  <Text style={styles.statText}>
-                    Joined {new Date(sellerProfile.created_at).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      year: 'numeric' 
-                    })}
-                  </Text>
-                </View>
-                {isUserVerified(sellerProfile) && (
-                  <View style={styles.statItem}>
-                    <Shield size={12} color="#22C55E" />
-                    <Text style={[styles.statText, { color: '#22C55E' }]}>
-                      Verified Seller
-                    </Text>
-                  </View>
-                )}
-              </View>
-              
-              {/* Rating Display */}
-              <View style={styles.ratingSection}>
-                <HomeRatingDisplay 
-                  username={sellerProfile.username}
-                  size="medium"
-                  showCount={true}
-                  showAverage={true}
-                  compact={false}
-                />
-              </View>
-
-              {/* Location */}
-              <View style={styles.locationRow}>
-                <MapPin size={16} color="#64748B" />
-                <Text style={styles.locationText}>
-                  {sellerProfile.location_display || sellerProfile.location || 'Location not specified'}
-                </Text>
-              </View>
-
-              {/* Availability Status */}
-              <View style={styles.availabilityRow}>
-                <View style={[
-                  styles.availabilityBadge,
-                  sellerProfile.isAvailable ? styles.available : styles.unavailable
-                ]}>
-                  <View style={[
-                    styles.availabilityDot,
-                    { backgroundColor: sellerProfile.isAvailable ? '#22C55E' : '#EF4444' }
-                  ]} />
-                  <Text style={[
-                    styles.availabilityText,
-                    { color: sellerProfile.isAvailable ? '#22C55E' : '#EF4444' }
-                  ]}>
-                    {sellerProfile.isAvailable ? 'Available' : 'Unavailable'}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* Bio Section */}
-          <View style={styles.bioSection}>
-            <Text style={styles.bioTitle}>About</Text>
-            <Text style={styles.bioText}>
-              {sellerProfile.bio || 'No bio available for this seller.'}
-            </Text>
-          </View>
-
-        </View>
+        {/* Unified Seller Profile */}
+        <UnifiedSellerProfileCard seller={sellerProfile} />
 
         {/* Listings Section */}
         <View style={styles.listingsSection}>
@@ -351,9 +249,8 @@ export default function SellerProfileScreen() {
               data={sellerListings}
               renderItem={renderListingItem}
               keyExtractor={(item) => item.id}
-              numColumns={2}
               scrollEnabled={false}
-              contentContainerStyle={styles.listingsGrid}
+              contentContainerStyle={styles.listingsContainer}
             />
           ) : (
             <View style={styles.noListingsContainer}>
@@ -373,7 +270,7 @@ export default function SellerProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F9FAFB',
   },
   header: {
     flexDirection: 'row',
@@ -402,130 +299,6 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  sellerInfoSection: {
-    backgroundColor: '#FFFFFF',
-    margin: 16,
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  sellerHeader: {
-    flexDirection: 'row',
-    marginBottom: 20,
-  },
-  sellerAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginRight: 16,
-  },
-  sellerDetails: {
-    flex: 1,
-  },
-  sellerNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  sellerName: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1E293B',
-    marginRight: 8,
-  },
-  sellerUsername: {
-    fontSize: 14,
-    color: '#64748B',
-    marginBottom: 12,
-  },
-  sellerStats: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 16,
-  },
-  statItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  statText: {
-    fontSize: 12,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  ratingSection: {
-    marginBottom: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-  },
-  locationText: {
-    fontSize: 14,
-    color: '#64748B',
-    marginLeft: 8,
-    flex: 1,
-  },
-  availabilityRow: {
-    marginBottom: 16,
-  },
-  availabilityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: '#F1F5F9',
-  },
-  available: {
-    backgroundColor: '#DCFCE7',
-  },
-  unavailable: {
-    backgroundColor: '#FEF2F2',
-  },
-  availabilityDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 6,
-  },
-  availabilityText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  bioSection: {
-    marginBottom: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 8,
-  },
-  bioTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 8,
-  },
-  bioText: {
-    fontSize: 14,
-    color: '#64748B',
-    lineHeight: 22,
-  },
   listingsSection: {
     margin: 16,
     marginTop: 0,
@@ -535,49 +308,11 @@ const styles = StyleSheet.create({
   },
   listingsTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#1E293B',
+    fontFamily: 'Inter-SemiBold',
+    color: '#111827',
   },
-  listingsGrid: {
+  listingsContainer: {
     paddingBottom: 16,
-  },
-  listingItem: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    margin: 4,
-    padding: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  listingImage: {
-    width: '100%',
-    height: 120,
-    borderRadius: 6,
-    marginBottom: 8,
-  },
-  listingDetails: {
-    flex: 1,
-  },
-  listingTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1E293B',
-    marginBottom: 4,
-  },
-  listingPrice: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#22C55E',
-    marginBottom: 2,
-  },
-  listingCategory: {
-    fontSize: 12,
-    color: '#64748B',
-    textTransform: 'capitalize',
   },
   noListingsContainer: {
     alignItems: 'center',

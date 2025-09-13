@@ -1,5 +1,6 @@
 /* global console */
 import { supabase } from './supabaseClient';
+import { grantPhoneAccess } from './phoneSharingUtils';
 
 export type ActivityType = 'listing' | 'received_ping' | 'sent_ping';
 export type PingStatus = 'pending' | 'accepted' | 'rejected';
@@ -319,6 +320,44 @@ export async function updatePingStatusNew(pingId: string, status: PingStatus, re
 
   if (error) {
     throw error;
+  }
+
+  // If ping is accepted, grant phone access
+  if (status === 'accepted' && data) {
+    try {
+      // Get the ping details to find sender and receiver
+      const { data: pingData, error: pingError } = await supabase
+        .from('pings')
+        .select('sender_username, receiver_username')
+        .eq('id', pingId)
+        .single();
+
+      if (!pingError && pingData) {
+        // Get user IDs for both sender and receiver
+        const { data: senderUser, error: senderError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('username', pingData.sender_username)
+          .single();
+
+        const { data: receiverUser, error: receiverError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('username', pingData.receiver_username)
+          .single();
+
+        if (!senderError && !receiverError && senderUser && receiverUser) {
+          // Grant phone access both ways (bidirectional)
+          await Promise.all([
+            grantPhoneAccess(receiverUser.id, senderUser.id), // Receiver grants access to sender
+            grantPhoneAccess(senderUser.id, receiverUser.id)  // Sender grants access to receiver
+          ]);
+        }
+      }
+    } catch (phoneError) {
+      console.error('Error granting phone access after ping acceptance:', phoneError);
+      // Don't throw error here as ping acceptance should still succeed
+    }
   }
   
   return data as Ping;

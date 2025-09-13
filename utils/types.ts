@@ -62,8 +62,8 @@ export interface Listing {
   distance_km?: number; // Distance from user to listing
   expires_at?: string;
   extension_count?: number;
-  view_count?: number;
-  ping_count?: number;
+  view_count?: number; // Total views of this listing
+  ping_count?: number; // Total pings received for this listing
   created_at: string;
 }
 

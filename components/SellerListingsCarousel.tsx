@@ -165,8 +165,8 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
 const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    marginBottom: 8,
+    padding: 16,
+    marginBottom: 12,
   },
   header: {
     flexDirection: 'row',
@@ -191,13 +191,10 @@ const styles = StyleSheet.create({
     width: ITEM_WIDTH,
     marginRight: 16,
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 8,
     overflow: 'hidden',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   imageContainer: {
     position: 'relative',
