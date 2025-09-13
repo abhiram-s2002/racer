@@ -25,6 +25,7 @@ import { validatePhoneNumber, validateUsername } from '@/utils/validation';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
+import { getAvatarSource } from '@/utils/avatarUtils';
 
   const { height } = Dimensions.get('window');
 
@@ -349,7 +350,7 @@ function ProfileSetup() {
 
               {/* Avatar Section */}
               <View style={styles.avatarSection}>
-                <Image source={{ uri: avatar_url }} style={styles.avatar} />
+                <Image source={getAvatarSource(avatar_url)} style={styles.avatar} />
                 <TouchableOpacity 
                   style={styles.randomizeButton} 
                   onPress={randomizeAvatar}

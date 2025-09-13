@@ -30,6 +30,9 @@ import VerificationPricingCard from '@/components/VerificationPricingCard';
 import { isUserVerified } from '@/utils/verificationUtils';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { useAuth } from '@/hooks/useAuth';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { getAvatarSource } from '@/utils/avatarUtils';
 
 
 
@@ -81,6 +84,7 @@ function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [savingNotifications, setSavingNotifications] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   // Handle back button
   useEffect(() => {
@@ -155,6 +159,135 @@ function ProfileScreen() {
   };
 
   // Remove automatic GPS location detection - now manual only
+
+  // Profile image upload function with 95% compression
+  const uploadProfileImage = async () => {
+    try {
+      // Request permissions
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant photo library access to upload profile images.');
+        return;
+      }
+
+      // Launch image picker
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 1, // Start with highest quality, we'll compress it ourselves
+      });
+
+      if (result.canceled || !result.assets[0]) {
+        return;
+      }
+
+      setUploadingImage(true);
+      const imageUri = result.assets[0].uri;
+
+      // Get current user's access token
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      if (!accessToken) {
+        Alert.alert('Not logged in', 'You must be logged in to upload images.');
+        return;
+      }
+
+      // Compress image to 70% compression (30% quality) - standard quality for profiles
+      const compressedImage = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [{ resize: { width: 300, height: 300 } }], // Square 300x300 for avatars
+        { 
+          compress: 0.3, // 70% compression (30% quality) - standard profile quality
+          format: ImageManipulator.SaveFormat.JPEG 
+        }
+      );
+
+      // Create unique filename for avatar
+      const filename = `avatar_${Date.now()}.jpg`;
+      
+      // Upload to avatars bucket
+      const response = await fetch(
+        `https://vroanjodovwsyydxrmma.supabase.co/storage/v1/object/avatars/${filename}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: (() => {
+            const formData = new FormData();
+            formData.append('file', {
+              uri: compressedImage.uri,
+              name: filename,
+              type: 'image/jpeg',
+            } as any);
+            return formData;
+          })(),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        Alert.alert('Upload Error', 'Failed to upload image. Please try again.');
+        return;
+      }
+
+      const avatarUrl = `https://vroanjodovwsyydxrmma.supabase.co/storage/v1/object/public/avatars/${filename}`;
+
+      // Delete old avatar image if it exists and is from our avatars bucket
+      const currentAvatar = profileData.avatar;
+      if (currentAvatar && currentAvatar.includes('avatars/')) {
+        try {
+          // Extract filename from current avatar URL
+          const oldFilename = currentAvatar.split('avatars/')[1];
+          if (oldFilename) {
+            await fetch(
+              `https://vroanjodovwsyydxrmma.supabase.co/storage/v1/object/avatars/${oldFilename}`,
+              {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${accessToken}`,
+                },
+              }
+            );
+          }
+        } catch (deleteError) {
+          // Don't fail the upload if deletion fails - just log it
+          console.warn('Failed to delete old avatar:', deleteError);
+        }
+      }
+
+      // Update user profile with new avatar URL
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase
+          .from('users')
+          .update({
+            avatar_url: avatarUrl,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id);
+
+        if (error) {
+          Alert.alert('Error', 'Failed to save profile image. Please try again.');
+          return;
+        }
+
+        // Update local state
+        setProfileData(prev => ({
+          ...prev,
+          avatar: avatarUrl
+        }));
+
+        Alert.alert('Success', 'Profile image updated successfully!');
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      Alert.alert('Error', 'Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const toggleAvailability = async () => {
     const newAvailability = !profileData.isAvailable;
@@ -252,7 +385,7 @@ function ProfileScreen() {
         phone: phoneValue, // Use validated phone number
         location_display: editProfile.locationDisplay, // Use location_display for now
         bio: editProfile.bio,
-        avatar_url: `https://api.dicebear.com/7.x/pixel-art/png?seed=${avatarSeed}`,
+        // Don't overwrite avatar_url - keep existing uploaded image
         isAvailable: editProfile.isAvailable,
       };
       
@@ -454,11 +587,18 @@ function ProfileScreen() {
                 multiline
                 maxLength={200}
               />
-              <Text style={styles.inputLabel}>Avatar</Text>
+              <Text style={styles.inputLabel}>Profile Image</Text>
               <View style={{ alignItems: 'center', marginBottom: 16 }}>
-                <Image source={{ uri: `https://api.dicebear.com/7.x/pixel-art/png?seed=${avatarSeed}` }} style={styles.avatar} />
-                <TouchableOpacity style={styles.randomizeButton} onPress={() => setAvatarSeed(getRandomSeed())}>
-                  <Text style={styles.randomizeButtonText}>Randomize Avatar</Text>
+                <Image source={getAvatarSource(profileData.avatar)} style={styles.avatar} />
+                <TouchableOpacity 
+                  style={[styles.uploadButton, uploadingImage && styles.uploadButtonDisabled]} 
+                  onPress={uploadProfileImage}
+                  disabled={uploadingImage}
+                >
+                  <Camera size={16} color="#22C55E" />
+                  <Text style={styles.uploadButtonText}>
+                    {uploadingImage ? 'Uploading...' : 'Upload Image'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>
@@ -570,8 +710,12 @@ function ProfileScreen() {
         <View style={styles.header}>
           <View style={styles.profileSection}>
             <View style={styles.avatarContainer}>
-              <Image source={profileData.avatar ? { uri: profileData.avatar } : defaultAvatar} style={styles.avatar} />
-              <TouchableOpacity style={styles.cameraButton} onPress={() => setAvatarSeed(getRandomSeed())}>
+              <Image source={getAvatarSource(profileData.avatar)} style={styles.avatar} />
+              <TouchableOpacity 
+                style={[styles.cameraButton, uploadingImage && styles.cameraButtonDisabled]} 
+                onPress={uploadProfileImage}
+                disabled={uploadingImage}
+              >
                 <Camera size={16} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
@@ -1233,17 +1377,29 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#64748B',
   },
-  randomizeButton: {
+  uploadButton: {
     marginTop: 8,
-    backgroundColor: '#E2E8F0',
+    backgroundColor: '#F0FDF4',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#22C55E',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
-  randomizeButtonText: {
-    color: '#1E293B',
+  uploadButtonDisabled: {
+    backgroundColor: '#F3F4F6',
+    borderColor: '#D1D5DB',
+  },
+  uploadButtonText: {
+    color: '#22C55E',
     fontSize: 14,
     fontFamily: 'Inter-Medium',
+  },
+  cameraButtonDisabled: {
+    backgroundColor: '#94A3B8',
   },
 });
 

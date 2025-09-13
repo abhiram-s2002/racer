@@ -14,6 +14,7 @@ import {
 import VerificationBadge from './VerificationBadge';
 import { isUserVerified } from '@/utils/verificationUtils';
 import HomeRatingDisplay from './HomeRatingDisplay';
+import { getAvatarSource } from '@/utils/avatarUtils';
 
 interface SellerProfile {
   username: string;
@@ -62,7 +63,7 @@ const UnifiedSellerProfileCard: React.FC<UnifiedSellerProfileCardProps> = React.
       {/* Seller Header */}
       <View style={styles.sellerHeader}>
         <Image 
-          source={{ uri: seller.avatar_url || 'https://api.dicebear.com/7.x/pixel-art/png?seed=default' }}
+          source={getAvatarSource(seller.avatar_url)}
           style={styles.avatar}
         />
         <View style={styles.sellerInfo}>

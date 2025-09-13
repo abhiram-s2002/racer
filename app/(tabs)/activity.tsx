@@ -18,6 +18,7 @@ import { Activity, deleteActivity } from '@/utils/activitySupabase';
 import { supabase } from '@/utils/supabaseClient';
 import { useIsFocused } from '@react-navigation/native';
 import { useCachedActivities } from '@/hooks/useCachedActivities';
+import { getAvatarSource } from '@/utils/avatarUtils';
 import RatingService from '@/utils/ratingService';
 import VerificationBadge from '@/components/VerificationBadge';
 import { isUserVerified } from '@/utils/verificationUtils';
@@ -444,7 +445,7 @@ function ActivityScreen() {
           onPress={() => router.push(`/seller/${displayUser.username}` as any)}
           activeOpacity={0.7}
         >
-          <Image source={{ uri: displayUser.avatar || '' }} style={styles.userAvatar} resizeMode="cover" />
+          <Image source={getAvatarSource(displayUser.avatar)} style={styles.userAvatar} resizeMode="cover" />
           <View style={styles.pingDetails}>
             <View style={styles.pingUserNameRow}>
               <Text style={styles.pingUserName}>{displayUser.name}</Text>
