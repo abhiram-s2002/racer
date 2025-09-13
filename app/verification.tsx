@@ -17,7 +17,6 @@ import {
   CreditCard, 
   Shield, 
   Clock, 
-  Users, 
   Award,
   Info,
   ExternalLink
