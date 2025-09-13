@@ -15,7 +15,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Camera, MapPin, Phone, Mail, Settings, CircleHelp as HelpCircle, FileText, LogOut, CreditCard as Edit3, CircleCheck as CheckCircle, Circle as XCircle, ArrowRight, Lock, Flag, EyeOff, UserX, Package } from 'lucide-react-native';
+import { Camera, MapPin, Phone, Mail, Settings, CircleHelp as HelpCircle, FileText, LogOut, CreditCard as Edit3, CircleCheck as CheckCircle, Circle as XCircle, ArrowRight, Lock, Flag, EyeOff, UserX, Package, Shield } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { signOut } from '@/utils/auth';
 import defaultAvatar from '../../assets/images/icon.png';
@@ -29,7 +29,6 @@ import VerificationBadge from '@/components/VerificationBadge';
 import VerificationPricingCard from '@/components/VerificationPricingCard';
 import { isUserVerified } from '@/utils/verificationUtils';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
-import PhonePrivacyManager from '@/components/PhonePrivacyManager';
 import { useAuth } from '@/hooks/useAuth';
 
 
@@ -645,20 +644,23 @@ function ProfileScreen() {
           </View>
         </View>
 
-        {/* Phone Sharing Info */}
+        {/* Phone Privacy Management */}
         <View style={styles.phoneSharingSection}>
-          <Text style={styles.sectionTitle}>Phone Sharing</Text>
+          <Text style={styles.sectionTitle}>Phone Privacy</Text>
           <View style={styles.phoneSharingInfo}>
             <Text style={styles.phoneSharingDescription}>
-              Your phone number is shared only when you accept pings. You can manage who has access below.
+              Manage how your phone number is shared with other users
             </Text>
           </View>
+          <TouchableOpacity 
+            style={styles.phonePrivacyButton}
+            onPress={() => router.push('/phone-privacy')}
+          >
+            <Shield size={20} color="#22C55E" />
+            <Text style={styles.phonePrivacyButtonText}>Manage Phone Privacy</Text>
+            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
+          </TouchableOpacity>
         </View>
-
-        {/* Phone Privacy Management */}
-        {user?.id && (
-          <PhonePrivacyManager userId={user.id} />
-        )}
 
         {/* Verification Section */}
         <VerificationPricingCard userName={profileData.name || 'Your Name'} />
@@ -1022,6 +1024,24 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#64748B',
     lineHeight: 20,
+    marginBottom: 12,
+  },
+  phonePrivacyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#22C55E',
+    gap: 12,
+  },
+  phonePrivacyButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#22C55E',
+    flex: 1,
   },
   toggleInfo: {
     flex: 1,

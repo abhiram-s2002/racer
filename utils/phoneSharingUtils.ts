@@ -18,8 +18,9 @@ export type PhoneAccessUser = {
   unlocked_at: string;
 };
 
+
 /**
- * Check if a user can see another user's phone using the unlock system
+ * Check if a user can see another user's phone using the new preference system
  * @param phoneOwnerId - The user whose phone we want to access
  * @param requestingUserId - The user requesting access
  * @returns Promise<boolean> - Whether the phone can be shared
@@ -30,7 +31,7 @@ export async function canSeePhone(
 ): Promise<boolean> {
   try {
     const { data, error } = await supabase
-      .rpc('can_see_phone', {
+      .rpc('should_show_phone', {
         phone_owner_id_param: phoneOwnerId,
         requesting_user_id_param: requestingUserId
       });
@@ -130,7 +131,7 @@ export async function getPhoneAccessList(phoneOwnerId: string): Promise<PhoneAcc
 }
 
 /**
- * Get user's phone number with sharing permission check using unlock system
+ * Get user's phone number with sharing permission check using new preference system
  * @param phoneOwnerId - The user ID whose phone we want to access
  * @param requestingUserId - The user requesting the phone number
  * @returns Promise<PhoneAccessInfo> - Phone access information
@@ -140,8 +141,17 @@ export async function getPhoneWithPermission(
   requestingUserId: string
 ): Promise<PhoneAccessInfo> {
   try {
-    // Check if the requesting user can see the phone
-    const canShare = await canSeePhone(phoneOwnerId, requestingUserId);
+    // Use the new should_show_phone function that respects user preferences
+    const { data: canShare, error: permissionError } = await supabase
+      .rpc('should_show_phone', {
+        phone_owner_id_param: phoneOwnerId,
+        requesting_user_id_param: requestingUserId
+      });
+
+    if (permissionError) {
+      console.error('Error checking phone sharing permission:', permissionError);
+      return { phone: null, canShare: false };
+    }
     
     if (!canShare) {
       return { phone: null, canShare: false };
@@ -163,5 +173,60 @@ export async function getPhoneWithPermission(
   } catch (error) {
     console.error('Error in getPhoneWithPermission:', error);
     return { phone: null, canShare: false };
+  }
+}
+
+export type PhoneSharingPreference = 'everyone' | 'ping_confirmation';
+
+/**
+ * Get user's phone sharing preference
+ * @param userId - The user ID
+ * @returns Promise<PhoneSharingPreference> - The user's phone sharing preference
+ */
+export async function getPhoneSharingPreference(userId: string): Promise<PhoneSharingPreference> {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_phone_sharing_preference', {
+        user_id_param: userId
+      });
+
+    if (error) {
+      console.error('Error getting phone sharing preference:', error);
+      return 'ping_confirmation'; // Default to ping confirmation for safety
+    }
+
+    return data || 'ping_confirmation';
+  } catch (error) {
+    console.error('Error in getPhoneSharingPreference:', error);
+    return 'ping_confirmation';
+  }
+}
+
+/**
+ * Update user's phone sharing preference
+ * @param userId - The user ID
+ * @param preference - The new preference
+ * @returns Promise<boolean> - Whether the update was successful
+ */
+export async function updatePhoneSharingPreference(
+  userId: string, 
+  preference: PhoneSharingPreference
+): Promise<boolean> {
+  try {
+    const { data, error } = await supabase
+      .rpc('update_phone_sharing_preference', {
+        user_id_param: userId,
+        preference_param: preference
+      });
+
+    if (error) {
+      console.error('Error updating phone sharing preference:', error);
+      return false;
+    }
+
+    return data === true;
+  } catch (error) {
+    console.error('Error in updatePhoneSharingPreference:', error);
+    return false;
   }
 }
