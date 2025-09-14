@@ -113,13 +113,13 @@ export interface Ping {
   receiver_username: string;
   message: string;
   status: PingStatus;
-  template_id?: string;
-  sent_at: string;
-  responded_at?: string;
-  expires_at: string;
   response_time_minutes?: number;
   first_response_at?: string;
+  responded_at?: string;
   response_message?: string;
+  ping_count?: number;
+  last_ping_at?: string;
+  created_at: string;
 }
 
 /**

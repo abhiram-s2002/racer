@@ -196,7 +196,6 @@ CREATE INDEX IF NOT EXISTS idx_reward_transactions_reference ON reward_transacti
 -- Insert default achievements
 INSERT INTO achievements (id, title, description, icon, category, max_progress, omni_reward, rarity) VALUES
     ('welcome_bonus', 'Welcome Bonus', 'Join the marketplace and get started', 'Gift', 'special', 1, 50, 'common'),
-    ('early_adopter', 'Early Adopter', 'Join during the first month of launch', 'Sparkles', 'special', 1, 1000, 'legendary'),
     ('first_list', 'First List', 'Create your first listing', 'ShoppingBag', 'sales', 1, 50, 'common'),
     ('listing_master', 'Listing Master', 'Create 10 listings', 'Trophy', 'sales', 10, 200, 'rare'),
     ('social_butterfly', 'Social Butterfly', 'Send 20 messages', 'MessageCircle', 'social', 20, 100, 'common'),

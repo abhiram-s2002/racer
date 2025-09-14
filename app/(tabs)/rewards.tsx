@@ -71,7 +71,7 @@ function RewardsScreen() {
     getReferralStats,
     getUserBalance,
     checkTodayCheckedIn
-  } = useRewards(username);
+  } = useRewards(username, user?.id);
 
   // Use the leaderboard hook
   const {
@@ -126,7 +126,14 @@ function RewardsScreen() {
 
     const success = await performDailyCheckin();
     if (success) {
-      Alert.alert('Check-in Successful!', 'You earned OMNI tokens for checking in today!');
+      // Check if user is verified to show appropriate message
+      const isVerified = isUserVerified(user);
+      
+      const message = isVerified 
+        ? 'You earned 20 OMNI tokens for checking in today! (10 + 10 verified bonus)'
+        : 'You earned 10 OMNI tokens for checking in today!';
+      
+      Alert.alert('Check-in Successful!', message);
     } else {
       Alert.alert('Check-in Failed', 'Please try again later.');
     }
@@ -240,7 +247,6 @@ function RewardsScreen() {
   const hasAchievementLogic = (achievementId: string) => {
     const implementedAchievements = [
       'welcome_bonus',
-      'early_adopter', 
       'power_user',
       'loyal_user',
       'social_butterfly',
@@ -408,13 +414,55 @@ function RewardsScreen() {
               onPress={handleDailyCheckIn}
               disabled={todayCheckedIn}
             >
-              <Text style={[
-                styles.checkInButtonText,
-                todayCheckedIn && styles.checkedInButtonText
-              ]}>
-                {todayCheckedIn ? 'Checked In' : 'Check In'}
-              </Text>
+              <View style={styles.checkInButtonContent}>
+                <Text style={[
+                  styles.checkInButtonText,
+                  todayCheckedIn && styles.checkedInButtonText
+                ]}>
+                  {todayCheckedIn ? 'Checked In' : 'Check In'}
+                </Text>
+              </View>
             </TouchableOpacity>
+          </View>
+
+          {/* OMNI Rewards Info */}
+          <View style={styles.rewardsInfo}>
+            <View style={styles.rewardsInfoHeader}>
+              <Coins size={16} color="#F59E0B" />
+              <Text style={styles.rewardsInfoTitle}>Daily OMNI Rewards</Text>
+            </View>
+            <View style={styles.rewardsComparison}>
+              <View style={styles.rewardCard}>
+                <View style={styles.rewardIcon}>
+                  <Coins size={20} color="#6B7280" />
+                </View>
+                <Text style={styles.rewardAmount}>10</Text>
+                <Text style={styles.rewardLabel}>Non-Verified</Text>
+              </View>
+              <View style={styles.rewardArrow}>
+                <Text style={styles.arrowText}>→</Text>
+              </View>
+              <View style={[styles.rewardCard, styles.verifiedRewardCard]}>
+                <View style={[styles.rewardIcon, styles.verifiedRewardIcon]}>
+                  <Crown size={20} color="#10B981" />
+                </View>
+                <Text style={[styles.rewardAmount, styles.verifiedRewardAmount]}>20</Text>
+                <Text style={[styles.rewardLabel, styles.verifiedRewardLabel]}>Verified</Text>
+                <View style={styles.bonusBadge}>
+                  <Text style={styles.bonusText}>+10 Bonus</Text>
+                </View>
+              </View>
+            </View>
+            {!isUserVerified(user) && (
+              <TouchableOpacity 
+                style={styles.getVerifiedButton}
+                onPress={() => router.push('/verification')}
+              >
+                <Crown size={16} color="#10B981" />
+                <Text style={styles.getVerifiedText}>Get Verified for 2x Daily Rewards</Text>
+                <Text style={styles.getVerifiedArrow}>→</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Streak Stats */}
@@ -466,15 +514,15 @@ function RewardsScreen() {
           {/* Rewards Summary */}
           <View style={styles.rewardsSummary}>
             <View style={styles.rewardItem}>
-              <Text style={styles.rewardLabel}>Today&apos;s Reward</Text>
+              <Text style={styles.rewardSummaryLabel}>Today&apos;s Reward</Text>
               <Text style={styles.rewardValue}>+10 OMNI</Text>
             </View>
             <View style={styles.rewardItem}>
-              <Text style={styles.rewardLabel}>Weekly Bonus</Text>
+              <Text style={styles.rewardSummaryLabel}>Weekly Bonus</Text>
               <Text style={styles.rewardValue}>+200 OMNI</Text>
             </View>
             <View style={styles.rewardItem}>
-              <Text style={styles.rewardLabel}>Monthly Bonus</Text>
+              <Text style={styles.rewardSummaryLabel}>Monthly Bonus</Text>
               <Text style={styles.rewardValue}>+1000 OMNI</Text>
             </View>
           </View>
@@ -1145,13 +1193,143 @@ const styles = StyleSheet.create({
   checkedInButton: {
     backgroundColor: '#E2E8F0',
   },
+  checkInButtonContent: {
+    alignItems: 'center',
+  },
   checkInButtonText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
     color: '#FFFFFF',
+    marginBottom: 4,
   },
   checkedInButtonText: {
     color: '#64748B',
+  },
+  rewardAmountBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  rewardAmountText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
+    marginLeft: 4,
+  },
+  rewardsInfo: {
+    backgroundColor: '#F8FAFC',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  rewardsInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  rewardsInfoTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#1E293B',
+    marginLeft: 8,
+  },
+  rewardsComparison: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  rewardCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  verifiedRewardCard: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#10B981',
+    position: 'relative',
+  },
+  rewardIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F3F4F6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  verifiedRewardIcon: {
+    backgroundColor: '#DCFCE7',
+  },
+  rewardAmount: {
+    fontSize: 20,
+    fontFamily: 'Inter-Bold',
+    color: '#1E293B',
+    marginBottom: 4,
+  },
+  verifiedRewardAmount: {
+    color: '#10B981',
+  },
+  rewardLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
+  },
+  verifiedRewardLabel: {
+    color: '#10B981',
+  },
+  bonusBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#10B981',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  bonusText: {
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
+  },
+  rewardArrow: {
+    marginHorizontal: 12,
+    alignItems: 'center',
+  },
+  arrowText: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: '#94A3B8',
+  },
+  getVerifiedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#10B981',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  getVerifiedText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
+    marginLeft: 8,
+    flex: 1,
+    textAlign: 'center',
+  },
+  getVerifiedArrow: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
+    marginLeft: 8,
   },
   streakStats: {
     flexDirection: 'row',
@@ -1239,7 +1417,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  rewardLabel: {
+  rewardSummaryLabel: {
     fontSize: 12,
     fontFamily: 'Inter-Regular',
     color: '#64748B',

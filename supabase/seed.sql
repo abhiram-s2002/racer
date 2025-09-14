@@ -26,7 +26,6 @@ INSERT INTO achievements (id, title, description, icon, category, max_progress, 
 
 -- Special achievements (Easy - Automatic)
 ('welcome_bonus', 'Welcome Bonus', 'Claim your welcome bonus', 'Gift', 'special', 1, 50, 'common', true),
-('early_adopter', 'Early Adopter', 'Join the platform in the first month', 'Star', 'milestone', 1, 200, 'legendary', true),
 
 -- Sales achievements (Easy - First Steps)
 ('first_list', 'First List', 'Create your first listing on the marketplace', 'ShoppingBag', 'sales', 1, 100, 'common', true),

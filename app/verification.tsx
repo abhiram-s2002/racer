@@ -27,11 +27,14 @@ import { SUBSCRIPTION_PRODUCTS } from '@/utils/subscriptionService';
 import { useCachedProfile } from '@/hooks/useCachedProfile';
 import { isUserVerified } from '@/utils/verificationUtils';
 import VerificationBadge from '@/components/VerificationBadge';
+import { useRewards } from '@/hooks/useRewards';
+import { useAuth } from '@/hooks/useAuth';
 
 const VerificationPage = () => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { profileData } = useCachedProfile();
+  const { user } = useAuth();
   
   const {
     isLoading,
@@ -45,8 +48,17 @@ const VerificationPage = () => {
     refreshVerificationStatus,
   } = useSubscription();
 
+  const {
+    userRewards,
+    purchaseVerificationWithOmniTokens,
+    checkVerificationAffordability,
+    loading: rewardsLoading,
+  } = useRewards(profileData?.username || '');
+
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('monthly');
   const [refreshing, setRefreshing] = useState(false);
+  const [omniPurchaseLoading, setOmniPurchaseLoading] = useState(false);
+  const [omniAffordability, setOmniAffordability] = useState({ can_afford: false, current_balance: 0, required_balance: 1000, shortfall: 1000 });
 
   // Get subscription pricing from loaded subscriptions
   const monthlySubscription = subscriptions.find(sub => sub.productId === SUBSCRIPTION_PRODUCTS.MONTHLY_VERIFICATION);
@@ -70,6 +82,32 @@ const VerificationPage = () => {
     }
   };
 
+  const handleOmniPurchase = async () => {
+    if (!user?.id || !profileData?.username) {
+      Alert.alert('Error', 'User information not available');
+      return;
+    }
+
+    setOmniPurchaseLoading(true);
+    try {
+      const result = await purchaseVerificationWithOmniTokens(user.id, 1000);
+      
+      if (result.success) {
+        Alert.alert(
+          'Success! 🎉',
+          'Verification purchased successfully with OMNI tokens!',
+          [{ text: 'OK', onPress: () => refreshVerificationStatus() }]
+        );
+      } else {
+        Alert.alert('Purchase Failed', result.error || 'Failed to purchase verification');
+      }
+    } catch (error) {
+      console.error('OMNI purchase error:', error);
+      Alert.alert('Error', 'Failed to purchase verification');
+    } finally {
+      setOmniPurchaseLoading(false);
+    }
+  };
 
   const handleRestorePurchases = async () => {
     try {
@@ -78,6 +116,18 @@ const VerificationPage = () => {
       console.error('Restore error:', error);
     }
   };
+
+  // Check OMNI affordability when component loads
+  useEffect(() => {
+    const checkAffordability = async () => {
+      if (profileData?.username) {
+        const affordability = await checkVerificationAffordability(1000);
+        setOmniAffordability(affordability);
+      }
+    };
+    
+    checkAffordability();
+  }, [profileData?.username, checkVerificationAffordability]);
 
   const formatExpiryDate = (dateString: string | null) => {
     if (!dateString) return 'No expiry date';
@@ -390,31 +440,101 @@ const VerificationPage = () => {
               </View>
             </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Payment Methods */}
-        <View style={styles.paymentContainer}>
-          <Text style={styles.sectionTitle}>Payment Methods</Text>
-          
+          {/* Purchase Button */}
           <TouchableOpacity 
-            style={styles.paymentMethod}
+            style={styles.purchaseButton} 
             onPress={handlePurchase}
+            activeOpacity={0.8}
             disabled={isLoading}
           >
-            <View style={styles.paymentMethodIcon}>
-              <CreditCard size={24} color="#22C55E" />
-            </View>
-            <View style={styles.paymentMethodContent}>
-              <Text style={styles.paymentMethodTitle}>Google Play Billing</Text>
-              <Text style={styles.paymentMethodSubtitle}>Secure payment through Google Play</Text>
-            </View>
             {isLoading ? (
-              <ActivityIndicator size="small" color="#22C55E" />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <ExternalLink size={20} color="#64748B" />
+              <CreditCard size={20} color="#FFFFFF" />
             )}
+            <Text style={styles.purchaseButtonText}>
+              {isLoading ? 'Processing...' : 'Subscribe with Google Play'}
+            </Text>
           </TouchableOpacity>
 
+          {/* Auto-Renewal Notice */}
+          <View style={styles.autoRenewalNotice}>
+            <Text style={styles.autoRenewalText}>
+              🔄 <Text style={styles.autoRenewalBold}>Auto-renewal:</Text> Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. You can manage or cancel your subscription in your Google Play account settings.
+            </Text>
+          </View>
+        </View>
+
+        {/* OMNI Verification Section */}
+        <View style={styles.omniContainer}>
+          <Text style={styles.sectionTitle}>🎮 Pay with OMNI Tokens</Text>
+          <Text style={styles.omniSubtitle}>
+            Use your earned OMNI tokens to get verified instantly! No real money required.
+          </Text>
+          
+          <View style={styles.omniCard}>
+            <View style={styles.omniHeader}>
+              <View style={styles.omniIcon}>
+                <Award size={28} color="#10B981" />
+              </View>
+              <View style={styles.omniContent}>
+                <Text style={styles.omniTitle}>OMNI Verification</Text>
+                <Text style={styles.omniDescription}>1 Month Premium Verification</Text>
+              </View>
+              <View style={styles.omniPrice}>
+                <Text style={styles.omniPriceText}>1,000</Text>
+                <Text style={styles.omniPriceLabel}>OMNI</Text>
+              </View>
+            </View>
+            
+            <View style={styles.omniBalance}>
+              <Text style={styles.omniBalanceLabel}>Your Balance:</Text>
+              <Text style={styles.omniBalanceValue}>
+                {userRewards?.current_balance || 0} OMNI
+              </Text>
+            </View>
+            
+            {!omniAffordability.can_afford && (
+              <View style={styles.omniInsufficient}>
+                <Text style={styles.omniInsufficientText}>
+                  💡 You need {omniAffordability.shortfall} more OMNI tokens
+                </Text>
+              </View>
+            )}
+            
+            <TouchableOpacity 
+              style={[
+                styles.omniButton,
+                (!omniAffordability.can_afford || omniPurchaseLoading) && styles.omniButtonDisabled
+              ]}
+              onPress={handleOmniPurchase}
+              disabled={!omniAffordability.can_afford || omniPurchaseLoading}
+            >
+              {omniPurchaseLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Award size={20} color="#FFFFFF" />
+              )}
+              <Text style={styles.omniButtonText}>
+                {omniPurchaseLoading 
+                  ? 'Processing...' 
+                  : omniAffordability.can_afford 
+                    ? '✨ Purchase with OMNI' 
+                    : 'Earn More OMNI'
+                }
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.omniInfo}>
+            <Text style={styles.omniInfoText}>
+              🚀 <Text style={styles.omniInfoBold}>Instant verification</Text> with OMNI tokens{'\n'}
+              🎯 <Text style={styles.omniInfoBold}>Earn OMNI</Text> through daily check-ins and achievements{'\n'}
+              💰 <Text style={styles.omniInfoBold}>No real money</Text> required - pure gamification{'\n'}
+              ⭐ <Text style={styles.omniInfoBold}>Same benefits</Text> as paid verification
+            </Text>
+          </View>
         </View>
 
         {/* Info Section */}
@@ -427,28 +547,13 @@ const VerificationPage = () => {
             • Verification is processed immediately after successful payment{'\n'}
             • You can cancel your subscription anytime through Google Play{'\n'}
             • All payments are secure and processed by Google{'\n'}
+            • OMNI verification purchases are final and cannot be cancelled or refunded{'\n'}
             • Contact support if you have any issues
           </Text>
         </View>
 
         {/* Action Buttons */}
         <View style={styles.actionContainer}>
-          <TouchableOpacity 
-            style={styles.primaryButton} 
-            onPress={handlePurchase}
-            activeOpacity={0.8}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <CreditCard size={20} color="#FFFFFF" />
-            )}
-            <Text style={styles.primaryButtonText}>
-              {isLoading ? 'Processing...' : 'Subscribe with Google Play'}
-            </Text>
-          </TouchableOpacity>
-
           <TouchableOpacity 
             style={styles.secondaryButton} 
             onPress={handleRestorePurchases}
@@ -755,36 +860,43 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Bold',
   },
-
-  // Payment Methods
-  paymentContainer: {
-    backgroundColor: '#FFFFFF',
-    padding: 20,
-    marginBottom: 8,
-  },
-  paymentMethod: {
+  purchaseButton: {
+    backgroundColor: '#22C55E',
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderRadius: 12,
+    marginTop: 20,
+    shadowColor: '#22C55E',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
   },
-  paymentMethodIcon: {
-    marginRight: 16,
-  },
-  paymentMethodContent: {
-    flex: 1,
-  },
-  paymentMethodTitle: {
+  purchaseButtonText: {
+    color: '#FFFFFF',
     fontSize: 16,
-    fontFamily: 'Inter-Medium',
-    color: '#1E293B',
-    marginBottom: 2,
+    fontFamily: 'Inter-Bold',
+    marginLeft: 8,
   },
-  paymentMethodSubtitle: {
-    fontSize: 14,
+  autoRenewalNotice: {
+    backgroundColor: '#F8FAFC',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  autoRenewalText: {
+    fontSize: 12,
     fontFamily: 'Inter-Regular',
     color: '#64748B',
+    lineHeight: 16,
+  },
+  autoRenewalBold: {
+    fontFamily: 'Inter-Bold',
+    color: '#374151',
   },
 
   // Info Section
@@ -858,6 +970,154 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Medium',
     textDecorationLine: 'underline',
+  },
+
+  // OMNI Verification Styles - Positive & Appealing
+  omniContainer: {
+    backgroundColor: '#FFFFFF',
+    padding: 20,
+    marginBottom: 8,
+  },
+  omniSubtitle: {
+    fontSize: 15,
+    fontFamily: 'Inter-Regular',
+    color: '#059669',
+    marginBottom: 20,
+    lineHeight: 22,
+    textAlign: 'center',
+  },
+  omniCard: {
+    backgroundColor: '#ECFDF5',
+    padding: 20,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#10B981',
+    marginBottom: 16,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  omniHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  omniIcon: {
+    marginRight: 16,
+    backgroundColor: '#D1FAE5',
+    padding: 8,
+    borderRadius: 12,
+  },
+  omniContent: {
+    flex: 1,
+  },
+  omniTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: '#064E3B',
+    marginBottom: 4,
+  },
+  omniDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#059669',
+  },
+  omniPrice: {
+    alignItems: 'flex-end',
+    backgroundColor: '#10B981',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  omniPriceText: {
+    fontSize: 22,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
+  },
+  omniPriceLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
+    marginTop: -2,
+    opacity: 0.9,
+  },
+  omniBalance: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  omniBalanceLabel: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#065F46',
+  },
+  omniBalanceValue: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: '#10B981',
+  },
+  omniInsufficient: {
+    backgroundColor: '#FEF3C7',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+  },
+  omniInsufficientText: {
+    fontSize: 13,
+    fontFamily: 'Inter-Medium',
+    color: '#D97706',
+    textAlign: 'center',
+  },
+  omniButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  omniButtonDisabled: {
+    backgroundColor: '#E5E7EB',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  omniButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    marginLeft: 8,
+  },
+  omniInfo: {
+    backgroundColor: '#F0FDF4',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  omniInfoText: {
+    fontSize: 13,
+    fontFamily: 'Inter-Regular',
+    color: '#065F46',
+    lineHeight: 20,
+  },
+  omniInfoBold: {
+    fontFamily: 'Inter-Bold',
+    color: '#064E3B',
   },
 });
 

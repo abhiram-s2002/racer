@@ -1,24 +1,25 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-
-
-
-
+  getUserRewardsSafe,
+  getUserStreakSafe,
+  getUserReferralCodeSafe,
   getUserAchievementsSafe,
-
-
-
   createDailyCheckin,
   updateUserAchievementProgressSafe,
   createRewardTransaction,
   getCompleteRewardsDataSafe,
   initializeUserRewards,
   hasCheckedInToday,
-
+  getRewardTransactions,
   batchUpdateAchievements,
   getRecentActivity,
   getReferralCommissions,
   getReferralCommissionStats,
+  purchaseVerificationWithOmni,
+  canAffordVerification,
+  processDailyCheckinWithVerification,
+  isUserCurrentlyVerified,
+  getRewardAmounts,
   type UserRewards,
   type UserStreak,
   type UserReferralCode,
@@ -26,12 +27,15 @@ import {
   type DailyCheckin,
   type Referral,
   type RewardTransaction,
-  type UserRewardsSummary
+  type UserRewardsSummary,
+  type OmniVerificationPurchaseResult,
+  type OmniVerificationAffordability,
+  type VerifiedCheckinResult
 } from '@/utils/rewardsSupabase';
 
 import { type ReferralCommission } from '@/utils/types';
 
-export function useRewards(username: string) {
+export function useRewards(username: string, userId?: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -115,7 +119,7 @@ export function useRewards(username: string) {
     }
   }, [username, loadRewardsData]);
 
-  // Daily check-in
+  // Daily check-in with verification bonus
   const performDailyCheckin = useCallback(async () => {
     if (!username) return false;
 
@@ -127,14 +131,27 @@ export function useRewards(username: string) {
         return true;
       }
 
+      // Use new verified check-in system if userId is available
+      if (userId) {
+        const result = await processDailyCheckinWithVerification(username, userId);
+        if (result.success) {
+          // Reload data to get updated streak and balance
+          await loadRewardsData();
+          return true;
+        } else {
+          throw new Error(result.error || 'Failed to check in');
+        }
+      }
+
+      // Fallback to old system if no userId (backwards compatibility)
       // Calculate reward based on current streak
-              let omniEarned = 10; // Base reward
-        if (userStreak?.current_streak && userStreak.current_streak >= 7) {
-          omniEarned = 200; // Weekly bonus
-        }
-        if (userStreak?.current_streak && userStreak.current_streak >= 30) {
-          omniEarned = 1000; // Monthly bonus
-        }
+      let omniEarned = 10; // Base reward
+      if (userStreak?.current_streak && userStreak.current_streak >= 7) {
+        omniEarned = 200; // Weekly bonus
+      }
+      if (userStreak?.current_streak && userStreak.current_streak >= 30) {
+        omniEarned = 1000; // Monthly bonus
+      }
 
       const today = new Date().toISOString().split('T')[0];
       
@@ -169,7 +186,7 @@ export function useRewards(username: string) {
       setError(err instanceof Error ? err.message : 'Failed to check in');
       return false;
     }
-  }, [username, userStreak, loadRewardsData]);
+  }, [username, userId, userStreak, loadRewardsData]);
 
   // Update achievement progress
   const updateAchievement = useCallback(async (achievementId: string, newProgress: number) => {
@@ -454,6 +471,36 @@ export function useRewards(username: string) {
     return dailyCheckins.some(checkin => checkin.checkin_date === today);
   }, [dailyCheckins]);
 
+  // OMNI Verification Purchase
+  const purchaseVerificationWithOmniTokens = useCallback(async (userId: string, omniCost = 1000) => {
+    if (!username) return { success: false, error: 'Username not available' };
+
+    try {
+      const result = await purchaseVerificationWithOmni(userId, username, omniCost);
+      
+      if (result.success) {
+        // Reload rewards data to get updated balance
+        await loadRewardsData();
+      }
+      
+      return result;
+    } catch (err) {
+      setError('Failed to purchase verification with OMNI');
+      return { success: false, error: 'Failed to purchase verification' };
+    }
+  }, [username, loadRewardsData]);
+
+  // Check if user can afford verification
+  const checkVerificationAffordability = useCallback(async (omniCost = 1000) => {
+    if (!username) return { can_afford: false, current_balance: 0, required_balance: omniCost, shortfall: omniCost };
+
+    try {
+      return await canAffordVerification(username, omniCost);
+    } catch (err) {
+      return { can_afford: false, current_balance: 0, required_balance: omniCost, shortfall: omniCost };
+    }
+  }, [username]);
+
   // Load data on mount and when username changes
   useEffect(() => {
     loadRewardsData();
@@ -491,6 +538,8 @@ export function useRewards(username: string) {
     updateAchievement,
     updateAchievementsBatch,
     checkEasyAchievements,
+    purchaseVerificationWithOmniTokens,
+    checkVerificationAffordability,
     
     // Computed values
     getCheckinHistory,

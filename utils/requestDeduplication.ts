@@ -155,7 +155,7 @@ export const optimizedApi = {
       const response = await supabase
         .from('listings')
         .select('*')
-        .eq('is_active', true)
+        .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false })
         .range((page - 1) * 20, page * 20 - 1);
       return response.data;

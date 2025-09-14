@@ -1242,42 +1242,218 @@ export async function awardReferralBonus(username: string) {
 
 export async function awardWelcomeAchievements(username: string) {
   try {
-    // Check if user already has these achievements
-    const { data: existingAchievements, error } = await supabase
-      .from('user_achievements')
-      .select('achievement_id, completed')
-      .eq('username', username)
-      .in('achievement_id', ['welcome_bonus', 'early_adopter']);
-
-    if (error) {
-      console.error('Error checking existing achievements:', error);
-      return false;
-    }
-
-    const existingIds = new Set(existingAchievements?.map(a => a.achievement_id) || []);
-    const completedIds = new Set(existingAchievements?.filter(a => a.completed).map(a => a.achievement_id) || []);
-
-    // Award Welcome Bonus if not completed (but don't give extra OMNI since it's already given as direct bonus)
-    if (!completedIds.has('welcome_bonus')) {
-      await updateUserAchievementProgressSafe(username, 'welcome_bonus', 1);
-      // Don't create reward transaction since welcome bonus is already given in initializeUserRewards
-    }
-
-    // Early Adopter achievement - only mark as completed, don't award OMNI automatically
-    // Check if user joined in the first month (assuming app launched in July 2025)
-    const userJoinDate = new Date();
-    const isEarlyAdopter = userJoinDate.getTime() <= new Date('2025-07-31').getTime();
-
-    // Mark Early Adopter as completed if applicable, but don't give OMNI automatically
-    if (isEarlyAdopter && !completedIds.has('early_adopter')) {
-      await updateUserAchievementProgressSafe(username, 'early_adopter', 1);
-      // Don't create reward transaction - let users earn this through gameplay
+    console.log(`Awarding welcome achievements for user: ${username}`);
+    
+    // Award Welcome Bonus - always try to update to progress 1 (completed)
+    console.log('Awarding welcome_bonus achievement...');
+    const welcomeResult = await updateUserAchievementProgressSafe(username, 'welcome_bonus', 1);
+    if (welcomeResult) {
+      console.log('Welcome bonus achievement updated:', welcomeResult);
+    } else {
+      console.error('Failed to update welcome bonus achievement');
     }
 
     return true;
   } catch (error) {
     console.error('Error awarding welcome achievements:', error);
     return false;
+  }
+}
+
+// ============================================================================
+// OMNI VERIFICATION PURCHASE
+// ============================================================================
+
+export interface OmniVerificationPurchaseResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  verification_expires_at?: string;
+  remaining_balance?: number;
+  current_balance?: number;
+  required_balance?: number;
+}
+
+export interface OmniVerificationAffordability {
+  can_afford: boolean;
+  current_balance: number;
+  required_balance: number;
+  shortfall: number;
+}
+
+/**
+ * Purchase verification using OMNI tokens
+ * @param userId - User ID
+ * @param username - Username
+ * @param omniCost - Cost in OMNI tokens (default: 1000)
+ * @returns Purchase result
+ */
+export async function purchaseVerificationWithOmni(
+  userId: string,
+  username: string,
+  omniCost = 1000
+): Promise<OmniVerificationPurchaseResult> {
+  try {
+    const { data, error } = await supabase.rpc('purchase_verification_with_omni', {
+      p_user_id: userId,
+      p_username: username,
+      p_omni_cost: omniCost
+    });
+
+    if (error) {
+      console.error('Error purchasing verification with OMNI:', error);
+      return {
+        success: false,
+        error: 'Failed to purchase verification'
+      };
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in purchaseVerificationWithOmni:', error);
+    return {
+      success: false,
+      error: 'Failed to purchase verification'
+    };
+  }
+}
+
+/**
+ * Check if user can afford verification with OMNI
+ * @param username - Username
+ * @param omniCost - Cost in OMNI tokens (default: 1000)
+ * @returns Affordability check result
+ */
+export async function canAffordVerification(
+  username: string,
+  omniCost = 1000
+): Promise<OmniVerificationAffordability> {
+  try {
+    const { data, error } = await supabase.rpc('can_afford_verification', {
+      p_username: username,
+      p_omni_cost: omniCost
+    });
+
+    if (error) {
+      console.error('Error checking verification affordability:', error);
+      return {
+        can_afford: false,
+        current_balance: 0,
+        required_balance: omniCost,
+        shortfall: omniCost
+      };
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in canAffordVerification:', error);
+    return {
+      can_afford: false,
+      current_balance: 0,
+      required_balance: omniCost,
+      shortfall: omniCost
+    };
+  }
+}
+
+// ============================================================================
+// VERIFIED USER DAILY CHECK-IN BONUS
+// ============================================================================
+
+export interface VerifiedCheckinResult {
+  success: boolean;
+  reward_amount: number;
+  is_verified: boolean;
+  new_balance: number;
+  message: string;
+  error?: string;
+}
+
+// Process daily check-in with verification bonus
+export async function processDailyCheckinWithVerification(
+  username: string,
+  userId: string
+): Promise<VerifiedCheckinResult> {
+  try {
+    const { data, error } = await supabase.rpc('process_daily_checkin_with_verification', {
+      p_username: username,
+      p_user_id: userId
+    });
+
+    if (error) {
+      console.error('Error processing daily check-in with verification:', error);
+      return {
+        success: false,
+        reward_amount: 0,
+        is_verified: false,
+        new_balance: 0,
+        message: 'Failed to process check-in',
+        error: error.message
+      };
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in processDailyCheckinWithVerification:', error);
+    return {
+      success: false,
+      reward_amount: 0,
+      is_verified: false,
+      new_balance: 0,
+      message: 'Failed to process check-in',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    };
+  }
+}
+
+// Check if user is currently verified
+export async function isUserCurrentlyVerified(userId: string): Promise<boolean> {
+  try {
+    const { data, error } = await supabase.rpc('is_user_currently_verified', {
+      p_user_id: userId
+    });
+
+    if (error) {
+      console.error('Error checking verification status:', error);
+      return false;
+    }
+
+    return data || false;
+  } catch (error) {
+    console.error('Error in isUserCurrentlyVerified:', error);
+    return false;
+  }
+}
+
+// Get reward amounts for different user types
+export async function getRewardAmounts(): Promise<{
+  daily_checkin_regular: number;
+  daily_checkin_verified: number;
+  verified_bonus: number;
+  description: string;
+}> {
+  try {
+    const { data, error } = await supabase.rpc('get_reward_amounts');
+
+    if (error) {
+      console.error('Error getting reward amounts:', error);
+      return {
+        daily_checkin_regular: 10,
+        daily_checkin_verified: 20,
+        verified_bonus: 10,
+        description: 'Verified users get 20 OMNI for daily check-in (10 base + 10 bonus)'
+      };
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error in getRewardAmounts:', error);
+    return {
+      daily_checkin_regular: 10,
+      daily_checkin_verified: 20,
+      verified_bonus: 10,
+      description: 'Verified users get 20 OMNI for daily check-in (10 base + 10 bonus)'
+    };
   }
 }
 

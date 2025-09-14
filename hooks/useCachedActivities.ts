@@ -274,9 +274,8 @@ export function useCachedActivities(username: string | null) {
     try {
       const { data: listings, error } = await supabase
         .from('listings')
-        .select('id, title, description, price, price_unit, category, thumbnail_images, preview_images, latitude, longitude, created_at, updated_at, is_active')
+        .select('id, title, description, price, price_unit, category, thumbnail_images, preview_images, latitude, longitude, created_at')
         .eq('username', username)
-        .order('updated_at', { ascending: false })
         .order('created_at', { ascending: false });
           
       if (error) {

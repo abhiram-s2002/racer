@@ -33,7 +33,7 @@ export interface Activity {
   receiver_avatar?: string;
 }
 
-// New interface for the dedicated pings table
+// Updated interface for the actual pings table schema
 export interface Ping {
   id: string;
   listing_id: string;
@@ -41,17 +41,21 @@ export interface Ping {
   receiver_username: string;
   message: string;
   status: PingStatus;
-  created_at: string;
+  response_time_minutes?: number;
+  first_response_at?: string;
   responded_at?: string;
   response_message?: string;
+  ping_count?: number;
+  last_ping_at?: string;
+  created_at: string;
   listings?: {
     title: string;
-  price: number;
-  images: string[];
-  thumbnail_images?: string[];
-  preview_images?: string[];
-  image_metadata?: any;
-  username: string;
+    price: number;
+    images: string[];
+    thumbnail_images?: string[];
+    preview_images?: string[];
+    image_metadata?: any;
+    username: string;
     latitude?: number;
     longitude?: number;
   };
@@ -109,15 +113,24 @@ export async function addPingActivity(activity: Omit<Activity, 'id' | 'created_a
 }
 
 // Update ping status
-export async function updatePingStatus(pingId: string, status: PingStatus): Promise<Activity> {
+export async function updatePingStatus(pingId: string, status: PingStatus, responseMessage?: string): Promise<Ping> {
+  const updateData: any = { 
+    status,
+    responded_at: new Date().toISOString()
+  };
+  
+  if (responseMessage) {
+    updateData.response_message = responseMessage;
+  }
+  
   const { data, error } = await supabase
-    .from('activities')
-    .update({ status })
+    .from('pings')
+    .update(updateData)
     .eq('id', pingId)
     .select()
     .single();
   if (error) throw error;
-  return data as Activity;
+  return data as Ping;
 }
 
 // Delete an activity
@@ -176,6 +189,12 @@ export async function createPing(ping: Omit<Ping, 'id' | 'created_at'>): Promise
     receiver_username: ping.receiver_username,
     message: ping.message,
     status: 'pending',
+    response_time_minutes: result.response_time_minutes,
+    first_response_at: result.first_response_at,
+    responded_at: result.responded_at,
+    response_message: result.response_message,
+    ping_count: result.ping_count,
+    last_ping_at: result.last_ping_at,
     created_at: result.created_at
   } as Ping;
 }
@@ -191,9 +210,13 @@ export async function getSentPings(username: string): Promise<Ping[]> {
       receiver_username,
       message,
       status,
-      created_at,
+      response_time_minutes,
+      first_response_at,
       responded_at,
       response_message,
+      ping_count,
+      last_ping_at,
+      created_at,
       listings (
         title, 
         price, 
@@ -251,9 +274,13 @@ export async function getReceivedPings(username: string): Promise<Ping[]> {
       receiver_username,
       message,
       status,
-      created_at,
+      response_time_minutes,
+      first_response_at,
       responded_at,
       response_message,
+      ping_count,
+      last_ping_at,
+      created_at,
       listings (
         title, 
         price, 
