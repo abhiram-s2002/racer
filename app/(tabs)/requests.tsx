@@ -240,8 +240,7 @@ export default function RequestsScreen() {
   }, [refresh, latitude, longitude, selectedCategory, loading, refreshing]);
 
   const handleEditRequest = useCallback((request: Request) => {
-    // TODO: Implement edit functionality
-    // For now, just show an alert
+    // Edit functionality not yet implemented
     Alert.alert(
       'Edit Request',
       'Edit functionality will be implemented soon. You can delete and recreate the request for now.',

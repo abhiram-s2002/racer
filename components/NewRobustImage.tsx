@@ -109,7 +109,7 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
   const [hasError, setHasError] = useState(false);
   const [retryAttempts, setRetryAttempts] = useState(0);
 
-  // Add timeout to force loading state to end (temporary fix)
+  // Add timeout to force loading state to end
   useEffect(() => {
     const timer = setTimeout(() => {
       if (isLoading) {
@@ -217,7 +217,6 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
       );
     }
 
-    // Use simple image source for debugging
     const imageSource = { uri: currentImageUrl };
 
     return (

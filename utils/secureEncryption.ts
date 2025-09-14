@@ -280,7 +280,8 @@ function btoa(str: string): string {
   } catch (error) {
     // Fallback for React Native
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require('base-64').encode(str);
+    const base64 = require('base-64') as { encode: (str: string) => string };
+    return base64.encode(str);
   }
 }
 
@@ -290,7 +291,8 @@ function atob(str: string): string {
   } catch (error) {
     // Fallback for React Native
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    return require('base-64').decode(str);
+    const base64 = require('base-64') as { decode: (str: string) => string };
+    return base64.decode(str);
   }
 }
 

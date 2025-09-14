@@ -130,7 +130,7 @@ function SettingsScreen() {
         try {
           await supabase.auth.signOut({ scope: 'local' });
         } catch (signOutError) {
-          console.log('Sign out error (expected):', signOutError);
+          // Sign out error is expected in some cases
         }
         
         // Redirect to auth screen

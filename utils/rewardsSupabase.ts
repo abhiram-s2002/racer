@@ -1242,14 +1242,9 @@ export async function awardReferralBonus(username: string) {
 
 export async function awardWelcomeAchievements(username: string) {
   try {
-    console.log(`Awarding welcome achievements for user: ${username}`);
-    
     // Award Welcome Bonus - always try to update to progress 1 (completed)
-    console.log('Awarding welcome_bonus achievement...');
     const welcomeResult = await updateUserAchievementProgressSafe(username, 'welcome_bonus', 1);
-    if (welcomeResult) {
-      console.log('Welcome bonus achievement updated:', welcomeResult);
-    } else {
+    if (!welcomeResult) {
       console.error('Failed to update welcome bonus achievement');
     }
 

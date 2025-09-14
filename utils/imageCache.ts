@@ -151,8 +151,7 @@ export const imageCache = ImageCache.getInstance();
 
 // Ensure cleanup on app exit (React Native doesn't have process.on('exit'))
 if (typeof global !== 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (global as any).__imageCacheCleanup = () => {
+  (global as typeof globalThis & { __imageCacheCleanup?: () => void }).__imageCacheCleanup = () => {
     if (imageCache) {
       imageCache.destroy();
     }

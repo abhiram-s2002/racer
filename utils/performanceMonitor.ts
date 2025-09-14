@@ -208,7 +208,7 @@ export class PerformanceMonitor {
     // Enable when you need database health monitoring
     return { connections: 0, cacheHitRatio: 0, slowQueries: 0 };
     
-    // TODO: Uncomment when you need database health monitoring
+    // Uncomment when you need database health monitoring
     /*
     try {
       const { data, error } = await supabase.rpc('get_database_stats');
@@ -289,7 +289,7 @@ export class PerformanceMonitor {
     // Enable database storage when you need performance analytics
     // Performance metrics collected silently
     
-    // Log slow operations for debugging
+    // Log slow operations
     const slowOperations = this.metrics.filter(m => m.duration > 1000);
     if (slowOperations.length > 0) {
       // console.warn(`🐌 Slow operations detected:`, slowOperations.map(m => ({
@@ -309,11 +309,8 @@ export class PerformanceMonitor {
    * Start periodic metric flushing
    */
   private startPeriodicFlush(): void {
-    // Temporarily disabled to prevent database errors
-    // Enable when you need performance analytics
-    // Performance monitoring active (console logging only)
-    
-    // TODO: Uncomment when you need database storage
+    // Performance monitoring is disabled by default
+    // Enable when you need database storage by uncommenting the code below
     /*
     this.flushTimer = setInterval(() => {
       this.flushMetrics();

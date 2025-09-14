@@ -134,8 +134,8 @@ export const isListingFavorited = async (
  */
 export const getUserFavorites = async (
   userId: string,
-  limit: number = 20,
-  offset: number = 0
+  limit = 20,
+  offset = 0
 ): Promise<{ success: boolean; favorites?: FavoriteListing[]; error?: string }> => {
   try {
     const { data, error } = await supabase.rpc('get_user_favorites', {

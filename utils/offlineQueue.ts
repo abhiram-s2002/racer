@@ -280,7 +280,6 @@ class OfflineQueueManager {
 
   private async executeMessageAction(action: OfflineAction): Promise<boolean> {
     // Chat functionality removed - using WhatsApp instead
-    console.log('Message action skipped - using WhatsApp for communication');
     return true;
   }
 

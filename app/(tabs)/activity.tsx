@@ -24,7 +24,6 @@ import VerificationBadge from '@/components/VerificationBadge';
 import { isUserVerified } from '@/utils/verificationUtils';
 
 import { useRouter } from 'expo-router';
-// Removed react-native-expo-image-cache import - using standard Image component
 
 import { formatPriceWithUnit } from '@/utils/formatters';
 import { getPhoneWithPermission } from '@/utils/phoneSharingUtils';
@@ -34,7 +33,6 @@ import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { formatActivityForWhatsApp, createWhatsAppURL, createWhatsAppWebURL } from '@/utils/whatsappMessageFormatter';
 
 
-declare const console: Console;
 
 // Add this function at the top level of the file
 const openInGoogleMaps = (latitude: number, longitude: number) => {
