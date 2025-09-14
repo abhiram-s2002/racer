@@ -15,7 +15,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Camera, MapPin, Phone, Mail, Settings, CircleHelp as HelpCircle, FileText, LogOut, CreditCard as Edit3, CircleCheck as CheckCircle, Circle as XCircle, ArrowRight, Lock, Flag, EyeOff, UserX, Package, Shield } from 'lucide-react-native';
+import { Camera, MapPin, Phone, Mail, Settings, LogOut, CreditCard as Edit3, CircleCheck as CheckCircle, Circle as XCircle, ArrowRight, Lock, Package, Shield, Heart } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { signOut } from '@/utils/auth';
 import defaultAvatar from '../../assets/images/icon.png';
@@ -787,79 +787,47 @@ function ProfileScreen() {
           </View>
         </TouchableOpacity>
 
-        {/* Quick Actions */}
-        <View style={styles.quickActionsSection}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-
-          <TouchableOpacity 
-            style={styles.quickActionItem}
-            onPress={() => router.push('/settings')}
-          >
-            <Settings size={20} color="#64748B" />
-            <Text style={styles.quickActionText}>App Settings</Text>
-            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.quickActionItem}
-            onPress={() => Alert.alert('Help & Support', 'Contact us at support@omnimarketplace.com for assistance.')}
-          >
-            <HelpCircle size={20} color="#64748B" />
-            <Text style={styles.quickActionText}>Help & Support</Text>
-            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.quickActionItem}
-            onPress={() => router.push('/terms')}
-          >
-            <FileText size={20} color="#64748B" />
-            <Text style={styles.quickActionText}>Terms & Privacy</Text>
-            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-          
-          {/* New Quick Actions for Content Management */}
-          <TouchableOpacity 
-            style={styles.quickActionItem}
-            onPress={() => router.push('/reported-content')}
-          >
-            <Flag size={20} color="#EF4444" />
-            <Text style={styles.quickActionText}>Reported Content</Text>
-            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.quickActionItem}
-            onPress={() => router.push('/hidden-listings')}
-          >
-            <EyeOff size={20} color="#F59E0B" />
-            <Text style={styles.quickActionText}>Hidden Listings</Text>
-            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.quickActionItem}
-            onPress={() => router.push('/blocked-users')}
-          >
-            <UserX size={20} color="#DC2626" />
-            <Text style={styles.quickActionText}>Blocked Users</Text>
-            <ArrowRight size={16} color="#94A3B8" style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Legal Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Legal</Text>
-          
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => router.push('/privacy')}
-          >
-            <View style={styles.settingLeft}>
-              <Text style={styles.settingLabel}>Privacy Policy</Text>
-              <Text style={styles.settingDescription}>How we protect your data</Text>
+        {/* Saved Listings */}
+        <TouchableOpacity 
+          style={styles.listingsSection}
+          onPress={() => router.push('/saved-listings')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.listingsContent}>
+            <View style={styles.listingsLeft}>
+              <Heart size={20} color="#22C55E" />
+              <View style={styles.listingsTextContainer}>
+                <Text style={styles.listingsTitle}>Saved Listings</Text>
+                <Text style={styles.listingsDescription}>
+                  View your favorite listings and saved items
+                </Text>
+              </View>
             </View>
             <ArrowRight size={20} color="#94A3B8" />
-          </TouchableOpacity>
-        </View>
+          </View>
+        </TouchableOpacity>
+
+        {/* Settings */}
+        <TouchableOpacity 
+          style={styles.listingsSection}
+          onPress={() => router.push('/settings' as any)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.listingsContent}>
+            <View style={styles.listingsLeft}>
+              <Settings size={20} color="#22C55E" />
+              <View style={styles.listingsTextContainer}>
+                <Text style={styles.listingsTitle}>Settings</Text>
+                <Text style={styles.listingsDescription}>
+                  Manage app preferences, privacy, and account settings
+                </Text>
+              </View>
+            </View>
+            <ArrowRight size={20} color="#94A3B8" />
+          </View>
+        </TouchableOpacity>
+
+
 
         {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
@@ -1190,26 +1158,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Regular',
     color: '#64748B',
-  },
-  quickActionsSection: {
-    backgroundColor: '#FFFFFF',
-    marginTop: 8,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  quickActionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  quickActionText: {
-    fontSize: 16,
-    fontFamily: 'Inter-Regular',
-    color: '#1E293B',
-    marginLeft: 16,
   },
   logoutButton: {
     flexDirection: 'row',

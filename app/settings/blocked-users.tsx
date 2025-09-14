@@ -199,7 +199,7 @@ const BlockedUsersScreen = () => {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} style={styles.backButton}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft size={24} color="#1E293B" />
           </TouchableOpacity>
           <Text style={styles.title}>Blocked Users</Text>
@@ -215,7 +215,7 @@ const BlockedUsersScreen = () => {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ArrowLeft size={24} color="#1E293B" />
         </TouchableOpacity>
         <Text style={styles.title}>Blocked Users</Text>

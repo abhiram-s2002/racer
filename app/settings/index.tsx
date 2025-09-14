@@ -16,24 +16,19 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
   ArrowLeft, 
- 
   Shield, 
- 
- 
   Trash2, 
   LogOut,
   Eye,
-
   MapPin,
-
-
   Settings as SettingsIcon,
-
-
   HelpCircle,
   FileText,
   Info,
-  RefreshCw
+  UserX,
+  EyeOff,
+  Flag,
+  Phone
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
@@ -54,7 +49,7 @@ function SettingsScreen() {
     if (Platform.OS !== 'android') return;
 
     const backAction = () => {
-      router.back();
+      router.push('/(tabs)/profile');
       return true;
     };
 
@@ -250,13 +245,11 @@ function SettingsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/profile')} style={styles.backButton}>
           <ArrowLeft size={24} color="#1E293B" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Settings</Text>
-        <TouchableOpacity onPress={refreshSettings} style={styles.refreshButton}>
-          <RefreshCw size={20} color="#64748B" />
-        </TouchableOpacity>
+        <View style={styles.placeholder} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -285,6 +278,43 @@ function SettingsScreen() {
           />
         </View>
 
+        {/* Privacy & Security */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Privacy & Security</Text>
+          
+          <SettingItem
+            icon={<Phone size={20} color="#64748B" />}
+            title="Phone Privacy"
+            subtitle="Manage phone number sharing"
+            onPress={() => router.push('/phone-privacy')}
+          />
+        </View>
+
+        {/* Content Management */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Content Management</Text>
+          
+          <SettingItem
+            icon={<UserX size={20} color="#64748B" />}
+            title="Blocked Users"
+            subtitle="Manage blocked users"
+            onPress={() => router.push('/settings/blocked-users')}
+          />
+          
+          <SettingItem
+            icon={<EyeOff size={20} color="#64748B" />}
+            title="Hidden Listings"
+            subtitle="View and manage hidden listings"
+            onPress={() => router.push('/settings/hidden-listings')}
+          />
+          
+          <SettingItem
+            icon={<Flag size={20} color="#64748B" />}
+            title="Reported Content"
+            subtitle="View your reported content history"
+            onPress={() => router.push('/settings/reported-content')}
+          />
+        </View>
 
         {/* Data & Storage */}
         <View style={styles.section}>
@@ -345,14 +375,14 @@ function SettingsScreen() {
             icon={<FileText size={20} color="#64748B" />}
             title="Terms of Service"
             subtitle="Read our terms and conditions"
-            onPress={() => router.push('/terms')}
+            onPress={() => router.push('/legal/terms')}
           />
           
           <SettingItem
             icon={<Shield size={20} color="#64748B" />}
             title="Privacy Policy"
             subtitle="How we protect your data"
-            onPress={() => router.push('/privacy')}
+            onPress={() => router.push('/legal/privacy-policy')}
           />
           
           <SettingItem
@@ -460,8 +490,8 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 32,
   },
-  refreshButton: {
-    padding: 4,
+  placeholder: {
+    width: 32,
   },
   content: {
     flex: 1,
@@ -637,7 +667,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#FFFFFF',
   },
-  
-}); 
+});
 
-export default withErrorBoundary(SettingsScreen, 'SettingsScreen'); 
+export default withErrorBoundary(SettingsScreen, 'SettingsScreen');
