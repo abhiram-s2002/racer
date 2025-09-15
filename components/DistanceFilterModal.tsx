@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,27 +7,31 @@ import {
   Modal,
   ScrollView,
 } from 'react-native';
-import { X, MapPin } from 'lucide-react-native';
+import { X, MapPin, Shield } from 'lucide-react-native';
 import Slider from '@react-native-community/slider';
 
 interface DistanceFilterModalProps {
   visible: boolean;
   onClose: () => void;
   selectedDistance: number | null;
-  
+  selectedVerifiedOnly?: boolean;
   onSelectDistance: (distance: number | null) => void;
+  onSelectVerifiedOnly?: (verifiedOnly: boolean) => void;
 }
 
 export default function DistanceFilterModal({ 
   visible, 
   onClose, 
   selectedDistance, 
-  onSelectDistance 
+  selectedVerifiedOnly = false,
+  onSelectDistance,
+  onSelectVerifiedOnly
 }: DistanceFilterModalProps) {
   
   // Local state for slider value
   const [sliderValue, setSliderValue] = useState(selectedDistance || 5);
   const [displayValue, setDisplayValue] = useState(selectedDistance || 5);
+  const [localVerifiedOnly, setLocalVerifiedOnly] = useState(selectedVerifiedOnly);
   const lastUpdateRef = useRef<number>(0);
   
   // Update slider value when selectedDistance changes
@@ -37,6 +41,11 @@ export default function DistanceFilterModal({
       setDisplayValue(selectedDistance);
     }
   }, [selectedDistance]);
+
+  // Update verified only state when prop changes
+  useEffect(() => {
+    setLocalVerifiedOnly(selectedVerifiedOnly);
+  }, [selectedVerifiedOnly]);
 
   const handleSelectDistance = useCallback((distance: number | null) => {
     onSelectDistance(distance);
@@ -62,8 +71,11 @@ export default function DistanceFilterModal({
 
   const handleApplySlider = useCallback(() => {
     onSelectDistance(sliderValue);
+    if (onSelectVerifiedOnly) {
+      onSelectVerifiedOnly(localVerifiedOnly);
+    }
     onClose();
-  }, [sliderValue, onSelectDistance, onClose]);
+  }, [sliderValue, localVerifiedOnly, onSelectDistance, onSelectVerifiedOnly, onClose]);
 
   return (
     <Modal
@@ -104,7 +116,7 @@ export default function DistanceFilterModal({
                 Any distance
               </Text>
               {selectedDistance === null && (
-                <View style={styles.checkmark}>
+                <View style={styles.checkmarkContainer}>
                   <Text style={styles.checkmarkText}>✓</Text>
                 </View>
               )}
@@ -177,6 +189,43 @@ export default function DistanceFilterModal({
               ))}
             </View>
           </View>
+
+          {/* Verified Sellers Filter Section */}
+          {onSelectVerifiedOnly && (
+            <View style={styles.verifiedSection}>
+              <View style={styles.sectionHeader}>
+                <Shield size={20} color="#22C55E" />
+                <Text style={styles.sectionTitle}>Verified Sellers</Text>
+              </View>
+              
+              <TouchableOpacity
+                style={[
+                  styles.verifiedOption,
+                  localVerifiedOnly && styles.selectedVerifiedOption
+                ]}
+                onPress={() => setLocalVerifiedOnly(!localVerifiedOnly)}
+              >
+                <View style={styles.verifiedOptionContent}>
+                  <View style={styles.verifiedOptionLeft}>
+                    <View style={[
+                      styles.checkbox,
+                      localVerifiedOnly && styles.checkedCheckbox
+                    ]}>
+                      {localVerifiedOnly && (
+                        <Text style={styles.checkmarkText}>✓</Text>
+                      )}
+                    </View>
+                    <Text style={[
+                      styles.verifiedOptionText,
+                      localVerifiedOnly && styles.selectedVerifiedOptionText
+                    ]}>
+                      Show only verified sellers
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Info text */}
           <View style={styles.infoContainer}>
@@ -255,7 +304,7 @@ const styles = StyleSheet.create({
     color: '#22C55E',
     fontWeight: '600',
   },
-  checkmark: {
+  checkmarkContainer: {
     width: 24,
     height: 24,
     borderRadius: 12,
@@ -367,5 +416,62 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#64748B',
     lineHeight: 20,
+  },
+  verifiedSection: {
+    marginBottom: 20,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1E293B',
+    marginLeft: 8,
+  },
+  verifiedOption: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  selectedVerifiedOption: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#22C55E',
+  },
+  verifiedOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  verifiedOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkedCheckbox: {
+    backgroundColor: '#22C55E',
+    borderColor: '#22C55E',
+  },
+  verifiedOptionText: {
+    fontSize: 16,
+    color: '#1E293B',
+    fontWeight: '500',
+  },
+  selectedVerifiedOptionText: {
+    color: '#16A34A',
+    fontWeight: '600',
   },
 }); 

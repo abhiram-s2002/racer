@@ -4,17 +4,20 @@ import {
   Text,
   StyleSheet,
   Image,
+  TouchableOpacity,
+  Linking,
+  Alert,
 } from 'react-native';
 import { 
   MapPin, 
   Calendar, 
   Shield,
-  User
 } from 'lucide-react-native';
 import VerificationBadge from './VerificationBadge';
 import { isUserVerified } from '@/utils/verificationUtils';
 import HomeRatingDisplay from './HomeRatingDisplay';
 import { getAvatarSource } from '@/utils/avatarUtils';
+import { parseBio } from '@/utils/bioUtils';
 
 interface SellerProfile {
   username: string;
@@ -53,10 +56,14 @@ const UnifiedSellerProfileCard: React.FC<UnifiedSellerProfileCardProps> = React.
     return seller.location_display || 'Location not specified';
   }, [seller.location_display]);
 
-  const truncatedBio = useMemo(() => {
-    if (!seller.bio) return null;
-    return seller.bio.length > 150 ? `${seller.bio.substring(0, 150)}...` : seller.bio;
+  const bioData = useMemo(() => {
+    return parseBio(seller.bio);
   }, [seller.bio]);
+
+  const truncatedBio = useMemo(() => {
+    if (!bioData.text) return null;
+    return bioData.text.length > 150 ? `${bioData.text.substring(0, 150)}...` : bioData.text;
+  }, [bioData.text]);
 
   return (
     <View style={styles.container}>
@@ -129,6 +136,51 @@ const UnifiedSellerProfileCard: React.FC<UnifiedSellerProfileCardProps> = React.
         <View style={styles.bioSection}>
           <Text style={styles.bioLabel}>About</Text>
           <Text style={styles.bioText}>{truncatedBio}</Text>
+          
+          {/* Social Media Links */}
+          {bioData.socialLinks && Object.values(bioData.socialLinks).some(url => url) && (
+            <View style={styles.socialLinksContainer}>
+              {bioData.socialLinks.instagram && (
+                <TouchableOpacity 
+                  style={styles.socialLinkButton}
+                  onPress={() => {
+                    const url = bioData.socialLinks!.instagram!;
+                    Linking.openURL(url).catch(err => 
+                      Alert.alert('Error', 'Could not open Instagram link')
+                    );
+                  }}
+                >
+                  <Text style={styles.socialLinkText}>📷 Instagram</Text>
+                </TouchableOpacity>
+              )}
+              {bioData.socialLinks.youtube && (
+                <TouchableOpacity 
+                  style={styles.socialLinkButton}
+                  onPress={() => {
+                    const url = bioData.socialLinks!.youtube!;
+                    Linking.openURL(url).catch(err => 
+                      Alert.alert('Error', 'Could not open YouTube link')
+                    );
+                  }}
+                >
+                  <Text style={styles.socialLinkText}>📺 YouTube</Text>
+                </TouchableOpacity>
+              )}
+              {bioData.socialLinks.facebook && (
+                <TouchableOpacity 
+                  style={styles.socialLinkButton}
+                  onPress={() => {
+                    const url = bioData.socialLinks!.facebook!;
+                    Linking.openURL(url).catch(err => 
+                      Alert.alert('Error', 'Could not open Facebook link')
+                    );
+                  }}
+                >
+                  <Text style={styles.socialLinkText}>👥 Facebook</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -257,6 +309,27 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#374151',
     lineHeight: 22,
+  },
+  
+  // Social Links
+  socialLinksContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 12,
+    gap: 8,
+  },
+  socialLinkButton: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  socialLinkText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#22C55E',
   },
 });
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "453661036387",
+    "project_id": "geomart-app",
+    "storage_bucket": "geomart-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:453661036387:android:3f7b0b32985483767c8d56",
+        "android_client_info": {
+          "package_name": "com.geomart.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDU1GzqwPEBkxwAOonfLJkekiPIZsdDMfk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

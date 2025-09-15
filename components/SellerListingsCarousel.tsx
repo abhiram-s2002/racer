@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,8 @@ import {
   TouchableOpacity,
   Dimensions,
 } from 'react-native';
-import { ChevronRight, MoreVertical } from 'lucide-react-native';
 import NewRobustImage from './NewRobustImage';
 import { formatPriceWithUnit } from '@/utils/formatters';
-import ListingOptionsModal from './ListingOptionsModal';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 60) / 2.5; // Account for padding and gap
@@ -30,23 +28,15 @@ interface SellerListingsCarouselProps {
   onListingPress: (listingId: string) => void;
   sellerName: string;
   sellerUsername?: string;
-  onReport?: () => void;
-  onHide?: () => void;
-  onBlock?: () => void;
 }
 
 const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo(({
   listings,
   onListingPress,
   sellerName,
-  sellerUsername,
-  onReport,
-  onHide,
-  onBlock,
+  // sellerUsername,
 }) => {
   // Options modal state
-  const [showOptionsModal, setShowOptionsModal] = useState(false);
-  const [selectedListingForOptions, setSelectedListingForOptions] = useState<Listing | null>(null);
 
   // Memoize the listings data to prevent unnecessary re-renders
   const memoizedListings = useMemo(() => listings, [listings]);
@@ -74,17 +64,6 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
             title={item.title}
           />
           
-          {/* 3-dots menu button */}
-          <TouchableOpacity
-            style={styles.optionsButton}
-            onPress={() => {
-              setSelectedListingForOptions(item);
-              setShowOptionsModal(true);
-            }}
-            activeOpacity={0.7}
-          >
-            <MoreVertical size={14} color="#64748B" />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.listingDetails}>
@@ -143,19 +122,6 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
         snapToInterval={ITEM_WIDTH + 16}
         snapToAlignment="start"
       />
-      
-      {/* Listing Options Modal */}
-      <ListingOptionsModal
-        visible={showOptionsModal}
-        onClose={() => setShowOptionsModal(false)}
-        listingId={selectedListingForOptions?.id || ''}
-        sellerUsername={sellerUsername || ''}
-        listingTitle={selectedListingForOptions?.title || ''}
-        type="listing"
-        onReport={onReport}
-        onHide={onHide}
-        onBlock={onBlock}
-      />
     </View>
   );
 });
@@ -203,22 +169,6 @@ const styles = StyleSheet.create({
   carouselImage: {
     width: '100%',
     height: '100%',
-  },
-  optionsButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 12,
-    padding: 4,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 2,
   },
   listingContent: {
     flex: 1,

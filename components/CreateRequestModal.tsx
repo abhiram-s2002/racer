@@ -17,7 +17,6 @@ import { Request, RequestCategory } from '@/utils/types';
 import { requestCategories } from '@/utils/requestCategories';
 import { validateListingTitle, validateListingDescription, validatePrice } from '@/utils/validation';
 import { RequestLocationUtils, LocationData } from '@/utils/requestLocationUtils';
-import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
 
 interface CreateRequestModalProps {

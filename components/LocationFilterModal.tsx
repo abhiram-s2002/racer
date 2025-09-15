@@ -8,7 +8,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { X, MapPin, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Palette, Home, Car, MoreHorizontal } from 'lucide-react-native';
+import { X, MapPin, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Palette, Home, Car, MoreHorizontal, Shield } from 'lucide-react-native';
 // Categories moved to inline definition for better performance
 const categories = [
   { id: 'all', name: 'All Categories' },
@@ -27,8 +27,10 @@ interface LocationFilterModalProps {
   onClose: () => void;
   onSelectDistance: (distance: number | null) => void;
   onSelectCategory: (categories: string[]) => void;
+  onSelectVerifiedOnly?: (verifiedOnly: boolean) => void;
   selectedDistance: number | null;
   selectedCategory: string | string[];
+  selectedVerifiedOnly?: boolean;
 }
 
 export default function LocationFilterModal({ 
@@ -36,14 +38,17 @@ export default function LocationFilterModal({
   onClose, 
   onSelectDistance, 
   onSelectCategory,
+  onSelectVerifiedOnly,
   selectedDistance,
-  selectedCategory
+  selectedCategory,
+  selectedVerifiedOnly = false
 }: LocationFilterModalProps) {
   
   const [localDistance, setLocalDistance] = useState(selectedDistance || 5);
   const [localCategory, setLocalCategory] = useState<string[]>(
     Array.isArray(selectedCategory) ? selectedCategory : selectedCategory === 'all' ? [] : [selectedCategory]
   );
+  const [localVerifiedOnly, setLocalVerifiedOnly] = useState(selectedVerifiedOnly);
   const lastUpdateRef = useRef<number>(0);
 
   // Update local state when props change
@@ -52,17 +57,22 @@ export default function LocationFilterModal({
     setLocalCategory(
       Array.isArray(selectedCategory) ? selectedCategory : selectedCategory === 'all' ? [] : [selectedCategory]
     );
-  }, [selectedDistance, selectedCategory]);
+    setLocalVerifiedOnly(selectedVerifiedOnly);
+  }, [selectedDistance, selectedCategory, selectedVerifiedOnly]);
 
   const handleApplyFilters = () => {
     onSelectDistance(localDistance);
     onSelectCategory(localCategory);
+    if (onSelectVerifiedOnly) {
+      onSelectVerifiedOnly(localVerifiedOnly);
+    }
     onClose();
   };
 
   const handleResetFilters = () => {
     setLocalDistance(5); // Reset to default distance instead of null
     setLocalCategory([]);
+    setLocalVerifiedOnly(false);
   };
 
   const categoryIcons = {
@@ -176,6 +186,43 @@ export default function LocationFilterModal({
               ))}
             </View>
           </View>
+
+          {/* Verified Sellers Filter Section */}
+          {onSelectVerifiedOnly && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Shield size={20} color="#22C55E" />
+                <Text style={styles.sectionTitle}>Verified Sellers</Text>
+              </View>
+              
+              <TouchableOpacity
+                style={[
+                  styles.verifiedOption,
+                  localVerifiedOnly && styles.selectedVerifiedOption
+                ]}
+                onPress={() => setLocalVerifiedOnly(!localVerifiedOnly)}
+              >
+                <View style={styles.verifiedOptionContent}>
+                  <View style={styles.verifiedOptionLeft}>
+                    <View style={[
+                      styles.checkbox,
+                      localVerifiedOnly && styles.checkedCheckbox
+                    ]}>
+                      {localVerifiedOnly && (
+                        <Text style={styles.checkmark}>✓</Text>
+                      )}
+                    </View>
+                    <Text style={[
+                      styles.verifiedOptionText,
+                      localVerifiedOnly && styles.selectedVerifiedOptionText
+                    ]}>
+                      Show only verified sellers
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Information Text */}
           <View style={styles.infoSection}>
@@ -363,5 +410,53 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-Medium',
     color: '#FFFFFF',
+  },
+  verifiedOption: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  selectedVerifiedOption: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#22C55E',
+  },
+  verifiedOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  verifiedOptionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#D1D5DB',
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkedCheckbox: {
+    backgroundColor: '#22C55E',
+    borderColor: '#22C55E',
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  verifiedOptionText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#1E293B',
+  },
+  selectedVerifiedOptionText: {
+    color: '#16A34A',
+    fontFamily: 'Inter-SemiBold',
   },
 });

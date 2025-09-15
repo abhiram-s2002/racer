@@ -1,10 +1,8 @@
-// Supabase Edge Function: send-fcm
-// Sends undelivered notifications to users' Android devices via FCM
-// Uses the legacy FCM HTTP API with FCM_SERVER_KEY for simplicity
+// Supabase Edge Function: send-fcm-http
+// Sends undelivered notifications via HTTP call to your own backend
+// This is a simpler approach that avoids JWT complexity
 
-// Deno std server
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-// Supabase client
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 type NotificationRow = {
@@ -27,13 +25,12 @@ type DeviceTokenRow = {
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const FCM_SERVER_KEY = Deno.env.get("FCM_SERVER_KEY") ?? "";
-const FCM_SERVICE_ACCOUNT_JSON = Deno.env.get("FCM_SERVICE_ACCOUNT_JSON") ?? "";
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("Missing Supabase service env vars");
 }
-if (!FCM_SERVER_KEY && !FCM_SERVICE_ACCOUNT_JSON) {
-  console.error("Missing FCM_SERVER_KEY or FCM_SERVICE_ACCOUNT_JSON env var");
+if (!FCM_SERVER_KEY) {
+  console.error("Missing FCM_SERVER_KEY env var");
 }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -70,106 +67,48 @@ async function fetchUserTokens(userId: string) {
   return (data ?? []) as DeviceTokenRow[];
 }
 
-type FcmMulticastResponse = {
-  success: number;
-  failure: number;
-  results: Array<{ message_id?: string; error?: string }>;
-};
-
-async function getFcmAccessToken(): Promise<string> {
-  if (FCM_SERVICE_ACCOUNT_JSON) {
-    const serviceAccount = JSON.parse(FCM_SERVICE_ACCOUNT_JSON);
-    
-    // Create JWT for Google OAuth2
-    const now = Math.floor(Date.now() / 1000);
-    const header = {
-      alg: "RS256",
-      typ: "JWT"
-    };
-    
-    const payload = {
-      iss: serviceAccount.client_email,
-      scope: "https://www.googleapis.com/auth/firebase.messaging",
-      aud: "https://oauth2.googleapis.com/token",
-      exp: now + 3600,
-      iat: now
-    };
-    
-    // Create JWT signature (simplified - in production use a proper JWT library)
-    const jwtHeader = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    const jwtPayload = btoa(JSON.stringify(payload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    const unsignedToken = `${jwtHeader}.${jwtPayload}`;
-    
-    // For now, we'll use a simpler approach with the service account
-    // In production, you'd properly sign the JWT with the private key
-    try {
-      const response = await fetch("https://oauth2.googleapis.com/token", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-          assertion: unsignedToken
-        })
-      });
-      
-      if (response.ok) {
-        const tokenData = await response.json();
-        return tokenData.access_token;
-      }
-    } catch (error) {
-      console.error("Failed to get access token:", error);
-    }
-  }
-  
-  throw new Error("FCM_SERVICE_ACCOUNT_JSON is required for FCM V1 API");
-}
-
-async function sendFcm(tokens: string[], title: string, body: string, data: Record<string, unknown>): Promise<FcmMulticastResponse> {
+// Send FCM using legacy API (simpler approach)
+async function sendFcmLegacy(tokens: string[], title: string, body: string, data: Record<string, unknown>): Promise<{ success: number; failure: number; results: Array<{ message_id?: string; error?: string }> }> {
   if (tokens.length === 0) {
     return { success: 0, failure: 0, results: [] };
   }
 
-  if (!FCM_SERVICE_ACCOUNT_JSON) {
-    throw new Error("FCM_SERVICE_ACCOUNT_JSON is required for FCM V1 API");
-  }
-
-  const serviceAccount = JSON.parse(FCM_SERVICE_ACCOUNT_JSON);
-  const projectId = serviceAccount.project_id;
-  
-  // Use FCM V1 API
-  const res = await fetch(`https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${FCM_SERVER_KEY}`, // This will be replaced with proper access token
-    },
-    body: JSON.stringify({
-      message: {
-        token: tokens[0], // FCM V1 sends to one token at a time
+  try {
+    const res = await fetch("https://fcm.googleapis.com/fcm/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `key=${FCM_SERVER_KEY}`,
+      },
+      body: JSON.stringify({
+        registration_ids: tokens,
         notification: { title, body },
         data: data ?? {},
         android: {
           priority: "high",
         },
-      }
-    }),
-  });
+      }),
+    });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`FCM V1 request failed: ${res.status} ${text}`);
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`FCM request failed: ${res.status} ${text}`);
+    }
+    
+    const json = await res.json();
+    return {
+      success: json.success || 0,
+      failure: json.failure || 0,
+      results: json.results || []
+    };
+  } catch (error) {
+    console.error("FCM send error:", error);
+    return {
+      success: 0,
+      failure: tokens.length,
+      results: tokens.map(() => ({ error: error.message }))
+    };
   }
-  
-  const json = await res.json();
-  
-  // Convert V1 response to our expected format
-  return {
-    success: json.name ? 1 : 0,
-    failure: json.name ? 0 : 1,
-    results: json.name ? [{ message_id: json.name }] : [{ error: "Unknown error" }]
-  };
 }
 
 async function markDelivered(notificationId: string) {
@@ -223,17 +162,18 @@ serve(async (req) => {
 
       if (androidTokens.length > 0) {
         try {
-          const res = await sendFcm(androidTokens, n.title, n.body, {
+          const result = await sendFcmLegacy(androidTokens, n.title, n.body, {
             type: n.type,
             notification_id: n.id,
             ...(n.data ?? {}),
           });
-          sent = res.success;
-          failed = res.failure;
+          
+          sent = result.success;
+          failed = result.failure;
 
           // Remove invalid tokens
           const invalidTokens: string[] = [];
-          res.results.forEach((r, idx) => {
+          result.results.forEach((r, idx) => {
             if (r.error && ["NotRegistered", "InvalidRegistration", "MismatchSenderId"].includes(r.error)) {
               invalidTokens.push(androidTokens[idx]);
             }
@@ -265,5 +205,3 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 });
-
-

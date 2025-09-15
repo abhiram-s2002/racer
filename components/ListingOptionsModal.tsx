@@ -8,7 +8,7 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
-import { MoreVertical, Flag, EyeOff, UserX, X } from 'lucide-react-native';
+import { Flag, EyeOff, UserX, X } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import { reportListing, hideListing, hideRequest, blockUser } from '@/utils/contentManagement';
 import { supabase } from '@/utils/supabaseClient';

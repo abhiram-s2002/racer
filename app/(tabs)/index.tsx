@@ -11,14 +11,11 @@ import {
   Dimensions,
   BackHandler,
   Platform,
-  Modal,
   Alert,
-  Linking,
   RefreshControl,
-  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, MapPin, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Home, Star, Clock, Tag, Car, MoreHorizontal, Heart, Map } from 'lucide-react-native';
+import { Search, MapPin, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Home, Star, Car, MoreHorizontal, Map } from 'lucide-react-native';
 import { Plus } from 'lucide-react-native';
 // Categories moved to inline definition for better performance
 const categories = [
@@ -35,13 +32,10 @@ const categories = [
 
 import AddListingModal from '@/components/AddListingModal';
 import FeedbackModal from '@/components/FeedbackModal';
-import HomeRatingDisplay from '@/components/HomeRatingDisplay';
-
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
 import CategorySelectionModal from '@/components/CategorySelectionModal';
 import DistanceFilterModal from '@/components/DistanceFilterModal';
 import { useListings } from '@/hooks/useListings';
-import { useFavorites } from '@/hooks/useFavorites';
 import { supabase } from '@/utils/supabaseClient';
 
 import { formatDistance } from '@/utils/distance';
@@ -58,11 +52,9 @@ import { networkMonitor } from '@/utils/networkMonitor';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { trackScreenView, trackSearch, trackFilterUsed, trackListingView } from '@/utils/googleAnalytics';
 // Location check is handled globally in _layout.tsx
-import RatingService from '@/utils/ratingService';
 import VerificationBadge from '@/components/VerificationBadge';
 import { isUserVerified } from '@/utils/verificationUtils';
 import HomeLoadingStates from '@/components/HomeLoadingStates';
-import ListingSkeleton from '@/components/ListingSkeleton';
 import { batchRatingService } from '@/utils/batchRatingService';
 import { requestBatcher } from '@/utils/requestBatching';
 
@@ -80,6 +72,7 @@ function HomeScreen() {
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [selectedCategoryForListing, setSelectedCategoryForListing] = useState<Category | undefined>(undefined);
   const [showDistanceFilterModal, setShowDistanceFilterModal] = useState(false);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sellerInfoMap, setSellerInfoMap] = useState<Record<string, any>>({});
   const [username, setUsername] = useState<string | null>(null);
   const [userRatings, setUserRatings] = useState<Record<string, { rating: string; reviewCount: number } | null>>({});
@@ -99,7 +92,6 @@ function HomeScreen() {
     loadMoreListings, 
     hasMore, 
     refreshListings,
-    forceRefreshListings,
     toggleDistanceSort,
     sortByDistance: sortByDistanceState,
     maxDistance,
@@ -109,15 +101,6 @@ function HomeScreen() {
     markReturningFromNavigation
   } = useListings();
 
-  // Favorites functionality
-  const { 
-    favorites, 
-    loading: favoritesLoading, 
-    toggleFavoriteStatus, 
-    refreshFavoritesStatus, 
-    isFavorited,
-    setFavorites
-  } = useFavorites();
 
   
   const [refreshing, setRefreshing] = useState(false);
@@ -201,13 +184,6 @@ function HomeScreen() {
     }
   }, [listings]);
 
-  // Load favorites status when listings change
-  useEffect(() => {
-    if (listings.length > 0) {
-      const listingIds = listings.map(listing => listing.id);
-      refreshFavoritesStatus(listingIds);
-    }
-  }, [listings, refreshFavoritesStatus]);
 
   const loadUserRatings = async () => {
     try {
@@ -305,9 +281,17 @@ function HomeScreen() {
     return listings.filter((listing: any) => {
       const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory === 'all' || listing.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+      
+      // Apply verified sellers filter
+      let matchesVerified = true;
+      if (verifiedOnly) {
+        const seller = sellerInfoMap[listing.username];
+        matchesVerified = seller ? isUserVerified(seller) : false;
+      }
+      
+      return matchesSearch && matchesCategory && matchesVerified;
     });
-  }, [listings, searchQuery, selectedCategory]);
+  }, [listings, searchQuery, selectedCategory, verifiedOnly, sellerInfoMap]);
 
   // Convert listing format for display with proper types
   const displayListings = useMemo(() => {
@@ -380,6 +364,10 @@ function HomeScreen() {
     }
   };
 
+  const handleSelectVerifiedOnly = (verifiedOnly: boolean) => {
+    setVerifiedOnly(verifiedOnly);
+  };
+
   const renderCategory = useCallback(({ item }: { item: any }) => {
     const IconComponent = categoryIcons[item.id as keyof typeof categoryIcons] || ShoppingCart;
     const isSelected = selectedCategory === item.id;
@@ -429,78 +417,6 @@ function HomeScreen() {
             />
           </TouchableOpacity>
           
-          {/* Favorite Button */}
-          {(() => {
-            const isCurrentlyFavorited = isFavorited(item.id);
-            return (
-              <TouchableOpacity
-                style={[
-                  styles.favoriteButton,
-                  isCurrentlyFavorited && styles.favoriteButtonActive
-                ]}
-                onPress={() => {
-                  const newFavoriteState = !isCurrentlyFavorited;
-                  
-                  // Immediate visual feedback - change color instantly
-                  setFavorites(prev => ({
-                    ...prev,
-                    [item.id]: newFavoriteState
-                  }));
-                  
-                  // Show confirmation dialog after a short delay to see the color change
-                  setTimeout(() => {
-                    Alert.alert(
-                      isCurrentlyFavorited ? 'Remove from Favorites' : 'Add to Favorites',
-                      isCurrentlyFavorited 
-                        ? 'Are you sure you want to remove this listing from your favorites?' 
-                        : 'Add this listing to your favorites?',
-                      [
-                        {
-                          text: 'Cancel',
-                          style: 'cancel',
-                          onPress: () => {
-                            // Revert the visual change if cancelled
-                            setFavorites(prev => ({
-                              ...prev,
-                              [item.id]: isCurrentlyFavorited
-                            }));
-                          }
-                        },
-                        {
-                          text: isCurrentlyFavorited ? 'Remove' : 'Add',
-                          onPress: async () => {
-                            // Perform the actual database operation
-                            try {
-                              await toggleFavoriteStatus(item.id, item.username);
-                            } catch (error) {
-                              // Revert on error
-                              setFavorites(prev => ({
-                                ...prev,
-                                [item.id]: isCurrentlyFavorited
-                              }));
-                              console.error('Error toggling favorite:', error);
-                            }
-                          }
-                        }
-                      ]
-                    );
-                  }, 100);
-                }}
-                activeOpacity={0.7}
-                disabled={favoritesLoading}
-              >
-                {favoritesLoading ? (
-                  <ActivityIndicator size={12} color="#64748B" />
-                ) : (
-                  <Heart 
-                    size={16} 
-                    color={isCurrentlyFavorited ? "#EF4444" : "#64748B"} 
-                    fill={isCurrentlyFavorited ? "#EF4444" : "transparent"}
-                  />
-                )}
-              </TouchableOpacity>
-            );
-          })()}
         </View>
 
         <View style={styles.listingContent}>
@@ -779,7 +695,9 @@ function HomeScreen() {
         visible={showDistanceFilterModal}
         onClose={() => setShowDistanceFilterModal(false)}
         selectedDistance={maxDistance}
+        selectedVerifiedOnly={verifiedOnly}
         onSelectDistance={handleSelectDistance}
+        onSelectVerifiedOnly={handleSelectVerifiedOnly}
       />
 
 
@@ -1032,21 +950,6 @@ const styles = StyleSheet.create({
     height: 150,
     borderWidth: 1,
     borderColor: '#F1F5F9',
-  },
-  favoriteButton: {
-    position: 'absolute',
-    top: 4,
-    right: 4,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 3,
-    boxShadow: '0px 2px 3px rgba(0,0,0,0.1)',
-    elevation: 2,
-  },
-  favoriteButtonActive: {
-    backgroundColor: '#FEF2F2',
-    borderWidth: 1,
-    borderColor: '#FECACA',
   },
   listingContent: {
     padding: 8,

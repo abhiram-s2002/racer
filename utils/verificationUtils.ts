@@ -3,7 +3,6 @@
  * Helper functions for checking user verification status
  */
 
-import { User } from './types';
 
 // Flexible type for verification check
 interface VerificationUser {

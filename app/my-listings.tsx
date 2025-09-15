@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,8 +6,6 @@ import {
   FlatList,
   TouchableOpacity,
   Alert,
-  BackHandler,
-  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Trash2 } from 'lucide-react-native';
@@ -39,7 +37,7 @@ function MyListingsScreen() {
     myListings,
     loading,
     refresh,
-    updateActivity,
+    // updateActivity,
     removeActivity,
   } = useCachedActivities(username);
 

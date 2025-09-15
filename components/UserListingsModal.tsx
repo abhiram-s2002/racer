@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, Edit3, Trash2, Clock, MapPin, Calendar } from 'lucide-react-native';
 import { supabase } from '@/utils/supabaseClient';
-import { Request, RequestCategory } from '@/utils/types';
+import { Request } from '@/utils/types';
 import { getCategoryById } from '@/utils/requestCategories';
 import { RequestLocationUtils } from '@/utils/requestLocationUtils';
 

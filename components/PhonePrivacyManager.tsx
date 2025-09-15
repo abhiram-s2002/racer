@@ -17,7 +17,6 @@ import {
   Trash2
 } from 'lucide-react-native';
 import { getPhoneAccessList, revokePhoneAccess, PhoneAccessUser } from '@/utils/phoneSharingUtils';
-import { supabase } from '@/utils/supabaseClient';
 
 interface PhonePrivacyManagerProps {
   userId: string;

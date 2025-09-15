@@ -18,10 +18,10 @@ interface RequestCardProps {
   onNamePress?: () => void; // Add name click callback
 }
 
-const { width } = Dimensions.get('window');
+  // const { width } = Dimensions.get('window');
 
-export function RequestCard({ request, requesterName, requesterVerified, requesterRating, onPress, onSave, onContact, onCall, onOptions, onNamePress }: RequestCardProps) {
-  const category = getCategoryById(request.category);
+export function RequestCard({ request, requesterName, requesterVerified, requesterRating, onSave, onContact, onCall, onOptions, onNamePress }: RequestCardProps) {
+  // const category = getCategoryById(request.category);
   const IconComponent = getCategoryIcon(request.category);
   const categoryColor = getCategoryColor(request.category);
 

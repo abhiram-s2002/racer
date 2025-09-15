@@ -1,10 +1,23 @@
 /* global console */
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { Linking, AppState } from 'react-native';
 import { getCurrentUser } from '@/utils/auth';
 import AuthScreen from './auth';
 import { Slot, useRouter, usePathname } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
+// Firebase messaging - will use mock in Expo Go
+// let messaging: any;
+// try {
+//   // eslint-disable-next-line @typescript-eslint/no-var-requires
+//   const firebaseMessaging = require('@react-native-firebase/messaging');
+//   messaging = firebaseMessaging.default || firebaseMessaging;
+// } catch (error) {
+//   // Fallback to mock in Expo Go
+//   // eslint-disable-next-line @typescript-eslint/no-var-requires
+//   const firebaseMock = require('@/utils/firebaseMock');
+//   messaging = firebaseMock.messaging;
+// }
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { initializeSentry } from '@/utils/sentryConfig';
 import { googleAnalytics } from '@/utils/googleAnalytics';
 
@@ -15,6 +28,8 @@ import { networkMonitor } from '@/utils/networkMonitor';
 import { useLocationCheck } from '@/hooks/useLocationCheck';
 import LocationCheckPopup from '@/components/LocationCheckPopup';
 import AuthLoadingScreen from '@/components/AuthLoadingScreen';
+import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime';
+import { setupFCMHandlers, processUndeliveredNotifications } from '@/utils/fcmClient';
 
 
 function validateUserProfileFields({ id, username, email, name }: { id: string; username: string; email: string; name: string }) {
@@ -187,6 +202,13 @@ export default function AuthGate() {
   const pathname = usePathname();
   const errorHandler = ErrorHandler.getInstance();
   const { showPopup, isChecking, locationStatus, checkLocationStatus, hidePopup, retryCheck } = useLocationCheck();
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
+  const { register } = usePushNotifications({ userId: currentUserId });
+  useNotificationsRealtime(currentUserId, (n) => {
+    // Optionally display an in-app banner/toast here
+    // For now, just log to console
+    console.log('New notification:', n.title, n.body);
+  });
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -204,6 +226,7 @@ export default function AuthGate() {
         setAuthenticated(!!user);
         
         if (user) {
+          setCurrentUserId(user.id);
           // Stage 3: Validate user profile
           setLoadingStage('validating_profile');
           const username = user.user_metadata?.username;
@@ -250,6 +273,73 @@ export default function AuthGate() {
     
     initializeApp();
   }, []); // Remove pathname dependency to prevent loops
+
+  // Register for push after authentication and profile validation
+  useEffect(() => {
+    if (authenticated && currentUserId) {
+      register();
+      
+      // Setup FCM handlers
+      const unsubscribeForeground = setupFCMHandlers();
+      
+      // Process any undelivered notifications
+      processUndeliveredNotifications();
+      
+      // Process notifications when app comes to foreground
+      const handleAppStateChange = () => {
+        processUndeliveredNotifications();
+      };
+      
+      // Listen for app state changes
+      const subscription = AppState.addEventListener('change', handleAppStateChange);
+      
+      return () => {
+        unsubscribeForeground();
+        subscription?.remove();
+      };
+    }
+  }, [authenticated, currentUserId, register]);
+
+  // Handle deep links
+  useEffect(() => {
+    const handleDeepLink = (url: string) => {
+      console.log('Deep link received:', url);
+      
+      // Parse the deep link URL
+      if (url.startsWith('geomart://listing/')) {
+        const listingId = url.replace('geomart://listing/', '');
+        if (listingId) {
+          // Navigate to the listing detail page
+          router.push(`/listing-detail?id=${listingId}`);
+        }
+      } else if (url.startsWith('geomart://seller/')) {
+        const username = url.replace('geomart://seller/', '');
+        if (username) {
+          // Navigate to the seller profile page
+          router.push(`/seller/${username}`);
+        }
+      }
+    };
+
+    // Handle initial URL (when app is opened from a deep link)
+    const getInitialURL = async () => {
+      const initialUrl = await Linking.getInitialURL();
+      if (initialUrl) {
+        handleDeepLink(initialUrl);
+      }
+    };
+
+    // Handle URL changes (when app is already running)
+    const subscription = Linking.addEventListener('url', (event) => {
+      handleDeepLink(event.url);
+    });
+
+    getInitialURL();
+
+    return () => {
+      subscription?.remove();
+    };
+  }, [router]);
 
 
 

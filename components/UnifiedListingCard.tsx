@@ -6,7 +6,7 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
-import { Package, Calendar, MapPin, User, Eye, MessageCircle, Clock } from 'lucide-react-native';
+import { Package, Calendar, MapPin, Eye, MessageCircle, Clock } from 'lucide-react-native';
 import { LocationUtils } from '@/utils/locationUtils';
 import HomeRatingDisplay from './HomeRatingDisplay';
 import VerificationBadge from './VerificationBadge';

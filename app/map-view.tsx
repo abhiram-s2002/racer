@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useListings } from '@/hooks/useListings';
+import { supabase } from '@/utils/supabaseClient';
 // Categories moved to inline definition for better performance
 const categories = [
   { id: 'all', name: 'All Categories' },
@@ -25,6 +26,7 @@ import LoadMoreSection from '@/components/LoadMoreSection';
 import ListingsInfoBox from '@/components/ListingsInfoBox';
 import MapContainer from '@/components/MapContainer';
 import MapPinPopup from '@/components/MapPinPopup';
+import { isUserVerified } from '@/utils/verificationUtils';
 
 const { width, height } = Dimensions.get('window');
 const LATITUDE_DELTA = 0.01;
@@ -36,6 +38,7 @@ function MapViewScreen() {
 
   // State
   const [selectedCategory, setSelectedCategory] = useState<string[]>([]);
+  const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [showLocationFilterModal, setShowLocationFilterModal] = useState(false);
   const [showListView, setShowListView] = useState(false);
   const [showBetaDisclaimer, setShowBetaDisclaimer] = useState(true);
@@ -50,6 +53,7 @@ function MapViewScreen() {
   const [selectedListing, setSelectedListing] = useState<any>(null);
   const [showPinPopup, setShowPinPopup] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
+  const [sellerInfoMap, setSellerInfoMap] = useState<Record<string, any>>({});
 
   
   // Use the existing listings hook
@@ -63,12 +67,68 @@ function MapViewScreen() {
     updateLocation
   } = useListings();
 
-  // Filter listings based on category and update visible listings
+  // Load seller info for all listings
+  useEffect(() => {
+    async function loadSellerInfo() {
+      const uniqueSellerUsernames = Array.from(new Set(listings.map(l => l.username)));
+      if (uniqueSellerUsernames.length === 0) {
+        setSellerInfoMap({});
+        return;
+      }
+      
+      // Check if we already have all the seller info we need
+      const missingUsernames = uniqueSellerUsernames.filter(username => !sellerInfoMap[username]);
+      if (missingUsernames.length === 0) {
+        return; // Already have all the data we need
+      }
+      
+      try {
+        const { data: sellerData, error } = await supabase
+          .from('users')
+          .select('username, name, avatar_url, location_display, verification_status, verified_at, expires_at')
+          .in('username', missingUsernames);
+        
+        if (error) {
+          console.error('Error loading seller info:', error);
+          return;
+        }
+        
+        // Update seller info map with new data
+        setSellerInfoMap(prev => {
+          const newMap = { ...prev };
+          sellerData?.forEach(seller => {
+            newMap[seller.username] = seller;
+          });
+          return newMap;
+        });
+      } catch (error) {
+        console.error('Error loading seller info:', error);
+      }
+    }
+    
+    if (listings.length > 0) {
+      loadSellerInfo();
+    }
+  }, [listings]);
+
+  // Filter listings based on category and verified sellers filter
   useEffect(() => {
     if (listings && listings.length > 0) {
       const filtered = listings.filter((listing: any) => {
-        if (selectedCategory.length === 0) return true; // Show all categories
-        return selectedCategory.includes(listing.category);
+        // Category filter
+        if (selectedCategory.length > 0 && !selectedCategory.includes(listing.category)) {
+          return false;
+        }
+        
+        // Verified sellers filter
+        if (verifiedOnly) {
+          const seller = sellerInfoMap[listing.username];
+          if (!seller || !isUserVerified(seller)) {
+            return false;
+          }
+        }
+        
+        return true;
       });
       
       // Ensure no duplicate IDs in visible listings
@@ -80,7 +140,7 @@ function MapViewScreen() {
     } else {
       setVisibleListings([]);
     }
-  }, [listings, selectedCategory]);
+  }, [listings, selectedCategory, verifiedOnly, sellerInfoMap]);
 
 
 
@@ -115,6 +175,10 @@ function MapViewScreen() {
   const handleSetDistanceFilter = (distance: number | null) => {
     setDistanceFilter(distance);
     setShowLocationFilterModal(false);
+  };
+
+  const handleSelectVerifiedOnly = (verifiedOnly: boolean) => {
+    setVerifiedOnly(verifiedOnly);
   };
 
   const handleMarkerPress = (listing: any) => {
@@ -236,8 +300,10 @@ function MapViewScreen() {
         onClose={() => setShowLocationFilterModal(false)}
         onSelectDistance={handleSetDistanceFilter}
         onSelectCategory={handleSelectCategory}
+        onSelectVerifiedOnly={handleSelectVerifiedOnly}
         selectedDistance={maxDistance}
         selectedCategory={selectedCategory}
+        selectedVerifiedOnly={verifiedOnly}
       />
 
       {/* List View Modal */}

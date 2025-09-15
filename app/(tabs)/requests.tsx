@@ -5,11 +5,9 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  TextInput,
   Alert,
   RefreshControl,
   ActivityIndicator,
-  Dimensions,
   Linking
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,7 +16,6 @@ import {
   Filter, 
   Plus,
   MapPin,
-  Clock
 } from 'lucide-react-native';
 import { useRequests } from '@/hooks/useRequests';
 import { useLocation } from '@/hooks/useLocation';
@@ -38,7 +35,7 @@ import { RequestLocationUtils, LocationData } from '@/utils/requestLocationUtils
 import { supabase } from '@/utils/supabaseClient';
 import { formatRequestForWhatsApp, createWhatsAppURL, createWhatsAppWebURL } from '@/utils/whatsappMessageFormatter';
 
-const { width } = Dimensions.get('window');
+// const { width } = Dimensions.get('window');
 
 export default function RequestsScreen() {
   const router = useRouter();
@@ -52,7 +49,6 @@ export default function RequestsScreen() {
     refresh, 
     createRequest,
     isInitialized,
-    getLastRefreshTime
   } = useRequests();
   const { latitude, longitude, updateLocation } = useLocation();
   const { user } = useAuth();
@@ -239,30 +235,30 @@ export default function RequestsScreen() {
     }
   }, [refresh, latitude, longitude, selectedCategory, loading, refreshing]);
 
-  const handleEditRequest = useCallback((request: Request) => {
-    // Edit functionality not yet implemented
-    Alert.alert(
-      'Edit Request',
-      'Edit functionality will be implemented soon. You can delete and recreate the request for now.',
-      [{ text: 'OK', style: 'default' }]
-    );
-  }, []);
+  // const handleEditRequest = useCallback((request: Request) => {
+  //   // Edit functionality not yet implemented
+  //   Alert.alert(
+  //     'Edit Request',
+  //     'Edit functionality will be implemented soon. You can delete and recreate the request for now.',
+  //     [{ text: 'OK', style: 'default' }]
+  //   );
+  // }, []);
 
-  const handleDeleteRequest = useCallback((requestId: string) => {
-    // Refresh the requests list after deletion (only if not already loading)
-    if (!loading && !refreshing) {
-      refresh(
-        latitude || undefined,
-        longitude || undefined,
-        selectedCategory || undefined,
-        userLocationData ? {
-          location_state: userLocationData.location_state,
-          location_district: userLocationData.location_district,
-          location_name: userLocationData.location_name,
-        } : undefined
-      );
-    }
-  }, [refresh, latitude, longitude, selectedCategory, userLocationData, loading, refreshing]);
+  // const handleDeleteRequest = useCallback((requestId: string) => {
+  //   // Refresh the requests list after deletion (only if not already loading)
+  //   if (!loading && !refreshing) {
+  //     refresh(
+  //       latitude || undefined,
+  //       longitude || undefined,
+  //       selectedCategory || undefined,
+  //       userLocationData ? {
+  //         location_state: userLocationData.location_state,
+  //         location_district: userLocationData.location_district,
+  //         location_name: userLocationData.location_name,
+  //       } : undefined
+  //     );
+  //   }
+  // }, [refresh, latitude, longitude, selectedCategory, userLocationData, loading, refreshing]);
 
   // Debounced refresh function to prevent rapid successive calls
   const debouncedRefresh = useCallback(() => {

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Image, ImageStyle, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { enhancedImageService } from '../utils/enhancedImageService';
+import { Image, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 
 // Define the missing interfaces
 export interface ImageSet {
@@ -89,9 +88,9 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
   resizeMode = 'cover',
   showLoadingIndicator = true,
   retryCount = 2,
-  width,
-  height,
-  useCacheBusting = true,
+  // width,
+  // height,
+  // useCacheBusting = true,
   title = 'Unknown'
 }) => {
   const [imageSet, setImageSet] = useState<ImageSet>({

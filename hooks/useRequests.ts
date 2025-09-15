@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import { Request, RequestCategory, RequestsState } from '@/utils/types';
 import { enhancedCache } from '@/utils/enhancedCacheManager';
+import { createAndDeliverNotification } from '@/utils/notificationService';
 
 const INITIAL_PAGE_SIZE = 12; // Initial load for good UX
 const SUBSEQUENT_PAGE_SIZE = 6; // Subsequent loads for efficiency
@@ -303,6 +304,19 @@ export function useRequests() {
       // Clear all caches to refresh data
       await enhancedCache.invalidateRelated('requests_');
       isInitializedRef.current = false;
+      
+      // TODO: Send notification to seller when request is created
+      // You'll need to determine the seller's user ID based on your business logic
+      // Example: if you have a seller_user_id field in requests
+      // if (data.seller_user_id) {
+      //   await createAndDeliverNotification(
+      //     data.seller_user_id,
+      //     'request_created',
+      //     'New Request Received',
+      //     `You have a new request: ${data.title}`,
+      //     { request_id: data.id }
+      //   );
+      // }
       
       return data;
     } catch (err) {

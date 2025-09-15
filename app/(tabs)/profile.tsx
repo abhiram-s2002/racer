@@ -13,12 +13,12 @@ import {
   Modal,
   TextInput,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, MapPin, Phone, Mail, Settings, LogOut, CreditCard as Edit3, CircleCheck as CheckCircle, Circle as XCircle, ArrowRight, Lock, Package, Shield, Heart } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { signOut } from '@/utils/auth';
-import defaultAvatar from '../../assets/images/icon.png';
 import { supabase } from '@/utils/supabaseClient';
 import * as Location from 'expo-location';
 import MapView, { Marker } from 'react-native-maps';
@@ -33,6 +33,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { getAvatarSource } from '@/utils/avatarUtils';
 import { useCachedProfile } from '@/hooks/useCachedProfile';
+import { parseBio, stringifyBio, validateSocialUrl, formatSocialUrl, BioData } from '@/utils/bioUtils';
 
 
 
@@ -62,6 +63,14 @@ function ProfileScreen() {
     avatar: '',
     isAvailable: true,
     username: '',
+  });
+  const [editBioData, setEditBioData] = useState<BioData>({
+    text: '',
+    socialLinks: {
+      instagram: '',
+      youtube: '',
+      facebook: '',
+    }
   });
   const [mapModalVisible, setMapModalVisible] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState<{latitude: number, longitude: number} | null>(null);
@@ -246,6 +255,11 @@ function ProfileScreen() {
       ...profileData,
       phone: profileData.phone || '' // Keep raw digits for editing
     });
+    
+    // Parse bio data for editing
+    const bioData = parseBio(profileData.bio);
+    setEditBioData(bioData);
+    
     setEditModalVisible(true);
   };
 
@@ -272,6 +286,28 @@ function ProfileScreen() {
         phoneValue = phoneValidation.sanitizedValue || phoneToValidate;
       }
 
+      // Validate social media URLs
+      const socialLinks = editBioData.socialLinks || {};
+      for (const [platform, url] of Object.entries(socialLinks)) {
+        if (url && !validateSocialUrl(url, platform as 'instagram' | 'youtube' | 'facebook')) {
+          Alert.alert('Invalid URL', `Please enter a valid ${platform} URL`);
+          return;
+        }
+      }
+
+      // Format social media URLs
+      const formattedSocialLinks = {
+        instagram: socialLinks.instagram ? formatSocialUrl(socialLinks.instagram, 'instagram') : '',
+        youtube: socialLinks.youtube ? formatSocialUrl(socialLinks.youtube, 'youtube') : '',
+        facebook: socialLinks.facebook ? formatSocialUrl(socialLinks.facebook, 'facebook') : '',
+      };
+
+      // Create final bio data
+      const finalBioData: BioData = {
+        text: editBioData.text,
+        socialLinks: Object.values(formattedSocialLinks).some(url => url) ? formattedSocialLinks : undefined
+      };
+
       const upsertData = {
         id: user.id,
         username: profileData.username, // Always send the existing username
@@ -279,7 +315,7 @@ function ProfileScreen() {
         email: user.email,
         phone: phoneValue, // Use validated phone number
         location_display: editProfile.locationDisplay, // Use location_display for now
-        bio: editProfile.bio,
+        bio: stringifyBio(finalBioData),
         // Don't overwrite avatar_url - keep existing uploaded image
         isAvailable: editProfile.isAvailable,
       };
@@ -501,10 +537,66 @@ function ProfileScreen() {
               <Text style={styles.inputLabel}>Bio</Text>
               <TextInput
                 style={[styles.input, { height: 80 }]}
-                value={editProfile.bio}
-                onChangeText={text => setEditProfile(prev => ({ ...prev, bio: text }))}
+                value={editBioData.text}
+                onChangeText={text => setEditBioData(prev => ({ ...prev, text: text }))}
                 multiline
                 maxLength={200}
+                placeholder="Tell us about yourself..."
+                placeholderTextColor="#94A3B8"
+              />
+              
+              {/* Social Media Links */}
+              <Text style={[styles.inputLabel, { marginTop: 16 }]}>Social Media Links (Optional)</Text>
+              
+              <Text style={styles.socialLabel}>Instagram</Text>
+              <TextInput
+                style={styles.input}
+                value={editBioData.socialLinks?.instagram || ''}
+                onChangeText={text => setEditBioData(prev => ({ 
+                  ...prev, 
+                  socialLinks: { 
+                    ...prev.socialLinks, 
+                    instagram: text 
+                  } 
+                }))}
+                placeholder="https://instagram.com/username"
+                placeholderTextColor="#94A3B8"
+                keyboardType="url"
+                autoCapitalize="none"
+              />
+              
+              <Text style={styles.socialLabel}>YouTube</Text>
+              <TextInput
+                style={styles.input}
+                value={editBioData.socialLinks?.youtube || ''}
+                onChangeText={text => setEditBioData(prev => ({ 
+                  ...prev, 
+                  socialLinks: { 
+                    ...prev.socialLinks, 
+                    youtube: text 
+                  } 
+                }))}
+                placeholder="https://youtube.com/@username"
+                placeholderTextColor="#94A3B8"
+                keyboardType="url"
+                autoCapitalize="none"
+              />
+              
+              <Text style={styles.socialLabel}>Facebook</Text>
+              <TextInput
+                style={styles.input}
+                value={editBioData.socialLinks?.facebook || ''}
+                onChangeText={text => setEditBioData(prev => ({ 
+                  ...prev, 
+                  socialLinks: { 
+                    ...prev.socialLinks, 
+                    facebook: text 
+                  } 
+                }))}
+                placeholder="https://facebook.com/username"
+                placeholderTextColor="#94A3B8"
+                keyboardType="url"
+                autoCapitalize="none"
               />
               <Text style={styles.inputLabel}>Profile Image</Text>
               <View style={{ alignItems: 'center', marginBottom: 16 }}>
@@ -687,7 +779,57 @@ function ProfileScreen() {
         {/* Bio Section */}
         <View style={styles.bioSection}>
           <Text style={styles.sectionTitle}>About</Text>
-          <Text style={styles.bioText}>{profileData.bio || 'No bio set'}</Text>
+          {(() => {
+            const bioData = parseBio(profileData.bio);
+            return (
+              <>
+                <Text style={styles.bioText}>{bioData.text || 'No bio set'}</Text>
+                {bioData.socialLinks && Object.values(bioData.socialLinks).some(url => url) && (
+                  <View style={styles.socialLinksContainer}>
+                    {bioData.socialLinks.instagram && (
+                      <TouchableOpacity 
+                        style={styles.socialLinkButton}
+                        onPress={() => {
+                          const url = bioData.socialLinks!.instagram!;
+                          Linking.openURL(url).catch(err => 
+                            Alert.alert('Error', 'Could not open Instagram link')
+                          );
+                        }}
+                      >
+                        <Text style={styles.socialLinkText}>📷 Instagram</Text>
+                      </TouchableOpacity>
+                    )}
+                    {bioData.socialLinks.youtube && (
+                      <TouchableOpacity 
+                        style={styles.socialLinkButton}
+                        onPress={() => {
+                          const url = bioData.socialLinks!.youtube!;
+                          Linking.openURL(url).catch(err => 
+                            Alert.alert('Error', 'Could not open YouTube link')
+                          );
+                        }}
+                      >
+                        <Text style={styles.socialLinkText}>📺 YouTube</Text>
+                      </TouchableOpacity>
+                    )}
+                    {bioData.socialLinks.facebook && (
+                      <TouchableOpacity 
+                        style={styles.socialLinkButton}
+                        onPress={() => {
+                          const url = bioData.socialLinks!.facebook!;
+                          Linking.openURL(url).catch(err => 
+                            Alert.alert('Error', 'Could not open Facebook link')
+                          );
+                        }}
+                      >
+                        <Text style={styles.socialLinkText}>👥 Facebook</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+              </>
+            );
+          })()}
         </View>
 
         {/* Contact Info */}
@@ -1300,6 +1442,32 @@ const styles = StyleSheet.create({
   },
   cameraButtonDisabled: {
     backgroundColor: '#94A3B8',
+  },
+  socialLabel: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  socialLinksContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 12,
+    gap: 8,
+  },
+  socialLinkButton: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  socialLinkText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#22C55E',
   },
 });
 

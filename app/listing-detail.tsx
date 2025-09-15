@@ -10,11 +10,11 @@ import {
   Alert,
   Linking,
   TextInput,
-  Modal,
+  Share,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { MoreVertical, Phone, MessageCircle, X } from 'lucide-react-native';
+import { MoreVertical, Phone, MessageCircle, X, Heart, Share2, Flag, EyeOff, UserX } from 'lucide-react-native';
 import { supabase } from '@/utils/supabaseClient';
 import { imageCache } from '@/utils/imageCache';
 import { reportListing, hideListing, blockUser } from '@/utils/contentManagement';
@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { createPing, checkExistingPing } from '@/utils/activitySupabase';
 import { usePingLimits } from '@/hooks/usePingLimits';
 import { useOfflineQueue } from '@/hooks/useOfflineQueue';
+import { useFavorites } from '@/hooks/useFavorites';
 import { incrementViewCount } from '@/utils/listingMetrics';
 import { getPhoneWithPermission } from '@/utils/phoneSharingUtils';
 
@@ -67,6 +68,9 @@ function ListingDetailScreen() {
   const [pingMessage, setPingMessage] = useState('Hi, is this still available?');
   const [existingPing, setExistingPing] = useState(false);
   const [isPinging, setIsPinging] = useState(false);
+  
+  // Options modal state
+  const [showOptionsModal, setShowOptionsModal] = useState(false);
 
   // Memoized values to prevent unnecessary re-renders
   const listingId = useMemo(() => id as string, [id]);
@@ -75,6 +79,16 @@ function ListingDetailScreen() {
   const { user: currentUser } = useAuth();
   const { isOnline } = useOfflineQueue();
   const { limitInfo } = usePingLimits(currentUser?.username || null);
+  
+  // Favorites functionality
+  const { 
+    favorites, 
+    loading: favoritesLoading, 
+    toggleFavoriteStatus, 
+    refreshFavoritesStatus, 
+    isFavorited,
+    setFavorites
+  } = useFavorites();
   
   // Check for existing ping
   const checkExistingPingStatus = useCallback(async () => {
@@ -257,6 +271,13 @@ function ListingDetailScreen() {
     }
   }, [listing, currentUser, checkExistingPingStatus]);
 
+  // Load favorites status when listing changes
+  useEffect(() => {
+    if (listing?.id) {
+      refreshFavoritesStatus([listing.id]);
+    }
+  }, [listing?.id, refreshFavoritesStatus]);
+
   // Handle navigation to other listings
   const handleListingPress = useCallback((listingId: string) => {
     router.push(`/listing-detail?id=${listingId}`);
@@ -384,34 +405,114 @@ function ListingDetailScreen() {
     }
   }, [user, listing, router]);
 
+  // Handle share listing
+  const handleShareListing = useCallback(async () => {
+    if (!listing) return;
+
+    try {
+      // Generate deep link for the listing
+      const deepLink = `geomart://listing/${listing.id}`;
+      
+      // Create share message with listing details
+      const shareMessage = `Check out this ${listing.category} listing on GeoMart!\n\n` +
+        `"${listing.title}"\n` +
+        `Price: ${listing.price} ${listing.price_unit}\n` +
+        `Seller: ${listing.username}\n\n` +
+        `View it here: ${deepLink}\n\n` +
+        `Download GeoMart: https://play.google.com/store/apps/details?id=com.geomart.app`;
+
+      await Share.share({
+        message: shareMessage,
+        url: deepLink, // This will be used by apps that support URL sharing
+        title: `Share ${listing.title} - GeoMart`,
+      });
+    } catch (error) {
+      console.error('Error sharing listing:', error);
+      Alert.alert('Error', 'Failed to share listing. Please try again.');
+    }
+  }, [listing]);
+
+  // Handle toggle favorite
+  const handleToggleFavorite = useCallback(async () => {
+    if (!listing) return;
+
+    const isCurrentlyFavorited = isFavorited(listing.id);
+    const newFavoriteState = !isCurrentlyFavorited;
+    
+    // Immediate visual feedback - change color instantly
+    setFavorites(prev => ({
+      ...prev,
+      [listing.id]: newFavoriteState
+    }));
+    
+    // Show confirmation dialog after a short delay to see the color change
+    setTimeout(() => {
+      Alert.alert(
+        isCurrentlyFavorited ? 'Remove from Favorites' : 'Add to Favorites',
+        isCurrentlyFavorited 
+          ? 'Are you sure you want to remove this listing from your favorites?' 
+          : 'Add this listing to your favorites?',
+        [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+            onPress: () => {
+              // Revert the visual change if cancelled
+              setFavorites(prev => ({
+                ...prev,
+                [listing.id]: isCurrentlyFavorited
+              }));
+            }
+          },
+          {
+            text: isCurrentlyFavorited ? 'Remove' : 'Add',
+            onPress: async () => {
+              // Perform the actual database operation
+              try {
+                await toggleFavoriteStatus(listing.id, listing.username);
+              } catch (error) {
+                // Revert on error
+                setFavorites(prev => ({
+                  ...prev,
+                  [listing.id]: isCurrentlyFavorited
+                }));
+                console.error('Error toggling favorite:', error);
+                Alert.alert('Error', 'Failed to update favorites. Please try again.');
+              }
+            }
+          }
+        ]
+      );
+    }, 100);
+  }, [listing, isFavorited, setFavorites, toggleFavoriteStatus]);
+
   // Show options menu
   const showOptionsMenu = useCallback(() => {
-    Alert.alert(
-      'Listing Options',
-      `What would you like to do with this listing?`,
-      [
-        {
-          text: 'Report Listing',
-          style: 'destructive',
-          onPress: handleReport
-        },
-        {
-          text: 'Hide Listing',
-          onPress: handleHide
-        },
-        {
-          text: `Block ${listing?.username}`,
-          style: 'destructive',
-          onPress: handleBlock
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        }
-      ],
-      { cancelable: true }
-    );
-  }, [handleReport, handleHide, handleBlock, listing?.username]);
+    setShowOptionsModal(true);
+  }, []);
+
+  // Handle option selection
+  const handleOptionSelect = useCallback((option: string) => {
+    setShowOptionsModal(false);
+    
+    switch (option) {
+      case 'share':
+        handleShareListing();
+        break;
+      case 'favorite':
+        handleToggleFavorite();
+        break;
+      case 'report':
+        handleReport();
+        break;
+      case 'hide':
+        handleHide();
+        break;
+      case 'block':
+        handleBlock();
+        break;
+    }
+  }, [handleShareListing, handleToggleFavorite, handleReport, handleHide, handleBlock]);
 
   // Handle phone call
   const handleCall = useCallback(() => {
@@ -627,18 +728,6 @@ function ListingDetailScreen() {
             onListingPress={handleListingPress}
             sellerName={sellerInfo?.name || 'Seller'}
             sellerUsername={listing?.username}
-            onReport={() => {
-              // Refresh the page to hide reported item
-              router.replace(`/listing-detail?id=${listing?.id}`);
-            }}
-            onHide={() => {
-              // Refresh the page to hide the item
-              router.replace(`/listing-detail?id=${listing?.id}`);
-            }}
-            onBlock={() => {
-              // Navigate back to home as user is blocked
-              router.back();
-            }}
           />
         )}
       </ScrollView>
@@ -741,6 +830,79 @@ function ListingDetailScreen() {
                 ]}>
                   {isPinging ? 'Sending...' : 'Send Ping'}
                 </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
+      
+      {/* Options Modal */}
+      {showOptionsModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.optionsModal}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Listing Options</Text>
+              <TouchableOpacity onPress={() => setShowOptionsModal(false)}>
+                <X size={24} color="#64748B" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.optionsList}>
+              <TouchableOpacity
+                style={styles.optionItem}
+                onPress={() => handleOptionSelect('share')}
+              >
+                <Share2 size={20} color="#22C55E" />
+                <Text style={styles.optionText}>Share Listing</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.optionItem}
+                onPress={() => handleOptionSelect('favorite')}
+              >
+                <Heart 
+                  size={20} 
+                  color={listing ? (isFavorited(listing.id) ? "#EF4444" : "#64748B") : "#64748B"} 
+                  fill={listing ? (isFavorited(listing.id) ? "#EF4444" : "transparent") : "transparent"}
+                />
+                <Text style={styles.optionText}>
+                  {listing ? (isFavorited(listing.id) ? 'Remove from Favorites' : 'Add to Favorites') : 'Add to Favorites'}
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.optionItem}
+                onPress={() => handleOptionSelect('report')}
+              >
+                <Flag size={20} color="#64748B" />
+                <Text style={styles.optionText}>Report Listing</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.optionItem}
+                onPress={() => handleOptionSelect('hide')}
+              >
+                <EyeOff size={20} color="#64748B" />
+                <Text style={styles.optionText}>Hide Listing</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.optionItem}
+                onPress={() => handleOptionSelect('block')}
+              >
+                <UserX size={20} color="#64748B" />
+                <Text style={styles.optionText}>
+                  Block {listing?.username}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => setShowOptionsModal(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -934,10 +1096,8 @@ const styles = StyleSheet.create({
   },
   modalActions: {
     flexDirection: 'row',
-    padding: 20,
+    padding: 16,
     gap: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
   },
   cancelButton: {
     flex: 1,
@@ -965,6 +1125,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Medium',
     color: '#FFFFFF',
+  },
+  // Options Modal Styles
+  optionsModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    margin: 20,
+    maxHeight: '80%',
+    width: '90%',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  optionsList: {
+    paddingVertical: 4,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  optionText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#1E293B',
+    flex: 1,
   },
 });
 

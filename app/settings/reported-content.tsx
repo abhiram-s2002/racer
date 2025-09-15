@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Flag, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react-native';
+import { ArrowLeft, Flag, CheckCircle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
 import { withErrorBoundary } from '@/components/ErrorBoundary';

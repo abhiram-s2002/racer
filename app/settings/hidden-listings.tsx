@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, EyeOff, Eye, Trash2, Clock } from 'lucide-react-native';
+import { ArrowLeft, EyeOff, Eye } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
 import { withErrorBoundary } from '@/components/ErrorBoundary';

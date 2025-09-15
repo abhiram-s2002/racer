@@ -19,13 +19,11 @@ import {
   Clock, 
   Award,
   Info,
-  ExternalLink
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useSubscription } from '@/hooks/useSubscription';
 import { SUBSCRIPTION_PRODUCTS } from '@/utils/subscriptionService';
 import { useCachedProfile } from '@/hooks/useCachedProfile';
-import { isUserVerified } from '@/utils/verificationUtils';
 import VerificationBadge from '@/components/VerificationBadge';
 import { useRewards } from '@/hooks/useRewards';
 import { useAuth } from '@/hooks/useAuth';
@@ -43,7 +41,7 @@ const VerificationPage = () => {
     restorePurchases,
     subscriptions,
     isVerified,
-    verificationStatus,
+    // verificationStatus,
     verificationExpiresAt,
     refreshVerificationStatus,
   } = useSubscription();
@@ -52,7 +50,7 @@ const VerificationPage = () => {
     userRewards,
     purchaseVerificationWithOmniTokens,
     checkVerificationAffordability,
-    loading: rewardsLoading,
+    // loading: rewardsLoading,
   } = useRewards(profileData?.username || '');
 
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('monthly');

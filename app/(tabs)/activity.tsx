@@ -7,16 +7,14 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  BackHandler,
   Platform,
   Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MessageCircle, Send, Trash2, Check, X, MapPin, Star } from 'lucide-react-native';
 import RatingModal from '@/components/RatingModal';
-import { Activity, deleteActivity } from '@/utils/activitySupabase';
+import { Activity } from '@/utils/activitySupabase';
 import { supabase } from '@/utils/supabaseClient';
-import { useIsFocused } from '@react-navigation/native';
 import { useCachedActivities } from '@/hooks/useCachedActivities';
 import { getAvatarSource } from '@/utils/avatarUtils';
 import RatingService from '@/utils/ratingService';
@@ -56,7 +54,7 @@ function ActivityScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
   const [refreshing, setRefreshing] = useState(false);
-  const isFocused = useIsFocused();
+  // const isFocused = useIsFocused();
   const [username, setUsername] = useState<string | null>(null);
   
   // New state for enhanced organization
@@ -165,29 +163,29 @@ function ActivityScreen() {
     }
   };
 
-  const checkIfUserCanRate = async (username: string, pingId: string) => {
-    if (!currentUsername) return false;
-    
-    try {
-      // Check if user can rate this person
-      const eligibility = await RatingService.canRateUser(currentUsername, username);
-      return eligibility.can_rate;
-    } catch (error) {
-      return false;
-    }
-  };
+  // const checkIfUserCanRate = async (username: string, pingId: string) => {
+  //   if (!currentUsername) return false;
+  //   
+  //   try {
+  //     // Check if user can rate this person
+  //     const eligibility = await RatingService.canRateUser(currentUsername, username);
+  //     return eligibility.can_rate;
+  //   } catch (error) {
+  //     return false;
+  //   }
+  // };
 
-  const checkIfUserHasRated = async (pingId: string) => {
-    if (!currentUsername) return false;
-    
-    try {
-      // Check if user has already rated this specific ping
-      const existingRating = await RatingService.getRatingByPingId(pingId, currentUsername);
-      return existingRating !== null;
-    } catch (error) {
-      return false;
-    }
-  };
+  // const checkIfUserHasRated = async (pingId: string) => {
+  //   if (!currentUsername) return false;
+  //   
+  //   try {
+  //     // Check if user has already rated this specific ping
+  //     const existingRating = await RatingService.getRatingByPingId(pingId, currentUsername);
+  //     return existingRating !== null;
+  //   } catch (error) {
+  //     return false;
+  //   }
+  // };
 
 
 
@@ -597,33 +595,33 @@ function ActivityScreen() {
   );
   };
 
-  const getRatingRole = (pingId: string) => {
-    const ping = sentPings.find(p => p.id === pingId) || receivedPings.find(p => p.id === pingId);
-    if (!ping) return 'User';
+  // const getRatingRole = (pingId: string) => {
+  //   const ping = sentPings.find(p => p.id === pingId) || receivedPings.find(p => p.id === pingId);
+  //   if (!ping) return 'User';
 
-    if (ping.type === 'sent_ping') {
-      // Current user sent the ping (is buyer), so they're rating the seller
-      return 'Seller';
-    } else {
-      // Current user received the ping (is seller), so they're rating the buyer
-      return 'Buyer';
-    }
-  };
+  //   if (ping.type === 'sent_ping') {
+  //     // Current user sent the ping (is buyer), so they're rating the seller
+  //     return 'Seller';
+  //   } else {
+  //     // Current user received the ping (is seller), so they're rating the buyer
+  //     return 'Buyer';
+  //   }
+  // };
 
-  const formatCategory = (category: string) => {
-    switch (category) {
-      case 'overall':
-        return 'Overall';
-      case 'communication':
-        return 'Communication';
-      case 'responsiveness':
-        return 'Responsiveness';
-      case 'helpfulness':
-        return 'Helpfulness';
-      default:
-        return category.charAt(0).toUpperCase() + category.slice(1);
-    }
-  };
+  // const formatCategory = (category: string) => {
+  //   switch (category) {
+  //     case 'overall':
+  //       return 'Overall';
+  //     case 'communication':
+  //       return 'Communication';
+  //     case 'responsiveness':
+  //       return 'Responsiveness';
+  //     case 'helpfulness':
+  //       return 'Helpfulness';
+  //     default:
+  //       return category.charAt(0).toUpperCase() + category.slice(1);
+  //   }
+  // };
 
 
   return (

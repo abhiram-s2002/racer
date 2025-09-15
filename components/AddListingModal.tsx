@@ -1,5 +1,4 @@
-/* global setTimeout */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,16 +8,10 @@ import {
   StyleSheet,
   Alert,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform as RNPlatform,
   Image,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { 
   Upload,
-  Check,
   X,
   MapPin,
   ShoppingCart,
@@ -109,7 +102,7 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pickedImageUri, setPickedImageUri] = useState<string | null>(null);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  // const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   
   // Location hook for capturing listing location
   const location = useLocation();
@@ -196,15 +189,15 @@ function AddListingModal({ visible, onClose, preSelectedCategory, editListing, s
   };
 
 
-  const getDefaultListingImage = async () => {
-    // Fetch seller's avatar from Supabase users table
-    const { data: user } = await supabase
-      .from('users')
-      .select('avatar_url')
-      .eq('username', sellerUsername)
-      .single();
-    return user?.avatar_url || 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=400';
-  };
+  // const getDefaultListingImage = async () => {
+  //   // Fetch seller's avatar from Supabase users table
+  //   const { data: user } = await supabase
+  //     .from('users')
+  //     .select('avatar_url')
+  //     .eq('username', sellerUsername)
+  //     .single();
+  //   return user?.avatar_url || 'https://images.pexels.com/photos/1130626/pexels-photo-1130626.jpeg?auto=compress&cs=tinysrgb&w=400';
+  // };
 
   // Image picker handler
   const handlePickImage = async () => {
