@@ -235,30 +235,30 @@ export default function RequestsScreen() {
     }
   }, [refresh, latitude, longitude, selectedCategory, loading, refreshing]);
 
-  // const handleEditRequest = useCallback((request: Request) => {
-  //   // Edit functionality not yet implemented
-  //   Alert.alert(
-  //     'Edit Request',
-  //     'Edit functionality will be implemented soon. You can delete and recreate the request for now.',
-  //     [{ text: 'OK', style: 'default' }]
-  //   );
-  // }, []);
+  const handleEditRequest = useCallback((request: Request) => {
+    // Edit functionality not yet implemented
+    Alert.alert(
+      'Edit Request',
+      'Edit functionality will be implemented soon. You can delete and recreate the request for now.',
+      [{ text: 'OK', style: 'default' }]
+    );
+  }, []);
 
-  // const handleDeleteRequest = useCallback((requestId: string) => {
-  //   // Refresh the requests list after deletion (only if not already loading)
-  //   if (!loading && !refreshing) {
-  //     refresh(
-  //       latitude || undefined,
-  //       longitude || undefined,
-  //       selectedCategory || undefined,
-  //       userLocationData ? {
-  //         location_state: userLocationData.location_state,
-  //         location_district: userLocationData.location_district,
-  //         location_name: userLocationData.location_name,
-  //       } : undefined
-  //     );
-  //   }
-  // }, [refresh, latitude, longitude, selectedCategory, userLocationData, loading, refreshing]);
+  const handleDeleteRequest = useCallback((requestId: string) => {
+    // Refresh the requests list after deletion (only if not already loading)
+    if (!loading && !refreshing) {
+      refresh(
+        latitude || undefined,
+        longitude || undefined,
+        selectedCategory || undefined,
+        userLocationData ? {
+          location_state: userLocationData.location_state,
+          location_district: userLocationData.location_district,
+          location_name: userLocationData.location_name,
+        } : undefined
+      );
+    }
+  }, [refresh, latitude, longitude, selectedCategory, userLocationData, loading, refreshing]);
 
   // Debounced refresh function to prevent rapid successive calls
   const debouncedRefresh = useCallback(() => {
