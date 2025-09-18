@@ -7,16 +7,20 @@ import {
   Modal,
   ScrollView,
 } from 'react-native';
-import { X, MapPin, Shield } from 'lucide-react-native';
+import { X, MapPin, Shield, Clock, Navigation } from 'lucide-react-native';
 import Slider from '@react-native-community/slider';
+
+type SortOption = 'location' | 'newest';
 
 interface DistanceFilterModalProps {
   visible: boolean;
   onClose: () => void;
   selectedDistance: number | null;
   selectedVerifiedOnly?: boolean;
+  selectedSortOption?: SortOption;
   onSelectDistance: (distance: number | null) => void;
   onSelectVerifiedOnly?: (verifiedOnly: boolean) => void;
+  onSelectSortOption?: (sortOption: SortOption) => void;
 }
 
 export default function DistanceFilterModal({ 
@@ -24,8 +28,10 @@ export default function DistanceFilterModal({
   onClose, 
   selectedDistance, 
   selectedVerifiedOnly = false,
+  selectedSortOption = 'location',
   onSelectDistance,
-  onSelectVerifiedOnly
+  onSelectVerifiedOnly,
+  onSelectSortOption
 }: DistanceFilterModalProps) {
   
   // Local state for slider value
@@ -98,7 +104,64 @@ export default function DistanceFilterModal({
 
         {/* Content */}
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <Text style={styles.subtitle}>Show listings within:</Text>
+          {/* Sort Options Section */}
+          {onSelectSortOption && (
+            <View style={styles.sortSection}>
+              <Text style={styles.sectionTitle}>Sort by:</Text>
+              <View style={styles.sortOptions}>
+                <TouchableOpacity
+                  style={[
+                    styles.sortOption,
+                    selectedSortOption === 'location' && styles.selectedSortOption
+                  ]}
+                  onPress={() => onSelectSortOption('location')}
+                >
+                  <View style={styles.sortOptionContent}>
+                    <Navigation size={20} color={selectedSortOption === 'location' ? '#10B981' : '#64748B'} />
+                    <Text style={[
+                      styles.sortOptionText,
+                      selectedSortOption === 'location' && styles.selectedSortOptionText
+                    ]}>
+                      Location
+                    </Text>
+                    {selectedSortOption === 'location' && (
+                      <View style={styles.checkmarkContainer}>
+                        <Text style={styles.checkmarkText}>✓</Text>
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.sortOption,
+                    selectedSortOption === 'newest' && styles.selectedSortOption
+                  ]}
+                  onPress={() => onSelectSortOption('newest')}
+                >
+                  <View style={styles.sortOptionContent}>
+                    <Clock size={20} color={selectedSortOption === 'newest' ? '#10B981' : '#64748B'} />
+                    <Text style={[
+                      styles.sortOptionText,
+                      selectedSortOption === 'newest' && styles.selectedSortOptionText
+                    ]}>
+                      Newest
+                    </Text>
+                    {selectedSortOption === 'newest' && (
+                      <View style={styles.checkmarkContainer}>
+                        <Text style={styles.checkmarkText}>✓</Text>
+                      </View>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          {/* Distance Filter Section - Only show when sorting by location */}
+          {(!onSelectSortOption || selectedSortOption === 'location') && (
+            <>
+              <Text style={styles.subtitle}>Show listings within:</Text>
           
           {/* Any Distance Option */}
           <TouchableOpacity
@@ -227,12 +290,23 @@ export default function DistanceFilterModal({
             </View>
           )}
 
-          {/* Info text */}
-          <View style={styles.infoContainer}>
-            <Text style={styles.infoText}>
-              Distance is calculated from your current location. Make sure location access is enabled for accurate results.
-            </Text>
-          </View>
+              {/* Info text */}
+              <View style={styles.infoContainer}>
+                <Text style={styles.infoText}>
+                  Distance is calculated from your current location. Make sure location access is enabled for accurate results.
+                </Text>
+              </View>
+            </>
+          )}
+
+          {/* Info text for newest sorting */}
+          {onSelectSortOption && selectedSortOption === 'newest' && (
+            <View style={styles.infoContainer}>
+              <Text style={styles.infoText}>
+                Showing newest listings first. Location-based filtering is not available when sorting by newest.
+              </Text>
+            </View>
+          )}
         </ScrollView>
       </View>
     </Modal>
@@ -471,6 +545,41 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   selectedVerifiedOptionText: {
+    color: '#10B981',
+    fontWeight: '600',
+  },
+  sortSection: {
+    marginBottom: 24,
+  },
+  sortOptions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  sortOption: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  selectedSortOption: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#10B981',
+  },
+  sortOptionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sortOptionText: {
+    fontSize: 16,
+    color: '#1E293B',
+    fontWeight: '500',
+    marginLeft: 8,
+    flex: 1,
+  },
+  selectedSortOptionText: {
     color: '#10B981',
     fontWeight: '600',
   },

@@ -81,6 +81,7 @@ function HomeScreen() {
   const router = useRouter();
   const [showDistanceFilterModal, setShowDistanceFilterModal] = useState(false);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [sortOption, setSortOption] = useState<'location' | 'newest'>('location');
   const [sellerInfoMap, setSellerInfoMap] = useState<Record<string, any>>({});
   const [username, setUsername] = useState<string | null>(null);
   const [userRatings, setUserRatings] = useState<Record<string, { rating: string; reviewCount: number } | null>>({});
@@ -108,6 +109,8 @@ function HomeScreen() {
     setItemTypeFilter,
     selectedCategory: hookCategory,
     setCategoryFilter,
+    sortOption: hookSortOption,
+    setSortOptionFilter,
     locationAvailable,
     updateLocation
   } = useMarketplaceItems();
@@ -356,6 +359,24 @@ function HomeScreen() {
 
   const handleSelectVerifiedOnly = (verifiedOnly: boolean) => {
     setVerifiedOnly(verifiedOnly);
+  };
+
+  const handleSelectSortOption = (option: 'location' | 'newest') => {
+    setSortOption(option);
+    setSortOptionFilter(option);
+    
+    if (option === 'newest') {
+      // When sorting by newest, disable distance sorting and clear distance filter
+      if (sortByDistanceState) {
+        toggleDistanceSort();
+      }
+      setDistanceFilter(null);
+    } else if (option === 'location') {
+      // When sorting by location, enable distance sorting if location is available
+      if (locationAvailable && !sortByDistanceState) {
+        toggleDistanceSort();
+      }
+    }
   };
 
   // Map view handlers
@@ -734,8 +755,10 @@ function HomeScreen() {
         onClose={() => setShowDistanceFilterModal(false)}
         selectedDistance={maxDistance}
         selectedVerifiedOnly={verifiedOnly}
+        selectedSortOption={hookSortOption}
         onSelectDistance={handleSelectDistance}
         onSelectVerifiedOnly={handleSelectVerifiedOnly}
+        onSelectSortOption={handleSelectSortOption}
       />
 
 
@@ -760,11 +783,11 @@ function HomeScreen() {
         <TouchableOpacity 
           style={[
             styles.filterButton, 
-            (sortByDistanceState || maxDistance !== null) && { backgroundColor: '#DCFCE7' }
+            (sortByDistanceState || maxDistance !== null || hookSortOption !== 'location') && { backgroundColor: '#DCFCE7' }
           ]}
           onPress={handleToggleSortByDistance}
         >
-          <Filter size={20} color={(sortByDistanceState || maxDistance !== null) ? '#10B981' : '#64748B'} />
+          <Filter size={20} color={(sortByDistanceState || maxDistance !== null || hookSortOption !== 'location') ? '#10B981' : '#64748B'} />
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.mapButton, isMapView && styles.activeMapButton]}

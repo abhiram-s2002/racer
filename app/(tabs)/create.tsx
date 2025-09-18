@@ -313,26 +313,46 @@ export default function CreateScreen() {
     
     for (const uri of imageUris) {
       try {
-        const response = await fetch(uri);
-        const blob = await response.blob();
-        
         const fileExt = uri.split('.').pop()?.toLowerCase() || 'jpg';
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `${formData.itemType}s/${fileName}`;
 
-        const { data, error } = await supabase.storage
-          .from('listings')
-          .upload(filePath, blob, {
-            contentType: `image/${fileExt}`,
-            upsert: false
-          });
+        // Normalize MIME type - jpg should be jpeg
+        const mimeType = fileExt === 'jpg' ? 'image/jpeg' : `image/${fileExt}`;
 
-        if (error) throw error;
+        // Create FormData for proper file upload in React Native
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', {
+          uri: uri,
+          name: fileName,
+          type: mimeType,
+        } as any);
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('listings')
-          .getPublicUrl(filePath);
+        // Get current session for authentication
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+          throw new Error('No active session');
+        }
 
+        // Upload using direct fetch to Supabase storage API
+        const response = await fetch(
+          `https://vroanjodovwsyydxrmma.supabase.co/storage/v1/object/listings/${filePath}`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`,
+            },
+            body: uploadFormData,
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Upload failed: ${errorText}`);
+        }
+
+        // Get public URL
+        const publicUrl = `https://vroanjodovwsyydxrmma.supabase.co/storage/v1/object/public/listings/${filePath}`;
         uploadedUrls.push(publicUrl);
       } catch (error) {
         console.error('Error uploading image:', error);

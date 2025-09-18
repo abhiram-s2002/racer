@@ -41,6 +41,7 @@ export function useMarketplaceItems() {
   const [selectedCategory, setSelectedCategory] = useState<Category | 'all'>('all');
   const [verifiedOnly, setVerifiedOnly] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [sortOption, setSortOption] = useState<'location' | 'newest'>('location');
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 250);
   
   // In-memory cache for quick repeats within the same session
@@ -58,8 +59,8 @@ export function useMarketplaceItems() {
     const roundedLat = userLat ? Math.round(userLat * 100) / 100 : 'no-lat';
     const roundedLon = userLon ? Math.round(userLon * 100) / 100 : 'no-lon';
     const sq = searchQuery ? searchQuery.trim().toLowerCase() : 'no-search';
-    return `${CACHE_NAMESPACE}:${pageNumber}:${roundedLat}:${roundedLon}:${sortByDistance}:${maxDistance}:${itemType}:${selectedCategory}:${verifiedOnly}:${sq}`;
-  }, [sortByDistance, maxDistance, itemType, selectedCategory, verifiedOnly, debouncedSearchQuery]);
+    return `${CACHE_NAMESPACE}:${pageNumber}:${roundedLat}:${roundedLon}:${sortByDistance}:${maxDistance}:${itemType}:${selectedCategory}:${verifiedOnly}:${sortOption}:${sq}`;
+  }, [sortByDistance, maxDistance, itemType, selectedCategory, verifiedOnly, sortOption, debouncedSearchQuery]);
 
   // Fetch items from Supabase (both listings and requests)
   const fetchItems = useCallback(async (pageNumber = 1, userLat?: number, userLon?: number) => {
@@ -83,22 +84,24 @@ export function useMarketplaceItems() {
 
       // Use unified function to fetch both listings and requests
       if (userLat && userLon) {
-        const isKeysetMode = !sortByDistance; // keyset only when sorting by date
+        // Determine sorting based on sort option
+        const shouldSortByDistance = sortOption === 'location' && (sortByDistance || (userLat && userLon));
+        const isKeysetMode = !shouldSortByDistance; // keyset only when sorting by date
         const lastItem = (pageNumber > 1 && isKeysetMode && items.length > 0)
           ? items[items.length - 1]
           : undefined;
         const rpcParams = {
           user_lat: userLat,
           user_lng: userLon,
-          max_distance_km: maxDistance === null ? 75 : maxDistance,
+          max_distance_km: sortOption === 'location' ? (maxDistance === null ? 75 : maxDistance) : null,
           item_type_filter: itemType === 'all' ? null : itemType,
           category_filter: selectedCategory === 'all' ? null : selectedCategory,
           verified_only: verifiedOnly,
           min_price: null,
           max_price: null,
           search_query: debouncedSearchQuery ? debouncedSearchQuery : null,
-          sort_by: sortByDistance ? 'distance' : 'date',
-          sort_order: sortByDistance ? 'asc' : 'desc',
+          sort_by: shouldSortByDistance ? 'distance' : 'date',
+          sort_order: shouldSortByDistance ? 'asc' : 'desc',
           limit_count: pageSize,
           offset_count: isKeysetMode ? 0 : offsetCount,
           last_created_at: isKeysetMode ? (lastItem?.created_at ?? null) : null,
@@ -241,6 +244,13 @@ export function useMarketplaceItems() {
       return [];
     }
   }, [sortByDistance, maxDistance, getCacheKey, itemType, selectedCategory]);
+
+  // Auto-enable distance sorting when location becomes available
+  useEffect(() => {
+    if (location.latitude && location.longitude && !sortByDistance) {
+      setSortByDistance(true);
+    }
+  }, [location.latitude, location.longitude, sortByDistance]);
 
   // Initial load of items
   useEffect(() => {
@@ -388,6 +398,15 @@ export function useMarketplaceItems() {
     }
   }, [items.length]);
 
+  // Set sort option
+  const setSortOptionFilter = useCallback((option: 'location' | 'newest') => {
+    setSortOption(option);
+    setPage(1);
+    if (items.length > 0) {
+      cacheRef.current.clear();
+    }
+  }, [items.length]);
+
   return {
     items,
     loading,
@@ -404,6 +423,8 @@ export function useMarketplaceItems() {
     setCategoryFilter,
     setVerifiedOnlyFilter,
     setSearchQueryFilter,
+    sortOption,
+    setSortOptionFilter,
     locationAvailable: !!(location.latitude && location.longitude),
     locationLoading: location.loading,
     locationError: location.error,
