@@ -6,7 +6,7 @@ import {
   Image,
   TouchableOpacity,
 } from 'react-native';
-import { Package, Calendar, MapPin, Eye, MessageCircle, Clock } from 'lucide-react-native';
+import { Package, Calendar, MapPin, Eye, MessageCircle, Clock, Truck, Hand, ChevronRight } from 'lucide-react-native';
 import { LocationUtils } from '@/utils/locationUtils';
 import HomeRatingDisplay from './HomeRatingDisplay';
 import VerificationBadge from './VerificationBadge';
@@ -217,12 +217,20 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
 
       {(pickupAvailable || deliveryAvailable) && (
         <View style={styles.availabilitySection}>
-          {pickupAvailable && (
-            <Text style={styles.detailText}>Pickup: Available</Text>
-          )}
-          {deliveryAvailable && (
-            <Text style={styles.detailText}>Delivery: Available</Text>
-          )}
+          <View style={styles.availabilityRow}>
+            {pickupAvailable && (
+              <View style={styles.availabilityItem}>
+                <Hand size={16} color="#6B7280" />
+                <Text style={styles.availabilityText}>Pickup Available</Text>
+              </View>
+            )}
+            {deliveryAvailable && (
+              <View style={styles.availabilityItem}>
+                <Truck size={16} color="#6B7280" />
+                <Text style={styles.availabilityText}>Delivery Available</Text>
+              </View>
+            )}
+          </View>
         </View>
       )}
 
@@ -272,40 +280,45 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
       
 
       {/* Seller Information - Compact */}
-      <TouchableOpacity 
-        style={styles.sellerSection}
-        onPress={onSellerPress}
-        activeOpacity={onSellerPress ? 0.7 : 1}
-      >
-        <View style={styles.sellerInfo}>
-          <Image
-            source={{ 
-              uri: seller.avatar_url || 'https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=400'
-            }}
-            style={styles.avatar}
-            defaultSource={{ uri: 'https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=400' }}
-          />
-          <View style={styles.sellerDetails}>
-            <View style={styles.sellerNameRow}>
-              <Text style={styles.sellerName}>
-                {seller.name || `Unknown ${itemType === 'request' ? 'Requester' : 'Seller'}`}
-              </Text>
-              {isUserVerified(seller) && <VerificationBadge size="small" />}
-            </View>
-            <View style={styles.sellerMeta}>
-              <View style={styles.locationRow}>
-                <MapPin size={12} color="#6B7280" />
-                <Text style={styles.locationText}>{formattedLocation}</Text>
+      <View style={styles.sellerSection}>
+        <TouchableOpacity 
+          style={styles.sellerInfoContainer}
+          onPress={onSellerPress}
+          activeOpacity={onSellerPress ? 0.7 : 1}
+        >
+          <View style={styles.sellerInfo}>
+            <Image
+              source={{ 
+                uri: seller.avatar_url || 'https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=400'
+              }}
+              style={styles.avatar}
+              defaultSource={{ uri: 'https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=400' }}
+            />
+            <View style={styles.sellerDetails}>
+              <View style={styles.sellerNameRow}>
+                <Text style={styles.sellerName}>
+                  {seller.name || `Unknown ${itemType === 'request' ? 'Requester' : 'Seller'}`}
+                </Text>
+                {isUserVerified(seller) && <VerificationBadge size="small" />}
+              </View>
+              <View style={styles.sellerMeta}>
+                <View style={styles.locationRow}>
+                  <MapPin size={12} color="#6B7280" />
+                  <Text style={styles.locationText}>{formattedLocation}</Text>
+                </View>
               </View>
             </View>
+            {onSellerPress && (
+              <ChevronRight size={20} color="#9CA3AF" style={styles.chevronIcon} />
+            )}
           </View>
-        </View>
-        
-        {truncatedBio && (
-          <Text style={styles.bioText} numberOfLines={2}>
-            {truncatedBio}
-          </Text>
-        )}
+          
+          {truncatedBio && (
+            <Text style={styles.bioText} numberOfLines={2}>
+              {truncatedBio}
+            </Text>
+          )}
+        </TouchableOpacity>
         
         {/* Professional Ratings Section */}
         <View style={styles.ratingsSection}>
@@ -355,7 +368,7 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
             )}
           </View>
         </View>
-      </TouchableOpacity>
+      </View>
     </View>
   );
 });
@@ -399,7 +412,7 @@ const styles = StyleSheet.create({
   // Details Row
   detailsRow: {
     flexDirection: 'row',
-    gap: 24,
+    gap: 20,
     marginBottom: 16,
   },
   detailItem: {
@@ -418,12 +431,26 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   availabilitySection: {
-    marginTop: 4,
-    marginBottom: 8,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  availabilityRow: {
+    flexDirection: 'row',
+    gap: 20,
+  },
+  availabilityItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  availabilityText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#6B7280',
   },
   engagementRow: {
     flexDirection: 'row',
-    gap: 32,
+    gap: 20,
     marginBottom: 12,
   },
   engagementItem: {
@@ -432,7 +459,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   engagementText: {
-    fontSize: 13,
+    fontSize: 14,
     fontFamily: 'Inter-Medium',
     color: '#6B7280',
   },
@@ -510,10 +537,16 @@ const styles = StyleSheet.create({
     borderTopColor: '#F3F4F6',
     paddingTop: 16,
   },
+  sellerInfoContainer: {
+    marginBottom: 16,
+  },
   sellerInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  chevronIcon: {
+    marginLeft: 'auto',
   },
   avatar: {
     width: 40,
@@ -547,8 +580,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   locationText: {
-    fontSize: 13,
-    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
     color: '#6B7280',
   },
   bioText: {
@@ -561,10 +594,7 @@ const styles = StyleSheet.create({
 
   // Professional Ratings Section
   ratingsSection: {
-    marginTop: 16,
     paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
   },
   ratingsSectionTitle: {
     fontSize: 15,
@@ -590,7 +620,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   ratingCount: {
-    fontSize: 12,
+    fontSize: 14,
     fontFamily: 'Inter-Medium',
     color: '#6B7280',
   },
@@ -603,7 +633,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   starLabel: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Inter-Medium',
     color: '#6B7280',
     width: 18,
@@ -624,7 +654,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   ratingBarCount: {
-    fontSize: 11,
+    fontSize: 12,
     fontFamily: 'Inter-Medium',
     color: '#6B7280',
     minWidth: 18,

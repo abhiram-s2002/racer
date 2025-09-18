@@ -114,41 +114,7 @@ export const validateListingDescription = (description: string): ValidationResul
   };
 };
 
-/**
- * Validate and sanitize user messages
- */
-export const validateMessage = (message: string): ValidationResult => {
-  const sanitized = sanitizeText(message);
-  
-  if (!sanitized) {
-    return { isValid: false, error: 'Message cannot be empty' };
-  }
-  
-  if (sanitized.length > 500) {
-    return { isValid: false, error: 'Message must be less than 500 characters' };
-  }
-  
-  // Check for spam patterns
-  const spamPatterns = [
-    /(buy|sell|click|visit|http|www|\.com|\.net|\.org)/gi,
-    /(free|money|cash|earn|income|profit)/gi,
-    /(limited|offer|discount|sale|deal)/gi
-  ];
-  
-  const spamScore = spamPatterns.reduce((score, pattern) => {
-    return score + (sanitized.match(pattern) || []).length;
-  }, 0);
-  
-  if (spamScore > 5) {
-    return { isValid: false, error: 'Message appears to be spam' };
-  }
-  
-  return { 
-    isValid: true, 
-    sanitizedValue: sanitized,
-    error: undefined 
-  };
-};
+// Message validation removed - using WhatsApp instead
 
 /**
  * Validate and sanitize user name

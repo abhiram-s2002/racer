@@ -97,32 +97,7 @@ export interface Request extends MarketplaceItem {
   budget_max?: number; // Max of range (optional - if not provided, it's a single budget)
 }
 
-/**
- * Chat conversation between users
- */
-export interface Chat {
-  id: string;
-  listing_id?: string;
-  participant_a: string;
-  participant_b: string;
-  last_message?: string;
-  last_sender?: string;
-  status: ChatStatus;
-  created_at: string;
-  updated_at: string;
-}
-
-/**
- * Individual chat message
- */
-export interface Message {
-  id: string;
-  chat_id: string;
-  sender_username: string;
-  text: string;
-  status: MessageStatus;
-  created_at: string;
-}
+// Chat functionality removed - using WhatsApp instead
 
 /**
  * Ping request from buyer to seller
@@ -222,15 +197,7 @@ export type RequestCategory =
   | 'others';
 
 
-/**
- * Chat status values
- */
-export type ChatStatus = 'active' | 'archived' | 'blocked';
-
-/**
- * Message status values
- */
-export type MessageStatus = 'sent' | 'delivered' | 'read';
+// Chat and message types removed - using WhatsApp instead
 
 /**
  * Ping status values
@@ -247,12 +214,7 @@ export type ActivityType =
   | 'ping_sent'
   | 'ping_received'
   | 'ping_responded'
-  | 'message_sent'
-  | 'message_received'
-  | 'request_created'
-  | 'request_chat_started'
-  | 'request_message_sent'
-  | 'request_message_received';
+  | 'request_created';
 
 /**
  * Activity status values
@@ -419,7 +381,6 @@ export type TransactionType =
   | 'referral_commission'
   | 'listing_created'
   | 'ping_sent'
-  | 'message_sent'
   | 'reward_spent'
   | 'bonus_granted';
 
@@ -546,14 +507,7 @@ export interface RequestsState {
   lastRefresh: number;
 }
 
-/**
- * Messages hook state
- */
-export interface MessagesState {
-  messages: Message[];
-  loading: boolean;
-  error: string | null;
-}
+// Messages state removed - using WhatsApp instead
 
 /**
  * Auth hook state
@@ -612,12 +566,7 @@ export interface PingFormData {
   template_id?: string;
 }
 
-/**
- * Form data type for messages
- */
-export interface MessageFormData {
-  text: string;
-}
+// Message form data removed - using WhatsApp instead
 
 /**
  * Form data type for requests
@@ -785,7 +734,7 @@ export interface AppEvent {
  * User interaction events
  */
 export interface UserInteractionEvent extends AppEvent {
-  type: 'listing_view' | 'ping_sent' | 'message_sent' | 'search_performed';
+  type: 'listing_view' | 'ping_sent' | 'search_performed';
   listingId?: string;
   category?: Category;
   searchQuery?: string;

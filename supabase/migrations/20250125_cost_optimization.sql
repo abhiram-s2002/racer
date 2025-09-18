@@ -2,36 +2,7 @@
 -- Date: 2025-01-25
 -- Purpose: Reduce Supabase costs through database optimizations
 
--- 1. BATCH OPERATIONS: Get multiple users' data in single queries
-CREATE OR REPLACE FUNCTION get_batch_chat_counts(usernames TEXT[])
-RETURNS TABLE(username TEXT, chat_count INTEGER) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        u.username,
-        COUNT(c.id)::INTEGER as chat_count
-    FROM unnest(usernames) AS u(username)
-    LEFT JOIN chats c ON (c.participant_a = u.username OR c.participant_b = u.username)
-    GROUP BY u.username;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- 2. BATCH UNREAD COUNTS: Get unread counts for multiple chats/users
-CREATE OR REPLACE FUNCTION get_batch_unread_counts(chat_user_pairs JSONB)
-RETURNS TABLE(chat_id UUID, username TEXT, unread_count INTEGER) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        (pair->>'chat_id')::UUID as chat_id,
-        pair->>'username' as username,
-        COUNT(m.id)::INTEGER as unread_count
-    FROM jsonb_array_elements(chat_user_pairs) AS pair
-    LEFT JOIN messages m ON m.chat_id = (pair->>'chat_id')::UUID
-    WHERE m.sender_username != pair->>'username'
-      AND (m.read_by IS NULL OR NOT (pair->>'username') = ANY(m.read_by))
-    GROUP BY pair->>'chat_id', pair->>'username';
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- NOTE: Batch functions removed - unused and chat system simplified to use WhatsApp
 
 -- 3. MATERIALIZED VIEW for frequently accessed data
 CREATE MATERIALIZED VIEW IF NOT EXISTS user_chat_summary AS
@@ -66,12 +37,8 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 7. Grant permissions
-GRANT EXECUTE ON FUNCTION get_batch_chat_counts(TEXT[]) TO authenticated;
-GRANT EXECUTE ON FUNCTION get_batch_unread_counts(JSONB) TO authenticated;
 GRANT EXECUTE ON FUNCTION refresh_user_chat_summary() TO authenticated;
 GRANT SELECT ON user_chat_summary TO authenticated;
 
 -- 8. Comments
-COMMENT ON FUNCTION get_batch_chat_counts(TEXT[]) IS 'Get chat counts for multiple users in single query (cost optimization)';
-COMMENT ON FUNCTION get_batch_unread_counts(JSONB) IS 'Get unread counts for multiple chat-user pairs in single query (cost optimization)';
 COMMENT ON MATERIALIZED VIEW user_chat_summary IS 'Pre-computed user chat statistics for cost reduction';

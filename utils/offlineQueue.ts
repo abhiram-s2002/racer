@@ -6,7 +6,7 @@ import { errorHandler } from './errorHandler';
 // Types for offline actions
 export interface OfflineAction {
   id: string;
-  type: 'ping' | 'message' | 'upload' | 'profile_update' | 'listing_create' | 'listing_update';
+  type: 'ping' | 'upload' | 'profile_update' | 'listing_create' | 'listing_update';
   data: any;
   timestamp: number;
   retryCount: number;
@@ -15,7 +15,6 @@ export interface OfflineAction {
   metadata?: {
     userId?: string;
     listingId?: string;
-    chatId?: string;
     imageUrls?: string[];
   };
 }
@@ -247,8 +246,7 @@ class OfflineQueueManager {
       switch (action.type) {
         case 'ping':
           return await this.executePingAction(action);
-        case 'message':
-          return await this.executeMessageAction(action);
+        // Message actions removed - using WhatsApp instead
         case 'upload':
           return await this.executeUploadAction(action);
         case 'profile_update':
@@ -279,10 +277,7 @@ class OfflineQueueManager {
     }
   }
 
-  private async executeMessageAction(action: OfflineAction): Promise<boolean> {
-    // Chat functionality removed - using WhatsApp instead
-    return true;
-  }
+  // Message execution removed - using WhatsApp instead
 
   private async executeUploadAction(action: OfflineAction): Promise<boolean> {
     try {
