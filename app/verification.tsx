@@ -86,22 +86,23 @@ const VerificationPage = () => {
       return;
     }
 
+    const omniAmount = selectedPlan === 'monthly' ? 1000 : 10000;
     setOmniPurchaseLoading(true);
     try {
-      const result = await purchaseVerificationWithOmniTokens(user.id, 1000);
+      const result = await purchaseVerificationWithOmniTokens(user.id, omniAmount);
       
       if (result.success) {
         Alert.alert(
-          'Success! 🎉',
-          'Verification purchased successfully with OMNI tokens!',
+          'Success!',
+          `Verification extended successfully with ${omniAmount} OMNI tokens!`,
           [{ text: 'OK', onPress: () => refreshVerificationStatus() }]
         );
       } else {
-        Alert.alert('Purchase Failed', result.error || 'Failed to purchase verification');
+        Alert.alert('Purchase Failed', result.error || 'Failed to extend verification');
       }
     } catch (error) {
       console.error('OMNI purchase error:', error);
-      Alert.alert('Error', 'Failed to purchase verification');
+      Alert.alert('Error', 'Failed to extend verification');
     } finally {
       setOmniPurchaseLoading(false);
     }
@@ -115,17 +116,18 @@ const VerificationPage = () => {
     }
   };
 
-  // Check OMNI affordability when component loads
+  // Check OMNI affordability when component loads or plan changes
   useEffect(() => {
     const checkAffordability = async () => {
       if (profileData?.username) {
-        const affordability = await checkVerificationAffordability(1000);
+        const omniAmount = selectedPlan === 'monthly' ? 1000 : 10000;
+        const affordability = await checkVerificationAffordability(omniAmount);
         setOmniAffordability(affordability);
       }
     };
     
     checkAffordability();
-  }, [profileData?.username, checkVerificationAffordability]);
+  }, [profileData?.username, selectedPlan, checkVerificationAffordability]);
 
   const formatExpiryDate = (dateString: string | null) => {
     if (!dateString) return 'No expiry date';
@@ -162,17 +164,17 @@ const VerificationPage = () => {
           {/* Verification Success Section */}
           <View style={styles.verifiedContainer}>
             <View style={styles.successIcon}>
-              <CheckCircle size={48} color="#10B981" />
+              <CheckCircle size={40} color="#10B981" />
             </View>
-            <Text style={styles.successTitle}>You&apos;re Verified! 🎉</Text>
+            <Text style={styles.successTitle}>You&apos;re Verified</Text>
             <Text style={styles.successSubtitle}>
-              Congratulations! You have an active verification subscription.
+              Active verification subscription
             </Text>
           </View>
 
           {/* Verification Details */}
           <View style={styles.detailsContainer}>
-            <Text style={styles.sectionTitle}>Verification Details</Text>
+            <Text style={styles.sectionTitle}>Details</Text>
             
             <View style={styles.detailRow}>
               <View style={styles.detailIcon}>
@@ -209,7 +211,7 @@ const VerificationPage = () => {
 
           {/* How You Appear */}
           <View style={styles.appearanceContainer}>
-            <Text style={styles.sectionTitle}>How You Appear to Others</Text>
+            <Text style={styles.sectionTitle}>Profile Preview</Text>
             <View style={styles.demoProfile}>
               <View style={styles.demoProfileInfo}>
                 <Text style={styles.demoName}>{profileData.name || 'Your Name'}</Text>
@@ -221,31 +223,213 @@ const VerificationPage = () => {
 
           {/* Benefits List */}
           <View style={styles.benefitsContainer}>
-            <Text style={styles.sectionTitle}>Your Verification Benefits</Text>
+            <Text style={styles.sectionTitle}>Benefits</Text>
             
             <View style={styles.benefitItem}>
               <CheckCircle size={16} color="#10B981" />
-              <Text style={styles.benefitText}>Verified badge on your profile</Text>
+              <Text style={styles.benefitText}>Verified badge on profile</Text>
             </View>
             
             <View style={styles.benefitItem}>
               <CheckCircle size={16} color="#10B981" />
-              <Text style={styles.benefitText}>Higher response rates from buyers</Text>
+              <Text style={styles.benefitText}>Higher buyer response rates</Text>
             </View>
             
             <View style={styles.benefitItem}>
               <CheckCircle size={16} color="#10B981" />
-              <Text style={styles.benefitText}>Extra OMNI tokens for transactions</Text>
+              <Text style={styles.benefitText}>Extra OMNI tokens per transaction</Text>
             </View>
             
             <View style={styles.benefitItem}>
               <CheckCircle size={16} color="#10B981" />
               <Text style={styles.benefitText}>Early access to new features</Text>
             </View>
+          </View>
+
+          {/* Renewal/Upgrade Section */}
+          <View style={styles.renewalContainer}>
+            <Text style={styles.sectionTitle}>Extend or Switch Plan</Text>
             
-            <View style={styles.benefitItem}>
-              <CheckCircle size={16} color="#10B981" />
-              <Text style={styles.benefitText}>Premium gamification benefits</Text>
+            {/* Plan Selector */}
+            <View style={styles.planSelector}>
+              <TouchableOpacity
+                style={[
+                  styles.planOption,
+                  selectedPlan === 'monthly' && styles.planOptionSelected
+                ]}
+                onPress={() => setSelectedPlan('monthly')}
+              >
+                <Text style={[
+                  styles.planOptionText,
+                  selectedPlan === 'monthly' && styles.planOptionTextSelected
+                ]}>
+                  Monthly
+                </Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[
+                  styles.planOption,
+                  selectedPlan === 'annual' && styles.planOptionSelected
+                ]}
+                onPress={() => setSelectedPlan('annual')}
+              >
+                <Text style={[
+                  styles.planOptionText,
+                  selectedPlan === 'annual' && styles.planOptionTextSelected
+                ]}>
+                  Annual
+                </Text>
+              </TouchableOpacity>
+            </View>
+            
+            {/* Pricing Cards */}
+            <View style={styles.pricingCards}>
+              {/* Monthly Plan */}
+              <TouchableOpacity 
+                style={[
+                  styles.pricingCard,
+                  selectedPlan === 'monthly' && styles.pricingCardSelected
+                ]}
+                onPress={() => setSelectedPlan('monthly')}
+              >
+                <View style={styles.pricingHeader}>
+                  <Text style={styles.pricingTitle}>Monthly</Text>
+                  {selectedPlan === 'monthly' && (
+                    <View style={styles.selectedBadge}>
+                      <Text style={styles.selectedBadgeText}>Selected</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.pricingAmount}>
+                  <Text style={styles.originalPrice}>₹100</Text>
+                  <Text style={styles.currentPrice}>
+                    {monthlySubscription?.title || '₹19'}
+                  </Text>
+                  <Text style={styles.priceUnit}>/month</Text>
+                </View>
+                <View style={styles.savingsBadge}>
+                  <Text style={styles.savingsText}>81% OFF</Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Annual Plan */}
+              <TouchableOpacity 
+                style={[
+                  styles.pricingCard,
+                  selectedPlan === 'annual' && styles.pricingCardSelected
+                ]}
+                onPress={() => setSelectedPlan('annual')}
+              >
+                <View style={styles.pricingHeader}>
+                  <Text style={styles.pricingTitle}>Annual</Text>
+                  {selectedPlan === 'annual' && (
+                    <View style={styles.selectedBadge}>
+                      <Text style={styles.selectedBadgeText}>Selected</Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.pricingAmount}>
+                  <Text style={styles.originalPrice}>₹1200</Text>
+                  <Text style={styles.currentPrice}>
+                    {annualSubscription?.title || '₹199'}
+                  </Text>
+                  <Text style={styles.priceUnit}>/year</Text>
+                </View>
+                <View style={styles.savingsBadge}>
+                  <Text style={styles.savingsText}>83% OFF</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            {/* Purchase Button */}
+            <TouchableOpacity 
+              style={styles.purchaseButton} 
+              onPress={handlePurchase}
+              activeOpacity={0.8}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <CreditCard size={20} color="#FFFFFF" />
+              )}
+              <Text style={styles.purchaseButtonText}>
+                {isLoading ? 'Processing...' : 'Extend with Google Play'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Auto-Renewal Notice */}
+            <View style={styles.autoRenewalNotice}>
+              <Text style={styles.autoRenewalText}>
+                Auto-renewal: Cancel anytime in Google Play settings
+              </Text>
+            </View>
+          </View>
+
+          {/* OMNI Renewal Section */}
+          <View style={styles.omniContainer}>
+            <Text style={styles.sectionTitle}>Extend with OMNI Tokens</Text>
+            <Text style={styles.omniSubtitle}>
+              Use earned OMNI tokens to extend verification
+            </Text>
+            
+            <View style={styles.omniCard}>
+              <View style={styles.omniHeader}>
+                <View style={styles.omniIcon}>
+                  <Award size={28} color="#10B981" />
+                </View>
+                <View style={styles.omniContent}>
+                  <Text style={styles.omniTitle}>OMNI Extension</Text>
+                  <Text style={styles.omniDescription}>
+                    {selectedPlan === 'monthly' ? '1 Month Extension' : '1 Year Extension'}
+                  </Text>
+                </View>
+                <View style={styles.omniPrice}>
+                  <Text style={styles.omniPriceText}>
+                    {selectedPlan === 'monthly' ? '1,000' : '10,000'}
+                  </Text>
+                  <Text style={styles.omniPriceLabel}>OMNI</Text>
+                </View>
+              </View>
+              
+              <View style={styles.omniBalance}>
+                <Text style={styles.omniBalanceLabel}>Your Balance:</Text>
+                <Text style={styles.omniBalanceValue}>
+                  {userRewards?.current_balance || 0} OMNI
+                </Text>
+              </View>
+              
+              {!omniAffordability.can_afford && (
+                <View style={styles.omniInsufficient}>
+                  <Text style={styles.omniInsufficientText}>
+                    Need {omniAffordability.shortfall} more OMNI tokens
+                  </Text>
+                </View>
+              )}
+              
+              <TouchableOpacity 
+                style={[
+                  styles.omniButton,
+                  (!omniAffordability.can_afford || omniPurchaseLoading) && styles.omniButtonDisabled
+                ]}
+                onPress={handleOmniPurchase}
+                disabled={!omniAffordability.can_afford || omniPurchaseLoading}
+              >
+                {omniPurchaseLoading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Award size={20} color="#FFFFFF" />
+                )}
+                <Text style={styles.omniButtonText}>
+                  {omniPurchaseLoading 
+                    ? 'Processing...' 
+                    : omniAffordability.can_afford 
+                      ? 'Extend with OMNI' 
+                      : 'Earn More OMNI'
+                  }
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
@@ -287,17 +471,17 @@ const VerificationPage = () => {
         {/* Hero Section */}
         <View style={styles.heroContainer}>
           <View style={styles.heroIcon}>
-            <Shield size={48} color="#10B981" />
+            <Shield size={40} color="#10B981" />
           </View>
-          <Text style={styles.heroTitle}>Build Trust, Get More Sales!</Text>
+          <Text style={styles.heroTitle}>Get Verified</Text>
           <Text style={styles.heroSubtitle}>
-            Get verified and stand out from the crowd with a trusted verification badge
+            Build trust and increase sales
           </Text>
         </View>
 
-        {/* How You'll Appear */}
+        {/* Preview */}
         <View style={styles.appearanceContainer}>
-          <Text style={styles.sectionTitle}>How You&apos;ll Appear to Others</Text>
+          <Text style={styles.sectionTitle}>Preview</Text>
           <View style={styles.demoProfile}>
             <View style={styles.demoProfileInfo}>
               <Text style={styles.demoName}>{profileData.name || 'Your Name'}</Text>
@@ -312,42 +496,32 @@ const VerificationPage = () => {
 
         {/* Benefits Section */}
         <View style={styles.benefitsContainer}>
-          <Text style={styles.sectionTitle}>Verification Benefits</Text>
+          <Text style={styles.sectionTitle}>Benefits</Text>
           
           <View style={styles.benefitItem}>
             <Star size={16} color="#10B981" />
-            <Text style={styles.benefitText}>Build trust with buyers & sellers</Text>
+            <Text style={styles.benefitText}>Verified badge on profile</Text>
           </View>
           
           <View style={styles.benefitItem}>
             <Star size={16} color="#10B981" />
-            <Text style={styles.benefitText}>Verified badge on your profile</Text>
+            <Text style={styles.benefitText}>Higher buyer response rates</Text>
           </View>
           
           <View style={styles.benefitItem}>
             <Star size={16} color="#10B981" />
-            <Text style={styles.benefitText}>Higher response rates from buyers</Text>
+            <Text style={styles.benefitText}>Extra OMNI tokens per transaction</Text>
           </View>
           
           <View style={styles.benefitItem}>
             <Star size={16} color="#10B981" />
-            <Text style={styles.benefitText}>Extra OMNI tokens for every transaction</Text>
-          </View>
-          
-          <View style={styles.benefitItem}>
-            <Star size={16} color="#10B981" />
-            <Text style={styles.benefitText}>Early access to future app features</Text>
-          </View>
-          
-          <View style={styles.benefitItem}>
-            <Star size={16} color="#10B981" />
-            <Text style={styles.benefitText}>Premium gamification benefits</Text>
+            <Text style={styles.benefitText}>Early access to new features</Text>
           </View>
         </View>
 
         {/* Pricing Section */}
         <View style={styles.pricingContainer}>
-          <Text style={styles.sectionTitle}>Choose Your Plan</Text>
+          <Text style={styles.sectionTitle}>Pricing</Text>
           
           {/* Plan Selector */}
           <View style={styles.planSelector}>
@@ -403,11 +577,12 @@ const VerificationPage = () => {
               <View style={styles.pricingAmount}>
                 <Text style={styles.originalPrice}>₹100</Text>
                 <Text style={styles.currentPrice}>
-                  {monthlySubscription?.title || '₹19'}/month
+                  {monthlySubscription?.title || '₹19'}
                 </Text>
+                <Text style={styles.priceUnit}>/month</Text>
               </View>
               <View style={styles.savingsBadge}>
-                <Text style={styles.savingsText}>81% OFF!</Text>
+                <Text style={styles.savingsText}>81% OFF</Text>
               </View>
             </TouchableOpacity>
 
@@ -430,11 +605,12 @@ const VerificationPage = () => {
               <View style={styles.pricingAmount}>
                 <Text style={styles.originalPrice}>₹1200</Text>
                 <Text style={styles.currentPrice}>
-                  {annualSubscription?.title || '₹199'}/year
+                  {annualSubscription?.title || '₹199'}
                 </Text>
+                <Text style={styles.priceUnit}>/year</Text>
               </View>
               <View style={styles.savingsBadge}>
-                <Text style={styles.savingsText}>83% OFF!</Text>
+                <Text style={styles.savingsText}>83% OFF</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -459,16 +635,16 @@ const VerificationPage = () => {
           {/* Auto-Renewal Notice */}
           <View style={styles.autoRenewalNotice}>
             <Text style={styles.autoRenewalText}>
-              🔄 <Text style={styles.autoRenewalBold}>Auto-renewal:</Text> Subscription automatically renews unless cancelled at least 24 hours before the end of the current period. You can manage or cancel your subscription in your Google Play account settings.
+              Auto-renewal: Cancel anytime in Google Play settings
             </Text>
           </View>
         </View>
 
         {/* OMNI Verification Section */}
         <View style={styles.omniContainer}>
-          <Text style={styles.sectionTitle}>🎮 Pay with OMNI Tokens</Text>
+          <Text style={styles.sectionTitle}>Pay with OMNI Tokens</Text>
           <Text style={styles.omniSubtitle}>
-            Use your earned OMNI tokens to get verified instantly! No real money required.
+            Use earned OMNI tokens - no real money required
           </Text>
           
           <View style={styles.omniCard}>
@@ -478,7 +654,7 @@ const VerificationPage = () => {
               </View>
               <View style={styles.omniContent}>
                 <Text style={styles.omniTitle}>OMNI Verification</Text>
-                <Text style={styles.omniDescription}>1 Month Premium Verification</Text>
+                <Text style={styles.omniDescription}>1 Month Verification</Text>
               </View>
               <View style={styles.omniPrice}>
                 <Text style={styles.omniPriceText}>1,000</Text>
@@ -496,7 +672,7 @@ const VerificationPage = () => {
             {!omniAffordability.can_afford && (
               <View style={styles.omniInsufficient}>
                 <Text style={styles.omniInsufficientText}>
-                  💡 You need {omniAffordability.shortfall} more OMNI tokens
+                  Need {omniAffordability.shortfall} more OMNI tokens
                 </Text>
               </View>
             )}
@@ -518,7 +694,7 @@ const VerificationPage = () => {
                 {omniPurchaseLoading 
                   ? 'Processing...' 
                   : omniAffordability.can_afford 
-                    ? '✨ Purchase with OMNI' 
+                    ? 'Purchase with OMNI' 
                     : 'Earn More OMNI'
                 }
               </Text>
@@ -527,10 +703,9 @@ const VerificationPage = () => {
           
           <View style={styles.omniInfo}>
             <Text style={styles.omniInfoText}>
-              🚀 <Text style={styles.omniInfoBold}>Instant verification</Text> with OMNI tokens{'\n'}
-              🎯 <Text style={styles.omniInfoBold}>Earn OMNI</Text> through daily check-ins and achievements{'\n'}
-              💰 <Text style={styles.omniInfoBold}>No real money</Text> required - pure gamification{'\n'}
-              ⭐ <Text style={styles.omniInfoBold}>Same benefits</Text> as paid verification
+              • Instant verification with OMNI tokens{'\n'}
+              • Earn OMNI through daily check-ins{'\n'}
+              • Same benefits as paid verification
             </Text>
           </View>
         </View>
@@ -539,14 +714,13 @@ const VerificationPage = () => {
         <View style={styles.infoContainer}>
           <View style={styles.infoHeader}>
             <Info size={20} color="#64748B" />
-            <Text style={styles.infoTitle}>Important Information</Text>
+            <Text style={styles.infoTitle}>Important</Text>
           </View>
           <Text style={styles.infoText}>
-            • Verification is processed immediately after successful payment{'\n'}
-            • You can cancel your subscription anytime through Google Play{'\n'}
-            • All payments are secure and processed by Google{'\n'}
-            • OMNI verification purchases are final and cannot be cancelled or refunded{'\n'}
-            • Contact support if you have any issues
+            • Verification processed immediately{'\n'}
+            • Cancel anytime in Google Play{'\n'}
+            • OMNI purchases are final{'\n'}
+            • Contact support for issues
           </Text>
         </View>
 
@@ -584,8 +758,8 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
   },
   placeholder: {
@@ -598,34 +772,34 @@ const styles = StyleSheet.create({
   // Hero Section
   heroContainer: {
     backgroundColor: '#FFFFFF',
-    padding: 24,
+    padding: 20,
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   heroIcon: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   heroTitle: {
-    fontSize: 24,
-    fontFamily: 'Inter-Bold',
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
     textAlign: 'center',
     marginBottom: 8,
   },
   heroSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: '#64748B',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 20,
   },
 
   // Verified Status
   verifiedContainer: {
     backgroundColor: '#F0FDF4',
-    padding: 24,
+    padding: 20,
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#BBF7D0',
   },
@@ -633,38 +807,38 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   successTitle: {
-    fontSize: 24,
-    fontFamily: 'Inter-Bold',
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
     color: '#15803D',
     textAlign: 'center',
     marginBottom: 8,
   },
   successSubtitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: '#15803D',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 20,
   },
 
   // Section Styling
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
-    marginBottom: 16,
+    marginBottom: 12,
   },
 
   // Details Section
   detailsContainer: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    marginBottom: 8,
+    padding: 16,
+    marginBottom: 12,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   detailIcon: {
     marginRight: 12,
@@ -679,16 +853,16 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   detailValue: {
-    fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
     color: '#1E293B',
   },
 
   // Appearance Section
   appearanceContainer: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    marginBottom: 8,
+    padding: 16,
+    marginBottom: 12,
   },
   demoProfile: {
     backgroundColor: '#F8FAFC',
@@ -703,8 +877,8 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   demoName: {
-    fontSize: 18,
-    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
     marginRight: 8,
   },
@@ -728,13 +902,13 @@ const styles = StyleSheet.create({
   },
   demoTick: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontFamily: 'Inter-Bold',
     fontSize: 12,
     marginRight: 4,
   },
   demoVerifiedText: {
     color: '#FFFFFF',
-    fontWeight: 'bold',
+    fontFamily: 'Inter-Bold',
     fontSize: 10,
     letterSpacing: 0.5,
   },
@@ -742,16 +916,23 @@ const styles = StyleSheet.create({
   // Benefits Section
   benefitsContainer: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    marginBottom: 8,
+    padding: 16,
+    marginBottom: 12,
+  },
+
+  // Renewal Section
+  renewalContainer: {
+    backgroundColor: '#FFFFFF',
+    padding: 16,
+    marginBottom: 12,
   },
   benefitItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   benefitText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter-Regular',
     color: '#374151',
     marginLeft: 12,
@@ -761,15 +942,15 @@ const styles = StyleSheet.create({
   // Pricing Section
   pricingContainer: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    marginBottom: 8,
+    padding: 16,
+    marginBottom: 12,
   },
   planSelector: {
     flexDirection: 'row',
     backgroundColor: '#F1F5F9',
     borderRadius: 12,
     padding: 4,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   planOption: {
     flex: 1,
@@ -782,13 +963,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#10B981',
   },
   planOptionText: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Inter-Medium',
     color: '#64748B',
   },
   planOptionTextSelected: {
     color: '#FFFFFF',
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter-SemiBold',
   },
   pricingCards: {
     flexDirection: 'row',
@@ -797,7 +978,7 @@ const styles = StyleSheet.create({
   pricingCard: {
     flex: 1,
     backgroundColor: '#F8FAFC',
-    padding: 16,
+    padding: 14,
     borderRadius: 12,
     borderWidth: 2,
     borderColor: '#E2E8F0',
@@ -811,11 +992,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   pricingTitle: {
-    fontSize: 16,
-    fontFamily: 'Inter-Bold',
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
   },
   selectedBadge: {
@@ -828,12 +1009,12 @@ const styles = StyleSheet.create({
   selectedBadgeText: {
     color: '#FFFFFF',
     fontSize: 10,
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter-SemiBold',
   },
   pricingAmount: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   originalPrice: {
     textDecorationLine: 'line-through',
@@ -844,8 +1025,14 @@ const styles = StyleSheet.create({
   },
   currentPrice: {
     color: '#10B981',
-    fontSize: 18,
-    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+  },
+  priceUnit: {
+    color: '#64748B',
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    marginLeft: 4,
   },
   savingsBadge: {
     backgroundColor: '#FEE2E2',
@@ -856,16 +1043,16 @@ const styles = StyleSheet.create({
   savingsText: {
     color: '#EF4444',
     fontSize: 12,
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter-SemiBold',
   },
   purchaseButton: {
     backgroundColor: '#10B981',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 12,
-    marginTop: 20,
+    marginTop: 16,
     shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
@@ -874,15 +1061,15 @@ const styles = StyleSheet.create({
   },
   purchaseButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontFamily: 'Inter-Bold',
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
     marginLeft: 8,
   },
   autoRenewalNotice: {
     backgroundColor: '#F8FAFC',
-    padding: 12,
+    padding: 10,
     borderRadius: 8,
-    marginTop: 12,
+    marginTop: 10,
     borderWidth: 1,
     borderColor: '#E2E8F0',
   },
@@ -893,38 +1080,38 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   autoRenewalBold: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter-SemiBold',
     color: '#374151',
   },
 
   // Info Section
   infoContainer: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    marginBottom: 8,
+    padding: 16,
+    marginBottom: 12,
   },
   infoHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   infoTitle: {
-    fontSize: 16,
-    fontFamily: 'Inter-Bold',
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
     color: '#1E293B',
     marginLeft: 8,
   },
   infoText: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter-Regular',
     color: '#64748B',
-    lineHeight: 20,
+    lineHeight: 18,
   },
 
   // Action Buttons
   actionContainer: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
+    padding: 16,
     marginBottom: 20,
   },
   primaryButton: {
@@ -943,8 +1130,8 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontFamily: 'Inter-Bold',
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
     marginLeft: 8,
   },
   secondaryButton: {
@@ -954,7 +1141,7 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: '#64748B',
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter-Medium',
     textDecorationLine: 'underline',
   },
@@ -965,7 +1152,7 @@ const styles = StyleSheet.create({
   },
   restoreButtonText: {
     color: '#64748B',
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter-Medium',
     textDecorationLine: 'underline',
   },
@@ -973,24 +1160,24 @@ const styles = StyleSheet.create({
   // OMNI Verification Styles - Positive & Appealing
   omniContainer: {
     backgroundColor: '#FFFFFF',
-    padding: 20,
-    marginBottom: 8,
+    padding: 16,
+    marginBottom: 12,
   },
   omniSubtitle: {
-    fontSize: 15,
+    fontSize: 13,
     fontFamily: 'Inter-Regular',
     color: '#059669',
-    marginBottom: 20,
-    lineHeight: 22,
+    marginBottom: 16,
+    lineHeight: 18,
     textAlign: 'center',
   },
   omniCard: {
     backgroundColor: '#ECFDF5',
-    padding: 20,
+    padding: 16,
     borderRadius: 16,
     borderWidth: 2,
     borderColor: '#10B981',
-    marginBottom: 16,
+    marginBottom: 12,
     shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
@@ -1000,7 +1187,7 @@ const styles = StyleSheet.create({
   omniHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   omniIcon: {
     marginRight: 16,
@@ -1012,13 +1199,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   omniTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
     color: '#064E3B',
     marginBottom: 4,
   },
   omniDescription: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter-Medium',
     color: '#059669',
   },
@@ -1030,13 +1217,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   omniPriceText: {
-    fontSize: 22,
-    fontFamily: 'Inter-Bold',
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
     color: '#FFFFFF',
   },
   omniPriceLabel: {
-    fontSize: 12,
-    fontFamily: 'Inter-Bold',
+    fontSize: 11,
+    fontFamily: 'Inter-SemiBold',
     color: '#FFFFFF',
     marginTop: -2,
     opacity: 0.9,
@@ -1046,32 +1233,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#F0FDF4',
-    padding: 12,
+    padding: 10,
     borderRadius: 10,
-    marginBottom: 12,
+    marginBottom: 10,
     borderWidth: 1,
     borderColor: '#BBF7D0',
   },
   omniBalanceLabel: {
-    fontSize: 14,
+    fontSize: 13,
     fontFamily: 'Inter-Medium',
     color: '#065F46',
   },
   omniBalanceValue: {
-    fontSize: 18,
-    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
     color: '#10B981',
   },
   omniInsufficient: {
     backgroundColor: '#FEF3C7',
-    padding: 12,
+    padding: 10,
     borderRadius: 10,
-    marginBottom: 16,
+    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#FCD34D',
   },
   omniInsufficientText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Inter-Medium',
     color: '#D97706',
     textAlign: 'center',
@@ -1081,7 +1268,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 12,
     shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 4 },
@@ -1096,25 +1283,25 @@ const styles = StyleSheet.create({
   },
   omniButtonText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontFamily: 'Inter-Bold',
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
     marginLeft: 8,
   },
   omniInfo: {
     backgroundColor: '#F0FDF4',
-    padding: 16,
+    padding: 12,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#BBF7D0',
   },
   omniInfoText: {
-    fontSize: 13,
+    fontSize: 12,
     fontFamily: 'Inter-Regular',
     color: '#065F46',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   omniInfoBold: {
-    fontFamily: 'Inter-Bold',
+    fontFamily: 'Inter-SemiBold',
     color: '#064E3B',
   },
 });
