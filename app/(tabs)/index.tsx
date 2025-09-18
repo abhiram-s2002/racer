@@ -30,7 +30,7 @@ const categories = [
   { id: 'others', name: 'Others' },
 ];
 
-import FeedbackModal from '@/components/FeedbackModal';
+// import FeedbackModal from '@/components/FeedbackModal'; // Removed from Home
 import { useRouter } from 'expo-router';
 import DistanceFilterModal from '@/components/DistanceFilterModal';
 import { useMarketplaceItems } from '@/hooks/useMarketplaceItems';
@@ -85,7 +85,7 @@ function HomeScreen() {
   const [username, setUsername] = useState<string | null>(null);
   const [userRatings, setUserRatings] = useState<Record<string, { rating: string; reviewCount: number } | null>>({});
 
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  // const [showFeedbackModal, setShowFeedbackModal] = useState(false); // Removed from Home
   const [userActivityCount, setUserActivityCount] = useState(0);
   const [hasShownFeedbackPrompt, setHasShownFeedbackPrompt] = useState(false);
   const [expandedDescriptions, setExpandedDescriptions] = useState<Record<string, boolean>>({});
@@ -187,7 +187,6 @@ function HomeScreen() {
 
 
 
-
   // Load ratings for all users in marketplace items
   useEffect(() => {
     if (marketplaceItems.length > 0) {
@@ -219,17 +218,10 @@ function HomeScreen() {
           newRatings[username] = rating;
         });
         
-        // Mark users as checked (even if they have no ratings)
-        usernamesToCheck.forEach(username => {
-          if (newRatings[username] === undefined) {
-            newRatings[username] = null;
-          }
-        });
-        
         return newRatings;
       });
     } catch (error) {
-      // Silent error handling
+      // Silent error handling for ratings
     }
   };
 
@@ -565,7 +557,7 @@ function HomeScreen() {
 
   // Handler for the feedback button
   const handleFeedback = useCallback(() => {
-    setShowFeedbackModal(true);
+    // setShowFeedbackModal(true); // Removed from Home
   }, []);
 
   const toggleDescriptionExpansion = useCallback((listingId: string) => {
@@ -621,7 +613,8 @@ function HomeScreen() {
             text: 'Rate App',
             onPress: () => {
               setHasShownFeedbackPrompt(true);
-              setShowFeedbackModal(true);
+              // setShowFeedbackModal(true); // Removed from Home
+              router.push('/settings' as any); // Temporary: direct to settings/profile area
             }
           }
         ]
@@ -637,22 +630,16 @@ function HomeScreen() {
 
     try {
       const { error } = await supabase
-        .from('feedback')
-        .insert({
-          username: username,
-          rating: rating,
-          feedback: feedback
-        });
-
+        .from('app_feedback')
+        .insert({ username, rating, feedback });
       if (error) {
-        Alert.alert('Error', 'Failed to submit feedback. Please try again.');
+        Alert.alert('Error', 'Failed to submit feedback');
         return;
       }
-
-      Alert.alert('Thank You!', `You rated us ${rating} stars. Your feedback helps us improve!`);
-      setShowFeedbackModal(false);
+      Alert.alert('Thank you!', 'Your feedback has been submitted.');
+      // setShowFeedbackModal(false); // Removed from Home
     } catch (error) {
-      Alert.alert('Error', 'Failed to submit feedback. Please try again.');
+      Alert.alert('Error', 'Failed to submit feedback');
     }
   }, [username]);
 
@@ -947,19 +934,19 @@ function HomeScreen() {
 
 
       {/* Floating Feedback Button */}
-      <TouchableOpacity 
+      {/* <TouchableOpacity 
         style={styles.feedbackButton}
         onPress={handleFeedback}
       >
         <Text style={styles.feedbackButtonText}>💬</Text>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
 
       {/* Enhanced Feedback Modal */}
-      <FeedbackModal
-        visible={showFeedbackModal}
-        onClose={() => setShowFeedbackModal(false)}
-        onSubmit={handleSubmitFeedback}
-      />
+      {/* <FeedbackModal // Removed from Home */}
+      {/*   visible={showFeedbackModal} // Removed from Home */}
+      {/*   onClose={() => setShowFeedbackModal(false)} // Removed from Home */}
+      {/*   onSubmit={handleSubmitFeedback} // Removed from Home */}
+      {/* /> // Removed from Home */}
 
       {/* Map Pin Popup */}
       {showPinPopup && (
@@ -1420,26 +1407,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: '#64748B',
-  },
-  feedbackButton: {
-    position: 'absolute',
-    bottom: 50,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  feedbackButtonText: {
-    fontSize: 24,
-    color: '#FFFFFF',
   },
 
   sortingBanner: {

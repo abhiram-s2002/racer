@@ -18,7 +18,9 @@ export interface CacheStats {
 
 export class EnhancedCacheManager {
   private static instance: EnhancedCacheManager;
-  private cachePrefix = 'enhanced_cache_';
+  // Bump this when cached data shape changes to avoid stale reads
+  private static CACHE_VERSION = 'v3_2025-09-18';
+  private cachePrefix = `enhanced_cache_${EnhancedCacheManager.CACHE_VERSION}_`;
   private maxCacheSize = 100 * 1024 * 1024; // 100MB
   private maxEntries = 1000;
   private stats = {
@@ -73,7 +75,7 @@ export class EnhancedCacheManager {
       const entry: CacheEntry<T> = {
         data,
         timestamp: Date.now(),
-        ttl: 0, // No expiration
+        ttl: 0, // No expiration by default
         accessCount: 0,
         lastAccessed: Date.now(),
       };
@@ -84,6 +86,57 @@ export class EnhancedCacheManager {
       await AsyncStorage.setItem(cacheKey, JSON.stringify(entry));
     } catch (error) {
       // Cache set error
+    }
+  }
+
+  /**
+   * Set cached data with TTL (milliseconds). When ttl > 0, consumers using batchGet
+   * will honor expiry, and getStrict will enforce it as well.
+   */
+  async setWithTTL<T>(key: string, data: T, ttlMs: number): Promise<void> {
+    try {
+      const cacheKey = this.cachePrefix + this.hashKey(key);
+      const entry: CacheEntry<T> = {
+        data,
+        timestamp: Date.now(),
+        ttl: Math.max(0, ttlMs),
+        accessCount: 0,
+        lastAccessed: Date.now(),
+      };
+      await this.ensureCacheSize();
+      await AsyncStorage.setItem(cacheKey, JSON.stringify(entry));
+    } catch (error) {
+      // Cache setWithTTL error
+    }
+  }
+
+  /**
+   * Get cached data and enforce TTL expiration if present (ttl > 0)
+   */
+  async getStrict<T>(key: string): Promise<T | null> {
+    try {
+      this.stats.totalRequests++;
+      const cacheKey = this.cachePrefix + this.hashKey(key);
+      const cached = await AsyncStorage.getItem(cacheKey);
+      if (!cached) {
+        this.stats.misses++;
+        return null;
+      }
+      const entry: CacheEntry<T> = JSON.parse(cached);
+      const isExpired = entry.ttl > 0 && Date.now() - entry.timestamp > entry.ttl;
+      if (isExpired) {
+        await AsyncStorage.removeItem(cacheKey);
+        this.stats.misses++;
+        return null;
+      }
+      entry.accessCount++;
+      entry.lastAccessed = Date.now();
+      await AsyncStorage.setItem(cacheKey, JSON.stringify(entry));
+      this.stats.hits++;
+      return entry.data;
+    } catch (error) {
+      this.stats.misses++;
+      return null;
     }
   }
 

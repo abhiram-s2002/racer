@@ -13,6 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Heart, MapPin, Star, Clock } from 'lucide-react-native';
 import { useSavedListings } from '@/hooks/useFavorites';
+import { useFavorites } from '@/hooks/useFavorites';
 import { FavoriteListing } from '@/utils/favoritesSupabase';
 import NewRobustImage from '@/components/NewRobustImage';
 import VerificationBadge from '@/components/VerificationBadge';

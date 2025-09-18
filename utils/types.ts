@@ -54,6 +54,10 @@ export interface MarketplaceItem {
   latitude?: number;
   longitude?: number;
   location?: any; // PostGIS geography type
+  // Optional denormalized location fields for display (requests compatibility)
+  location_name?: string;
+  location_district?: string;
+  location_state?: string;
   distance_km?: number; // Distance from user to item
   
   // Expiration (same for both)

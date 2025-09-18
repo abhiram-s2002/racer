@@ -443,7 +443,15 @@ function ActivityScreen() {
       <View style={styles.pingHeader}>
         <TouchableOpacity 
           style={styles.pingUser}
-          onPress={() => router.push(`/seller/${displayUser.username}` as any)}
+          onPress={() => {
+            const targetId = (item as any).listing_id || (item as any).listings?.id;
+            if (targetId) {
+              const targetType = ((item as any).listings && (item as any).listings.budget_min != null) ? 'request' : 'listing';
+              router.push(`/listing-detail?id=${targetId}&type=${targetType}` as any);
+            } else {
+              router.push(`/seller/${displayUser.username}` as any);
+            }
+          }}
           activeOpacity={0.7}
         >
           <Image source={getAvatarSource(displayUser.avatar)} style={styles.userAvatar} resizeMode="cover" />
@@ -676,7 +684,11 @@ function ActivityScreen() {
     return (
       <View style={styles.activityCard}>
         <View style={styles.pingHeader}>
-          <View style={styles.pingUser}>
+          <TouchableOpacity 
+            style={styles.pingUser}
+            activeOpacity={0.7}
+            onPress={() => router.push(`/listing-detail?id=${item.id}&type=${item.type}` as any)}
+          >
             <UserCircle2 size={40} color="#10B981" />
             <View style={styles.pingDetails}>
               <View style={styles.pingUserNameRow}>
@@ -686,7 +698,7 @@ function ActivityScreen() {
                 {item.type === 'listing' ? 'My Listing' : 'My Request'} • {item.category}
               </Text>
             </View>
-          </View>
+          </TouchableOpacity>
         </View>
         <View style={styles.pingProduct}>
           <NewRobustImage 

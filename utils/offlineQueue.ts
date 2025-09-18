@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { networkMonitor } from './networkMonitor';
+import { enhancedCache } from './enhancedCacheManager';
 import { errorHandler } from './errorHandler';
 
 // Types for offline actions
@@ -315,6 +316,8 @@ class OfflineQueueManager {
     try {
       const { addListing } = await import('./listingSupabase');
       await addListing(action.data);
+      // Invalidate marketplace caches so new listing appears
+      await enhancedCache.invalidateRelated('marketplace_list_v3');
       return true;
     } catch (error) {
       console.error('Listing create action failed:', error);
@@ -326,6 +329,8 @@ class OfflineQueueManager {
     try {
       const { updateListing } = await import('./listingSupabase');
       await updateListing(action.data.listingId, action.data.updates);
+      // Invalidate marketplace caches so updates reflect
+      await enhancedCache.invalidateRelated('marketplace_list_v3');
       return true;
     } catch (error) {
       console.error('Listing update action failed:', error);

@@ -14,8 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { X, Edit3, Trash2, Clock, MapPin, Calendar } from 'lucide-react-native';
 import { supabase } from '@/utils/supabaseClient';
 import { Request } from '@/utils/types';
-import { getCategoryById } from '@/utils/requestCategories';
-import { RequestLocationUtils } from '@/utils/requestLocationUtils';
+import { Category } from '@/utils/types';
+import { LocationUtils } from '@/utils/locationUtils';
 
 interface UserListingsModalProps {
   visible: boolean;
@@ -142,8 +142,33 @@ export function UserListingsModal({
     }
   };
 
+  const getCategoryName = (category: Category): string => {
+    // Basic mapping; align with your app's display copy
+    const mapping: Record<Category, string> = {
+      groceries: 'Groceries',
+      electronics: 'Electronics',
+      fashion: 'Fashion',
+      home: 'Home',
+      services: 'Services',
+      vehicles: 'Vehicles',
+      books: 'Books',
+      sports: 'Sports',
+      beauty: 'Beauty',
+      toys: 'Toys',
+      health: 'Health',
+      pets: 'Pets',
+      garden: 'Garden',
+      office: 'Office',
+      music: 'Music',
+      art: 'Art',
+      collectibles: 'Collectibles',
+      other: 'Other',
+    };
+    return mapping[category] || String(category);
+  };
+
   const renderRequestItem = ({ item }: { item: Request }) => {
-    const category = getCategoryById(item.category);
+    const categoryName = getCategoryName(item.category as Category);
     const isExpired = item.expires_at && new Date(item.expires_at) <= new Date();
 
     return (
@@ -153,10 +178,10 @@ export function UserListingsModal({
             <Text style={[styles.requestTitle, isExpired && styles.expiredText]} numberOfLines={2}>
               {item.title}
             </Text>
-            {category && (
-              <View style={[styles.categoryBadge, { backgroundColor: category.color + '20' }]}>
-                <Text style={[styles.categoryText, { color: category.color }]}>
-                  {category.name}
+            {!!categoryName && (
+              <View style={[styles.categoryBadge, { backgroundColor: '#EBF8FF' }]}> 
+                <Text style={[styles.categoryText, { color: '#3B82F6' }]}> 
+                  {categoryName}
                 </Text>
               </View>
             )}
@@ -189,16 +214,14 @@ export function UserListingsModal({
         )}
 
         <View style={styles.requestDetails}>
-          {item.location_name && (
+          {(item as any).location_name && (
             <View style={styles.detailItem}>
               <MapPin size={14} color="#64748B" />
               <Text style={[styles.detailText, isExpired && styles.expiredText]}>
-                {RequestLocationUtils.formatLocationForDisplay({
-                  location_name: item.location_name,
-                  location_district: item.location_district,
-                  location_state: item.location_state,
-                  formatted_address: item.location || ''
-                })}
+                {(() => {
+                  const locationDisplay = (item as any).location_name as string;
+                  return LocationUtils.formatLocationDisplay(locationDisplay || '');
+                })()}
               </Text>
             </View>
           )}
@@ -218,7 +241,7 @@ export function UserListingsModal({
 
         <View style={styles.requestFooter}>
           <Text style={[styles.dateText, isExpired && styles.expiredText]}>
-            {new Date(item.updated_at).toLocaleDateString()}
+            {item.updated_at ? new Date(item.updated_at).toLocaleDateString() : ''}
           </Text>
         </View>
       </View>

@@ -16,7 +16,7 @@ import {
   Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Camera, MapPin, Phone, Mail, Settings, LogOut, CreditCard as Edit3, CircleCheck as CheckCircle, Circle as XCircle, ArrowRight, Lock, Package, Shield, Heart } from 'lucide-react-native';
+import { Camera, MapPin, Phone, Mail, Settings, LogOut, CreditCard as Edit3, CircleCheck as CheckCircle, Circle as XCircle, ArrowRight, Lock, Package, Shield, Heart, Star } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { signOut } from '@/utils/auth';
 import { supabase } from '@/utils/supabaseClient';
@@ -34,6 +34,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { getAvatarSource } from '@/utils/avatarUtils';
 import { useCachedProfile } from '@/hooks/useCachedProfile';
 import { parseBio, stringifyBio, validateSocialUrl, formatSocialUrl, BioData } from '@/utils/bioUtils';
+import FeedbackModal from '@/components/FeedbackModal';
 
 
 
@@ -78,6 +79,29 @@ function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const handleSubmitFeedback = async (rating: number, feedback: string) => {
+    try {
+      const { user } = (await supabase.auth.getUser()).data;
+      if (!user) {
+        Alert.alert('Login required', 'Please log in to submit feedback.');
+        return;
+      }
+      // Prefer app username; fallback to Supabase user id to satisfy NOT NULL
+      const usernameVal = (user.user_metadata?.username as string) || profileData.username || user.id;
+      const { error } = await supabase
+        .from('feedback')
+        .insert({ username: usernameVal, rating, feedback });
+      if (error) {
+        Alert.alert('Error', 'Failed to submit feedback');
+        return;
+      }
+      Alert.alert('Thank you!', 'Your feedback has been submitted.');
+      setShowFeedbackModal(false);
+    } catch (e) {
+      Alert.alert('Error', 'Failed to submit feedback');
+    }
+  };
 
   // Handle back button
   useEffect(() => {
@@ -354,6 +378,40 @@ function ProfileScreen() {
     );
   };
 
+  const handleRateApp = () => {
+    setShowFeedbackModal(true);
+  };
+
+  const handleFeedbackSubmit = async (rating: number, comment: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        Alert.alert('Login required', 'Please log in to submit feedback.');
+        return;
+      }
+
+      // Align payload to existing feedback table (username, rating, feedback)
+      const usernameVal = (user.user_metadata?.username as string) || profileData.username || user.id;
+      const payload = {
+        username: usernameVal,
+        rating: rating,
+        feedback: comment,
+      } as const;
+
+      const { error } = await supabase
+        .from('feedback')
+        .insert(payload);
+
+      if (error) {
+        Alert.alert('Error', 'Failed to submit feedback. Please try again.');
+        return;
+      }
+      Alert.alert('Success', 'Thank you for your feedback!');
+      setShowFeedbackModal(false);
+    } catch (err) {
+      Alert.alert('Error', 'Something went wrong while submitting feedback.');
+    }
+  };
 
 
   const onRefresh = async () => {
@@ -711,6 +769,7 @@ function ProfileScreen() {
           </View>
         </View>
       </Modal>
+      
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -949,6 +1008,28 @@ function ProfileScreen() {
           </View>
         </TouchableOpacity>
 
+        {/* Rate Our App - moved here from Home */}
+        <TouchableOpacity 
+          style={styles.listingsSection}
+          onPress={() => {
+            setShowFeedbackModal(true);
+          }}
+          activeOpacity={0.7}
+        >
+          <View style={styles.listingsContent}>
+            <View style={styles.listingsLeft}>
+              <Star size={20} color="#10B981" />
+              <View style={styles.listingsTextContainer}>
+                <Text style={styles.listingsTitle}>Rate Our App</Text>
+                <Text style={styles.listingsDescription}>
+                  Share your feedback on the Play Store
+                </Text>
+              </View>
+            </View>
+            <ArrowRight size={20} color="#94A3B8" />
+          </View>
+        </TouchableOpacity>
+
         {/* Settings */}
         <TouchableOpacity 
           style={styles.listingsSection}
@@ -979,8 +1060,11 @@ function ProfileScreen() {
 
       </ScrollView>
 
-
-
+      <FeedbackModal
+        visible={showFeedbackModal}
+        onClose={() => setShowFeedbackModal(false)}
+        onSubmit={handleFeedbackSubmit}
+      />
 
     </View>
   );
