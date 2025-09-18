@@ -15,7 +15,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, MapPin, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Home, Star, Car, MoreHorizontal, Map } from 'lucide-react-native';
+import { Search, MapPin, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Home, Star, Car, MoreHorizontal, Map, List, User } from 'lucide-react-native';
 import { Plus } from 'lucide-react-native';
 // Categories moved to inline definition for better performance
 const categories = [
@@ -35,6 +35,8 @@ import { useRouter } from 'expo-router';
 import DistanceFilterModal from '@/components/DistanceFilterModal';
 import { useMarketplaceItems } from '@/hooks/useMarketplaceItems';
 import { supabase } from '@/utils/supabaseClient';
+import MapContainer from '@/components/MapContainer';
+import MapPinPopup from '@/components/MapPinPopup';
 
 import { formatDistance } from '@/utils/distance';
 import { LocationUtils } from '@/utils/locationUtils';
@@ -63,6 +65,16 @@ function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedItemType, setSelectedItemType] = useState<ItemType | 'all'>('all');
+  const [isMapView, setIsMapView] = useState(false);
+  const [userLocation, setUserLocation] = useState<{latitude: number, longitude: number} | null>(null);
+  const [selectedListing, setSelectedListing] = useState<any>(null);
+  const [showPinPopup, setShowPinPopup] = useState(false);
+  const [mapRegion, setMapRegion] = useState({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  });
   const errorHandler = ErrorHandler.getInstance();
 
   const insets = useSafeAreaInsets();
@@ -354,6 +366,52 @@ function HomeScreen() {
     setVerifiedOnly(verifiedOnly);
   };
 
+  // Map view handlers
+  const handleToggleMapView = () => {
+    setIsMapView(!isMapView);
+  };
+
+  const handleMarkerPress = (listing: any) => {
+    setSelectedListing(listing);
+    setShowPinPopup(true);
+  };
+
+  const handleClosePinPopup = () => {
+    setShowPinPopup(false);
+    setSelectedListing(null);
+  };
+
+  const handleViewDetailsFromPopup = () => {
+    if (selectedListing) {
+      // Navigate to detail page with seller data and item type
+      const seller = sellerInfoMap[selectedListing.username];
+      if (seller) {
+        router.push({
+          pathname: '/listing-detail',
+          params: {
+            id: selectedListing.id,
+            sellerData: JSON.stringify(seller),
+            type: selectedListing.item_type || 'listing'
+          }
+        });
+      } else {
+        const typeParam = selectedListing.item_type ? `&type=${selectedListing.item_type}` : '';
+        router.push(`/listing-detail?id=${selectedListing.id}${typeParam}`);
+      }
+    }
+  };
+
+  const handleLocationUpdate = (latitude: number, longitude: number) => {
+    setUserLocation({ latitude, longitude });
+    setMapRegion({
+      latitude,
+      longitude,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    });
+    updateLocation();
+  };
+
   const renderCategory = useCallback(({ item }: { item: any }) => {
     const IconComponent = categoryIcons[item.id as keyof typeof categoryIcons] || ShoppingCart;
     const isSelected = selectedCategory === item.id;
@@ -429,8 +487,9 @@ function HomeScreen() {
 
             {/* Seller Name with Verification Badge */}
             <View style={styles.sellerInfo}>
+              <User size={16} color="#64748B" />
               <Text style={styles.sellerName}>
-                {item.item_type === 'request' ? 'Requester' : 'Seller'}: {seller.name || 'Unknown'}
+                {seller.name || 'Unknown'}
               </Text>
               {isUserVerified(seller) && <VerificationBadge size="small" />}
             </View>
@@ -721,10 +780,10 @@ function HomeScreen() {
           <Filter size={20} color={(sortByDistanceState || maxDistance !== null) ? '#10B981' : '#64748B'} />
         </TouchableOpacity>
         <TouchableOpacity 
-          style={styles.mapButton}
-          onPress={() => router.push('/map-view')}
+          style={[styles.mapButton, isMapView && styles.activeMapButton]}
+          onPress={handleToggleMapView}
         >
-          <Map size={20} color="#64748B" />
+          {isMapView ? <List size={20} color="#FFFFFF" /> : <Map size={20} color="#64748B" />}
         </TouchableOpacity>
       </View>
 
@@ -781,46 +840,108 @@ function HomeScreen() {
 
       {/* Listings */}
       <View style={styles.listingsSection}>
-        
-        {loadingStage === 'loading' ? (
-          <HomeLoadingStates 
-            stage="loading"
-            onRetry={handleRetry}
-          />
-        ) : loadingStage === 'offline' ? (
-          <HomeLoadingStates 
-            stage="offline"
-            onRetry={handleRetry}
-          />
-        ) : loadingStage === 'error' ? (
-          <HomeLoadingStates 
-            stage="error"
-            onRetry={handleRetry}
-            errorMessage="Failed to load listings. Please try again."
-          />
-        ) : displayItems.length === 0 ? (
-          <HomeLoadingStates 
-            stage="empty"
-            onRetry={handleRetry}
-          />
+        {isMapView ? (
+          // Map View
+          <View style={styles.mapContainer}>
+            {loadingStage === 'loading' ? (
+              <HomeLoadingStates 
+                stage="loading"
+                onRetry={handleRetry}
+              />
+            ) : loadingStage === 'offline' ? (
+              <HomeLoadingStates 
+                stage="offline"
+                onRetry={handleRetry}
+              />
+            ) : loadingStage === 'error' ? (
+              <HomeLoadingStates 
+                stage="error"
+                onRetry={handleRetry}
+                errorMessage="Failed to load listings. Please try again."
+              />
+            ) : displayItems.length === 0 ? (
+              <HomeLoadingStates 
+                stage="empty"
+                onRetry={handleRetry}
+              />
+            ) : (
+              <>
+                <MapContainer
+                  loading={loading}
+                  visibleListings={displayItems}
+                  userLocation={userLocation}
+                  region={mapRegion}
+                  onMarkerPress={handleMarkerPress}
+                  onLocationUpdate={handleLocationUpdate}
+                />
+                
+                {/* Load More Button for Map View */}
+                <View style={styles.mapLoadMoreContainer}>
+                  <TouchableOpacity 
+                    style={[
+                      styles.mapLoadMoreButton,
+                      (!hasMore || loading) && styles.mapLoadMoreButtonDisabled
+                    ]}
+                    onPress={hasMore && !loading ? onEndReachedHandler : undefined}
+                    disabled={!hasMore || loading}
+                  >
+                    <Text style={[
+                      styles.mapLoadMoreText,
+                      (!hasMore || loading) && styles.mapLoadMoreTextDisabled
+                    ]}>
+                      {loading ? 'Loading...' : 
+                       !hasMore ? `All ${displayItems.length} items loaded` : 
+                       `Load More (${displayItems.length} shown)`}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
         ) : (
-          <FlatList
-            data={displayItems}
-            renderItem={renderListing}
-            keyExtractor={keyExtractor}
-            numColumns={2}
-            contentContainerStyle={styles.listingsContainer}
-            columnWrapperStyle={styles.columnWrapper}
-            showsVerticalScrollIndicator={false}
-            removeClippedSubviews={true}
-            maxToRenderPerBatch={10}
-            windowSize={10}
-            initialNumToRender={10}
-            onEndReached={onEndReachedHandler}
-            onEndReachedThreshold={0.7}
-            refreshControl={refreshControlComponent}
-            ListFooterComponent={footerComponent}
-          />
+          // List View
+          <>
+            {loadingStage === 'loading' ? (
+              <HomeLoadingStates 
+                stage="loading"
+                onRetry={handleRetry}
+              />
+            ) : loadingStage === 'offline' ? (
+              <HomeLoadingStates 
+                stage="offline"
+                onRetry={handleRetry}
+              />
+            ) : loadingStage === 'error' ? (
+              <HomeLoadingStates 
+                stage="error"
+                onRetry={handleRetry}
+                errorMessage="Failed to load listings. Please try again."
+              />
+            ) : displayItems.length === 0 ? (
+              <HomeLoadingStates 
+                stage="empty"
+                onRetry={handleRetry}
+              />
+            ) : (
+              <FlatList
+                data={displayItems}
+                renderItem={renderListing}
+                keyExtractor={keyExtractor}
+                numColumns={2}
+                contentContainerStyle={styles.listingsContainer}
+                columnWrapperStyle={styles.columnWrapper}
+                showsVerticalScrollIndicator={false}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={10}
+                windowSize={10}
+                initialNumToRender={10}
+                onEndReached={onEndReachedHandler}
+                onEndReachedThreshold={0.7}
+                refreshControl={refreshControlComponent}
+                ListFooterComponent={footerComponent}
+              />
+            )}
+          </>
         )}
       </View>
 
@@ -840,6 +961,16 @@ function HomeScreen() {
         onSubmit={handleSubmitFeedback}
       />
 
+      {/* Map Pin Popup */}
+      {showPinPopup && (
+        <MapPinPopup
+          listing={selectedListing}
+          visible={showPinPopup}
+          onClose={handleClosePinPopup}
+          onPing={handleViewDetailsFromPopup}
+          sellerInfoMap={sellerInfoMap}
+        />
+      )}
 
       {/* Location Check Popup is handled globally in _layout.tsx */}
 
@@ -894,6 +1025,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 12,
+  },
+  activeMapButton: {
+    backgroundColor: '#10B981',
   },
   categoriesSection: {
     backgroundColor: '#FFFFFF',
@@ -1200,6 +1334,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
+    gap: 6,
   },
   locationText: {
     fontSize: 11,
@@ -1349,6 +1484,42 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: '#64748B',
+  },
+  mapContainer: {
+    flex: 1,
+    position: 'relative',
+  },
+  mapLoadMoreContainer: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    zIndex: 1,
+  },
+  mapLoadMoreButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  mapLoadMoreButtonDisabled: {
+    backgroundColor: '#94A3B8',
+    shadowOpacity: 0.1,
+    elevation: 2,
+  },
+  mapLoadMoreText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+  },
+  mapLoadMoreTextDisabled: {
+    color: '#E2E8F0',
   },
 });
 

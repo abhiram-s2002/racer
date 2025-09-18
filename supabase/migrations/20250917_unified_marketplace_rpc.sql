@@ -103,6 +103,8 @@ returns table (
   preview_images text[],
   pickup_available boolean,
   delivery_available boolean,
+  latitude double precision,
+  longitude double precision,
   distance_km double precision,
   view_count integer,
   ping_count integer,
@@ -148,6 +150,8 @@ src_listings as (
     coalesce(l.preview_images, '{}') as preview_images,
     coalesce(l.pickup_available, false) as pickup_available,
     coalesce(l.delivery_available, false) as delivery_available,
+    l.latitude,
+    l.longitude,
     case when p.user_geog is not null and l.location is not null
       then ST_DistanceSphere(p.user_geog::geometry, l.location::geometry) / 1000.0
       else null::double precision end as distance_km,
@@ -191,6 +195,8 @@ src_requests as (
     coalesce(r.preview_images, '{}') as preview_images,
     coalesce(r.pickup_available, false) as pickup_available,
     coalesce(r.delivery_available, false) as delivery_available,
+    r.latitude,
+    r.longitude,
     case when p.user_geog is not null and r.location is not null
       then ST_DistanceSphere(p.user_geog::geometry, r.location::geometry) / 1000.0
       else null::double precision end as distance_km,
@@ -244,7 +250,7 @@ filtered as (
 select
   id, item_type, username, title, description, category, price, price_unit,
   thumbnail_images, preview_images, pickup_available, delivery_available,
-  distance_km, view_count, ping_count, expires_at, created_at
+  latitude, longitude, distance_km, view_count, ping_count, expires_at, created_at
 from filtered f, params p
 order by
   case when p.sort_by = 'distance' and p.sort_order = 'asc' then f.distance_km end asc nulls last,

@@ -59,6 +59,7 @@ function MapContainer({
 
 
 
+
   return (
     <MapView
       style={styles.map}
@@ -74,25 +75,32 @@ function MapContainer({
             latitude: userLocation.latitude,
             longitude: userLocation.longitude,
           }}
-          pinColor="#10B981"
+          pinColor="red"
           title="Your Location"
         />
       )}
 
-      {/* Listing markers */}
-      {visibleListings.map((listing) => (
-        <Marker
-          key={listing.id}
-          coordinate={{
-            latitude: listing.latitude || 37.78825,
-            longitude: listing.longitude || -122.4324,
-          }}
-          pinColor="#3B82F6"
-          title={listing.title}
-          description={`${listing.price} · ${listing.category}`}
-          onPress={() => onMarkerPress(listing)}
-        />
-      ))}
+      {/* Listing markers - only show items with valid coordinates */}
+      {visibleListings
+        .filter(listing => listing.latitude && listing.longitude)
+        .map((listing) => {
+          // Use different colors based on item type
+          const pinColor = listing.item_type === 'request' ? '#9333EA' : '#3B82F6';
+          
+          return (
+            <Marker
+              key={listing.id}
+              coordinate={{
+                latitude: listing.latitude,
+                longitude: listing.longitude,
+              }}
+              pinColor={pinColor}
+              title={listing.title}
+              description={`₹${listing.price} · ${listing.category} · ${listing.item_type === 'request' ? 'REQUEST' : 'FOR SALE'}`}
+              onPress={() => onMarkerPress(listing)}
+            />
+          );
+        })}
     </MapView>
   );
 }

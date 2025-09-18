@@ -80,26 +80,29 @@ export function useMarketplaceItems() {
         const lastItem = (pageNumber > 1 && isKeysetMode && items.length > 0)
           ? items[items.length - 1]
           : undefined;
+        const rpcParams = {
+          user_lat: userLat,
+          user_lng: userLon,
+          max_distance_km: maxDistance === null ? 75 : maxDistance,
+          item_type_filter: itemType === 'all' ? null : itemType,
+          category_filter: selectedCategory === 'all' ? null : selectedCategory,
+          verified_only: verifiedOnly,
+          min_price: null,
+          max_price: null,
+          search_query: searchQuery ? searchQuery : null,
+          sort_by: sortByDistance ? 'distance' : 'date',
+          sort_order: sortByDistance ? 'asc' : 'desc',
+          limit_count: pageSize,
+          offset_count: isKeysetMode ? 0 : offsetCount,
+          last_created_at: isKeysetMode ? (lastItem?.created_at ?? null) : null,
+          last_id: isKeysetMode ? (lastItem?.id ?? null) : null,
+        };
+        
         const { data: itemsData, error: itemsError } = await supabase
-          .rpc('get_marketplace_items_with_distance', {
-            user_lat: userLat,
-            user_lng: userLon,
-            max_distance_km: maxDistance === null ? 75 : maxDistance,
-            item_type_filter: itemType === 'all' ? null : itemType,
-            category_filter: selectedCategory === 'all' ? null : selectedCategory,
-            verified_only: verifiedOnly,
-            min_price: null,
-            max_price: null,
-            search_query: searchQuery ? searchQuery : null,
-            sort_by: sortByDistance ? 'distance' : 'date',
-            sort_order: sortByDistance ? 'asc' : 'desc',
-            limit_count: pageSize,
-            offset_count: isKeysetMode ? 0 : offsetCount,
-            last_created_at: isKeysetMode ? (lastItem?.created_at ?? null) : null,
-            last_id: isKeysetMode ? (lastItem?.id ?? null) : null,
-          });
+          .rpc('get_marketplace_items_with_distance', rpcParams);
 
         if (!itemsError && itemsData) {
+          
           const unifiedItems = itemsData.map((item: any) => ({
             ...item,
             username: item.item_type === 'request' ? item.requester_username || item.username : item.username,
@@ -141,6 +144,7 @@ export function useMarketplaceItems() {
           const { data: listingsData, error: listingsError } = await query;
           
           if (!listingsError && listingsData) {
+            
             const listings = listingsData.map((item: any) => ({
               ...item,
               item_type: 'listing' as ItemType,
@@ -179,6 +183,7 @@ export function useMarketplaceItems() {
           const { data: requestsData, error: requestsError } = await query;
           
           if (!requestsError && requestsData) {
+            
             const requests = requestsData.map((item: any) => ({
               ...item,
               item_type: 'request' as ItemType,
@@ -198,6 +203,7 @@ export function useMarketplaceItems() {
 
       // When using RPC or range queries, result set is already paginated and sorted
       const result = allItems;
+      
 
       // Cache images for each item
       result.forEach((item: MarketplaceItem) => {
