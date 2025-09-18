@@ -35,6 +35,8 @@ import { getAvatarSource } from '@/utils/avatarUtils';
 import { useCachedProfile } from '@/hooks/useCachedProfile';
 import { parseBio, stringifyBio, validateSocialUrl, formatSocialUrl, BioData } from '@/utils/bioUtils';
 import FeedbackModal from '@/components/FeedbackModal';
+import { googleAnalytics } from '@/utils/googleAnalytics';
+import { Environment } from '@/utils/environment';
 
 
 

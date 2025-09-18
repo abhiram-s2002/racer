@@ -1,6 +1,6 @@
 # Terms of Service for GeoMart
 
-**Last Updated:** January 25, 2025
+**Last Updated:** September 18, 2025
 
 ## 1. Acceptance of Terms
 
@@ -38,6 +38,7 @@ GeoMart is a comprehensive local marketplace platform that enables users to:
 - You are responsible for all activity under your account
 - You must maintain accurate and up-to-date profile information
 - You are responsible for maintaining the security of your device
+ - You acknowledge our limited right to administer account identifiers (including usernames) that violate policy or law (see Section 4 and 15)
 
 ### 3.3 Account Verification
 - We may require verification of your identity or contact information
@@ -68,6 +69,7 @@ You agree NOT to:
 - Use the service to facilitate illegal transactions
 - Manipulate ratings, reviews, or feedback systems
 - Share account credentials with others
+ - Select or use usernames that are deceptive (impersonation), infringing (e.g., trademarks), profane, hateful, or otherwise violate our policies or applicable law
 
 ### 4.2 Content Standards
 All content you post must:
@@ -121,6 +123,7 @@ All content you post must:
 - Verify buyer/seller identity when appropriate
 - Use escrow services for high-value transactions
 - Document all transaction details
+ - For request-based posts: clearly state the requested item/service, location constraints, and fulfillment terms
 
 ### 5.3 Dispute Resolution
 - Users should attempt to resolve disputes directly
@@ -154,6 +157,9 @@ You have certain rights regarding your personal data, including:
 
 ### 6.3 Data Processing
 By using our service, you consent to the processing of your personal data as described in our Privacy Policy and for the purposes outlined in these Terms. We process your data based on legitimate interests, contractual necessity, and legal obligations.
+
+### 6.4 Moderation and Administrative Actions
+To maintain a safe marketplace, we may review, edit, restrict, or remove content or profile elements (including usernames, avatars, bios, listings, and requests) that violate these Terms, our policies, or applicable law. We may also assign temporary placeholders or require changes to non-compliant usernames.
 
 ## 7. Intellectual Property
 
@@ -204,6 +210,7 @@ To the maximum extent permitted by law:
 - We are not liable for user-generated content or third-party actions
 - We are not liable for data loss or security breaches
 - We are not liable for transactions between users
+ - We are not liable for changes made to non-compliant user identifiers where required for safety, legality, or policy enforcement
 - We are not liable for any loss of profits, business, or opportunities
 - We are not liable for any damages arising from your use of third-party services
 - We are not liable for any damages resulting from force majeure events
@@ -254,6 +261,7 @@ We may terminate or suspend your account if:
 - You repeatedly violate community guidelines
 - You attempt to circumvent our security measures
 - You use the service for unauthorized commercial purposes
+ - You repeatedly use non-compliant usernames or refuse to remedy policy-violating identifiers or content
 
 ### 10.3 Effect of Termination
 Upon termination:
@@ -275,6 +283,7 @@ We may update these Terms from time to time. We will notify you of material chan
 - Displaying an in-app notification
 - Updating the "Last Updated" date at the top of these Terms
 - Providing notice through our official communication channels
+ - Updating in-app legal screens
 
 ### 11.2 Continued Use
 Your continued use of the service after changes become effective constitutes acceptance of the updated Terms.
@@ -294,6 +303,7 @@ These Terms are governed by the laws of India, without regard to conflict of law
 - **Court Proceedings**: If arbitration is not available, disputes will be resolved in courts of Kozhikode, Kerala, India
 - **Consumer Disputes**: Consumer disputes may be subject to different resolution procedures
 - **Class Action Waiver**: You agree to resolve disputes individually
+ - **Injunctive Relief**: We may seek injunctive relief to prevent ongoing violations of these Terms, including misuse of protected marks in usernames and listings
 
 ### 12.3 Class Action Waiver
 You agree to resolve disputes individually and waive any right to participate in class actions, collective actions, or representative proceedings.
@@ -331,6 +341,12 @@ Our failure to enforce any provision does not constitute a waiver of that provis
 ### 16.4 Survival
 Provisions that by their nature should survive termination will remain in effect, including but not limited to intellectual property rights, disclaimers, limitations of liability, indemnification, and dispute resolution provisions.
 
+### 16.5 Marketplace Requests and Listings
+Requests (wanted posts) and Listings (for sale/service posts) are both considered user-generated content and are subject to all provisions on content standards, moderation, and transactions. Visibility rules for requests and listings may differ by feature; we may rank or display them based on relevance, proximity, and safety.
+
 ---
 
-*These Terms of Service are effective as of January 25, 2025. For previous versions, please contact us at risingsoup76@gmail.com.* 
+*These Terms of Service are effective as of September 18, 2025. For previous versions, please contact us at risingsoup76@gmail.com.*
+
+Changelog:
+- 2025-09-18: Added explicit moderation/admin authority including username edits; clarified request-based posts; updated effective date and notices.

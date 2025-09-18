@@ -49,7 +49,7 @@ function PrivacyScreen() {
             At GeoMart, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, and safeguard your data.
           </Text>
           <Text style={styles.paragraph}>
-            Last updated: January 25, 2025
+            Last updated: September 18, 2025
           </Text>
         </View>
 
@@ -79,6 +79,7 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• Search queries and browsing history</Text>
             <Text style={styles.bullet}>• Communication data (messages, pings)</Text>
             <Text style={styles.bullet}>• Transaction history and preferences</Text>
+            <Text style={styles.bullet}>• Request posts and related interactions</Text>
             <Text style={styles.bullet}>• Ratings, reviews, and leaderboard participation</Text>
             <Text style={styles.bullet}>• Security events and login attempts</Text>
           </View>
@@ -100,6 +101,7 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• Implement verification systems</Text>
             <Text style={styles.bullet}>• Manage gamification rewards (OMNI tokens) and leaderboard systems</Text>
             <Text style={styles.bullet}>• Provide customer support</Text>
+            <Text style={styles.bullet}>• Enforce our Terms via moderation of listings, requests, and usernames</Text>
           </View>
         </View>
 
@@ -116,6 +118,7 @@ function PrivacyScreen() {
             <Text style={styles.bullet}>• With your explicit consent</Text>
             <Text style={styles.bullet}>• With identity verification services</Text>
             <Text style={styles.bullet}>• With security and fraud detection services</Text>
+            <Text style={styles.bullet}>• With map/location providers to display listings and requests</Text>
           </View>
         </View>
 
@@ -168,6 +171,7 @@ function PrivacyScreen() {
           <View style={styles.bulletList}>
             <Text style={styles.bullet}>• Access your personal data</Text>
             <Text style={styles.bullet}>• Correct inaccurate information</Text>
+            <Text style={styles.bullet}>• Request updates to non-compliant identifiers (including usernames)</Text>
             <Text style={styles.bullet}>• Delete your account and data</Text>
             <Text style={styles.bullet}>• Export your data</Text>
             <Text style={styles.bullet}>• Opt out of marketing communications</Text>
@@ -265,7 +269,7 @@ function PrivacyScreen() {
             We may update this Privacy Policy from time to time. We will notify you of significant changes through the app or email. Your continued use of the service constitutes acceptance of the updated policy.
           </Text>
           <Text style={styles.paragraph}>
-            For material changes, we will provide at least 30 days&apos; notice before the changes take effect.
+            For material changes, we will provide at least 30 days&apos; notice before the changes take effect. We may take reasonable administrative actions to maintain safety and compliance, including editing non-compliant usernames, avatars, bios, listings, and requests.
           </Text>
         </View>
 

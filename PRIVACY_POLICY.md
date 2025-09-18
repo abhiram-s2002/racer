@@ -1,6 +1,6 @@
 # Privacy Policy for GeoMart
 
-**Last Updated:** January 25, 2025
+**Last Updated:** September 18, 2025
 
 ## 1. Introduction
 
@@ -19,7 +19,7 @@ This Privacy Policy explains:
 ### 2.1 Information You Provide
 - **Account Information**: Name, email address, phone number, username, password, verification status
 - **Profile Information**: Profile pictures, location preferences, bio, avatar, verification badges
-- **Marketplace Activity**: Listings, messages, transactions, reviews, pings, ratings, leaderboard participation
+- **Marketplace Activity**: Listings, requests, messages, transactions, reviews, pings, ratings, leaderboard participation
 - **Communications**: Messages with other users, support requests, feedback, notifications preferences
 - **Location Data**: Your precise location when you enable location services, location history
 - **Payment Information**: If applicable, payment method details (processed securely by third-party providers)
@@ -69,6 +69,7 @@ This Privacy Policy explains:
 - **Rewards**: Manage rewards, achievements, and leaderboard systems
 - **Safety**: Monitor for suspicious activity and ensure platform safety
 - **Personalization**: Customize your experience based on preferences and behavior
+ - **Moderation and Enforcement**: Enforce our Terms and community guidelines, including reviewing, removing, or editing content such as listings, requests, and usernames that violate policies or laws
 
 ## 4. Legal Basis for Processing (GDPR)
 
@@ -85,7 +86,7 @@ We process your personal data based on the following legal grounds:
 ### 5.1 With Other Users
 - Your profile information (username, avatar, location, verification status) is visible to other users
 - Messages you send are shared with recipients
-- Listing information is publicly visible within the app
+- Listing and request information is publicly visible within the app
 - Your activity status may be visible to other users
 - Your ratings and reviews are visible to other users
 - Your leaderboard position and achievements may be visible to other users
@@ -170,6 +171,8 @@ To exercise any of these rights, contact us at:
 
 We will respond to your request within 30 days (GDPR) or 45 days (CCPA). We may require verification of your identity before processing your request.
 
+If you request correction of profile data, we may, at our discretion, update or restrict certain identifiers (including usernames) that conflict with our policies (e.g., impersonation, profanity, trademark infringement, hate speech, safety risks) to protect the community.
+
 ## 8. Data Retention
 
 ### 8.1 Retention Periods
@@ -243,6 +246,9 @@ We may update this privacy policy from time to time. We will notify you of any m
 ### 12.2 Continued Use
 Your continued use of the app after changes become effective constitutes acceptance of the updated policy. For material changes, we will provide at least 30 days' notice before the changes take effect.
 
+### 12.3 Account Administration Notice
+We reserve the authority to administer accounts to maintain safety and compliance. This includes reviewing, limiting, or editing profile elements (including usernames, avatars, bios) that violate our Terms, this Policy, or applicable law.
+
 ## 13. Contact Information
 
 ### 13.1 General Privacy Inquiries
@@ -276,4 +282,7 @@ Our app does not respond to "Do Not Track" signals as we do not track users acro
 
 ---
 
-*This privacy policy is effective as of January 25, 2025. For previous versions, please contact us at risingsoup76@gmail.com.* 
+*This privacy policy is effective as of September 18, 2025. For previous versions, please contact us at risingsoup76@gmail.com.*
+
+Changelog:
+- 2025-09-18: Clarified processing for requests/listings, added moderation authority including username edits, updated visibility disclosures, updated effective date.

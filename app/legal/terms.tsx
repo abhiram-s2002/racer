@@ -46,7 +46,7 @@ function TermsScreen() {
             These Terms of Service (&quot;Terms&quot;) govern your use of the GeoMart mobile application and services. By using GeoMart, you agree to these Terms.
           </Text>
           <Text style={styles.paragraph}>
-            Last updated: January 25, 2025
+            Last updated: September 18, 2025
           </Text>
         </View>
 
@@ -104,6 +104,7 @@ function TermsScreen() {
             <Text style={styles.bullet}>• Create fake accounts or use multiple accounts</Text>
             <Text style={styles.bullet}>• Manipulate ratings, reviews, or feedback systems</Text>
             <Text style={styles.bullet}>• Share account credentials with others</Text>
+            <Text style={styles.bullet}>• Use deceptive, infringing, profane, or hateful usernames</Text>
           </View>
         </View>
 
@@ -121,6 +122,7 @@ function TermsScreen() {
             <Text style={styles.bullet}>• Include clear, high-quality images when applicable</Text>
             <Text style={styles.bullet}>• Comply with local and international trade regulations</Text>
             <Text style={styles.bullet}>• Not contain copyrighted material without permission</Text>
+            <Text style={styles.bullet}>• For requests: clearly describe the wanted item/service and terms</Text>
           </View>
           <Text style={styles.paragraph}>
             GeoMart reserves the right to remove listings that violate these guidelines.
@@ -179,6 +181,7 @@ function TermsScreen() {
             <Text style={styles.bullet}>• Third-party actions or content</Text>
             <Text style={styles.bullet}>• Any loss of profits, business, or opportunities</Text>
             <Text style={styles.bullet}>• Damages arising from your violation of these Terms</Text>
+            <Text style={styles.bullet}>• Changes applied to non-compliant usernames for safety or legality</Text>
           </View>
         </View>
 
@@ -189,7 +192,7 @@ function TermsScreen() {
             We may terminate or suspend your account at any time for violations of these Terms. You may also delete your account at any time.
           </Text>
           <Text style={styles.paragraph}>
-            Upon termination, your access to the service will cease, your content may be removed, and we may retain certain data as required by law.
+            Upon termination, your access to the service will cease, your content may be removed, and we may retain certain data as required by law. Repeated use of non-compliant usernames or refusal to remedy policy violations may result in suspension.
           </Text>
         </View>
 
@@ -200,7 +203,7 @@ function TermsScreen() {
             We may update these Terms from time to time. We will notify you of significant changes through the app or email. Continued use of the service constitutes acceptance of updated Terms.
           </Text>
           <Text style={styles.paragraph}>
-            For material changes, we will provide at least 30 days&apos; notice before the changes take effect.
+            For material changes, we will provide at least 30 days&apos; notice before the changes take effect. We also update in-app legal screens when relevant.
           </Text>
         </View>
 

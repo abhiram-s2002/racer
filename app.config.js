@@ -54,6 +54,16 @@ module.exports = {
       "expo-image-picker",
       "expo-dev-client",
       [
+        "@sentry/react-native/expo",
+        {
+          // Configure native Sentry integration for EAS builds
+          organization: "silver",
+          project: "geomart",
+          url: "https://sentry.io/",
+          deploy: true
+        }
+      ],
+      [
         "expo-location",
         {
           locationAlwaysAndWhenInUsePermission: "Allow $(PRODUCT_NAME) to use your location."
@@ -66,6 +76,12 @@ module.exports = {
     },
     extra: {
       environment: "development",
+      EXPO_PUBLIC_ENV: "development",
+      // Sentry DSN can be overridden via env at build/runtime
+      EXPO_PUBLIC_SENTRY_DSN: "https://12bda6c71fb7e7c03519c5543ba94e47@o4509779115507712.ingest.us.sentry.io/4509779117080576",
+      EXPO_PUBLIC_ENABLE_ERROR_REPORTING: "true",
+      // Google Analytics ID
+      EXPO_PUBLIC_GOOGLE_ANALYTICS_ID: "G-1RN9LQFY3G",
       router: {},
       eas: {
         projectId: "8f44f78a-7dfa-43c5-9b3e-999d5256971a"

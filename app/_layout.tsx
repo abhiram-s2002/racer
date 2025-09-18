@@ -207,7 +207,6 @@ export default function AuthGate() {
   useNotificationsRealtime(currentUserId, (n) => {
     // Optionally display an in-app banner/toast here
     // For now, just log to console
-    console.log('New notification:', n.title, n.body);
   });
 
   useEffect(() => {
@@ -303,7 +302,7 @@ export default function AuthGate() {
   // Handle deep links
   useEffect(() => {
     const handleDeepLink = (url: string) => {
-      console.log('Deep link received:', url);
+      // Deep link received: ${url}
       
       // Parse the deep link URL
       if (url.startsWith('geomart://listing/')) {

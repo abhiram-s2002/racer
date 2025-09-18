@@ -13,14 +13,14 @@ interface Props {
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: ErrorInfo) => void;
   componentName?: string;
-  errorType?: 'critical' | 'recoverable' | 'network' | 'auth' | 'data' | 'whatsapp' | 'location';
+  errorType?: 'critical' | 'recoverable' | 'network' | 'auth' | 'data' | 'whatsapp' | 'location' | 'marketplace' | 'listing' | 'request' | 'image' | 'search' | 'activity';
 }
 
 interface State {
   hasError: boolean;
   error: Error | null;
   errorInfo: ErrorInfo | null;
-  errorType: 'critical' | 'recoverable' | 'network' | 'auth' | 'data' | 'whatsapp' | 'location';
+  errorType: 'critical' | 'recoverable' | 'network' | 'auth' | 'data' | 'whatsapp' | 'location' | 'marketplace' | 'listing' | 'request' | 'image' | 'search' | 'activity';
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -38,7 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     // Categorize errors based on error message or type
-    let errorType: 'critical' | 'recoverable' | 'network' | 'auth' | 'data' | 'whatsapp' | 'location' = 'recoverable';
+    let errorType: 'critical' | 'recoverable' | 'network' | 'auth' | 'data' | 'whatsapp' | 'location' | 'marketplace' | 'listing' | 'request' | 'image' | 'search' | 'activity' = 'recoverable';
     
     const errorMessage = error.message.toLowerCase();
     
@@ -52,6 +52,18 @@ export class ErrorBoundary extends Component<Props, State> {
       errorType = 'whatsapp';
     } else if (errorMessage.includes('location') || errorMessage.includes('gps') || errorMessage.includes('permission') || errorMessage.includes('coordinates')) {
       errorType = 'location';
+    } else if (errorMessage.includes('listing') || errorMessage.includes('sell') || errorMessage.includes('product') || errorMessage.includes('service')) {
+      errorType = 'listing';
+    } else if (errorMessage.includes('request') || errorMessage.includes('budget') || errorMessage.includes('requester')) {
+      errorType = 'request';
+    } else if (errorMessage.includes('image') || errorMessage.includes('photo') || errorMessage.includes('camera') || errorMessage.includes('upload') || errorMessage.includes('storage')) {
+      errorType = 'image';
+    } else if (errorMessage.includes('search') || errorMessage.includes('filter') || errorMessage.includes('query') || errorMessage.includes('category')) {
+      errorType = 'search';
+    } else if (errorMessage.includes('activity') || errorMessage.includes('ping') || errorMessage.includes('notification') || errorMessage.includes('rating')) {
+      errorType = 'activity';
+    } else if (errorMessage.includes('marketplace') || errorMessage.includes('market') || errorMessage.includes('item') || errorMessage.includes('trade')) {
+      errorType = 'marketplace';
     } else if (errorMessage.includes('critical') || errorMessage.includes('fatal')) {
       errorType = 'critical';
     }
@@ -265,6 +277,144 @@ export class ErrorBoundary extends Component<Props, State> {
     );
   }
 
+  renderMarketplaceError() {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Marketplace Error</Text>
+          <Text style={styles.message}>
+            There was an issue with the marketplace. This might be a temporary problem with loading items or data.
+          </Text>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.secondaryButton} onPress={this.handleGoHome}>
+              <Text style={styles.secondaryButtonText}>Go Home</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  renderListingError() {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Listing Error</Text>
+          <Text style={styles.message}>
+            There was an issue with the listing. This could be a problem with creating, editing, or viewing the listing.
+          </Text>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.secondaryButton} onPress={this.handleGoHome}>
+              <Text style={styles.secondaryButtonText}>Go Home</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  renderRequestError() {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Request Error</Text>
+          <Text style={styles.message}>
+            There was an issue with the request. This could be a problem with creating, editing, or viewing the request.
+          </Text>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.secondaryButton} onPress={this.handleGoHome}>
+              <Text style={styles.secondaryButtonText}>Go Home</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  renderImageError() {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Image Error</Text>
+          <Text style={styles.message}>
+            There was an issue with the image. This could be a problem with uploading, processing, or displaying images.
+          </Text>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.secondaryButton} onPress={this.handleGoHome}>
+              <Text style={styles.secondaryButtonText}>Continue Without Image</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  renderSearchError() {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Search Error</Text>
+          <Text style={styles.message}>
+            There was an issue with the search. This could be a problem with searching, filtering, or loading results.
+          </Text>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.secondaryButton} onPress={this.handleGoHome}>
+              <Text style={styles.secondaryButtonText}>Go Home</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  renderActivityError() {
+    return (
+      <View style={styles.container}>
+        <View style={styles.content}>
+          <Text style={styles.title}>Activity Error</Text>
+          <Text style={styles.message}>
+            There was an issue with the activity. This could be a problem with pings, notifications, or ratings.
+          </Text>
+          
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+              <Text style={styles.retryButtonText}>Try Again</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.secondaryButton} onPress={this.handleGoHome}>
+              <Text style={styles.secondaryButtonText}>Go Home</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
   renderDefaultError() {
     return (
       <View style={styles.container}>
@@ -307,6 +457,18 @@ export class ErrorBoundary extends Component<Props, State> {
           return this.renderWhatsAppError();
         case 'location':
           return this.renderLocationError();
+        case 'marketplace':
+          return this.renderMarketplaceError();
+        case 'listing':
+          return this.renderListingError();
+        case 'request':
+          return this.renderRequestError();
+        case 'image':
+          return this.renderImageError();
+        case 'search':
+          return this.renderSearchError();
+        case 'activity':
+          return this.renderActivityError();
         case 'critical':
           return this.renderCriticalError();
         default:
@@ -334,7 +496,7 @@ export class AsyncErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     // Enhanced error categorization for async operations
-    let errorType: 'critical' | 'recoverable' | 'network' | 'auth' | 'data' | 'whatsapp' | 'location' = 'recoverable';
+    let errorType: 'critical' | 'recoverable' | 'network' | 'auth' | 'data' | 'whatsapp' | 'location' | 'marketplace' | 'listing' | 'request' | 'image' | 'search' | 'activity' = 'recoverable';
     
     const errorMessage = error.message.toLowerCase();
     
@@ -353,6 +515,25 @@ export class AsyncErrorBoundary extends Component<Props, State> {
     } else if (errorMessage.includes('location') || errorMessage.includes('gps') || 
                errorMessage.includes('permission') || errorMessage.includes('coordinates')) {
       errorType = 'location';
+    } else if (errorMessage.includes('listing') || errorMessage.includes('sell') || 
+               errorMessage.includes('product') || errorMessage.includes('service')) {
+      errorType = 'listing';
+    } else if (errorMessage.includes('request') || errorMessage.includes('budget') || 
+               errorMessage.includes('requester')) {
+      errorType = 'request';
+    } else if (errorMessage.includes('image') || errorMessage.includes('photo') || 
+               errorMessage.includes('camera') || errorMessage.includes('upload') || 
+               errorMessage.includes('storage')) {
+      errorType = 'image';
+    } else if (errorMessage.includes('search') || errorMessage.includes('filter') || 
+               errorMessage.includes('query') || errorMessage.includes('category')) {
+      errorType = 'search';
+    } else if (errorMessage.includes('activity') || errorMessage.includes('ping') || 
+               errorMessage.includes('notification') || errorMessage.includes('rating')) {
+      errorType = 'activity';
+    } else if (errorMessage.includes('marketplace') || errorMessage.includes('market') || 
+               errorMessage.includes('item') || errorMessage.includes('trade')) {
+      errorType = 'marketplace';
     } else if (errorMessage.includes('critical') || errorMessage.includes('fatal') ||
                errorMessage.includes('crash') || errorMessage.includes('memory')) {
       errorType = 'critical';
@@ -404,23 +585,62 @@ export class AsyncErrorBoundary extends Component<Props, State> {
         return this.props.fallback;
       }
 
-      // Async-specific error UI
-      return (
-        <View style={styles.container}>
-          <View style={styles.content}>
-            <Text style={styles.title}>Operation Failed</Text>
-            <Text style={styles.message}>
-              The operation couldn&apos;t be completed. This might be due to a network issue or temporary server problem.
-            </Text>
-            
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
-                <Text style={styles.retryButtonText}>Try Again</Text>
-              </TouchableOpacity>
+      // Async-specific error UI based on error type
+      switch (this.state.errorType) {
+        case 'network':
+          return (
+            <View style={styles.container}>
+              <View style={styles.content}>
+                <Text style={styles.title}>Network Error</Text>
+                <Text style={styles.message}>
+                  The operation couldn&apos;t be completed due to a network issue. Please check your connection and try again.
+                </Text>
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+                    <Text style={styles.retryButtonText}>Try Again</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
-          </View>
-        </View>
-      );
+          );
+        case 'marketplace':
+        case 'listing':
+        case 'request':
+        case 'image':
+        case 'search':
+        case 'activity':
+          return (
+            <View style={styles.container}>
+              <View style={styles.content}>
+                <Text style={styles.title}>Operation Failed</Text>
+                <Text style={styles.message}>
+                  The {this.state.errorType} operation couldn&apos;t be completed. This might be a temporary issue.
+                </Text>
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+                    <Text style={styles.retryButtonText}>Try Again</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          );
+        default:
+          return (
+            <View style={styles.container}>
+              <View style={styles.content}>
+                <Text style={styles.title}>Operation Failed</Text>
+                <Text style={styles.message}>
+                  The operation couldn&apos;t be completed. This might be due to a network issue or temporary server problem.
+                </Text>
+                <View style={styles.buttonContainer}>
+                  <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+                    <Text style={styles.retryButtonText}>Try Again</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          );
+      }
     }
 
     return this.props.children || null;

@@ -14,13 +14,7 @@ export const initializeSentry = () => {
   const developmentDsn = 'https://12bda6c71fb7e7c03519c5543ba94e47@o4509779115507712.ingest.us.sentry.io/4509779117080576';
   const finalDsn = sentryDsn || (Environment.isDevelopment ? developmentDsn : undefined);
   
-  if (!finalDsn) {
-    console.log('Sentry DSN not provided, skipping Sentry initialization');
-    return;
-  }
-
-  if (finalDsn.includes('your-sentry-dsn')) {
-    console.log('Sentry DSN is placeholder, skipping Sentry initialization');
+  if (!finalDsn || finalDsn.includes('your-sentry-dsn')) {
     return;
   }
 
@@ -35,10 +29,7 @@ export const initializeSentry = () => {
       
       // Error filtering
       beforeSend(event) {
-        // Filter out development errors
-        if (Environment.isDevelopment) {
-          console.log('Sentry event (dev mode):', event);
-        }
+        // Filter out development errors if needed
         return event;
       },
       
@@ -51,7 +42,6 @@ export const initializeSentry = () => {
       },
     });
 
-    // Sentry initialized silently
   } catch (error) {
     console.error('Failed to initialize Sentry:', error);
   }

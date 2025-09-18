@@ -40,7 +40,7 @@ class GoogleAnalyticsService {
     const finalId = trackingId || (Environment.isDevelopment ? developmentId : undefined);
     
     if (!finalId || finalId.includes('your-google-analytics-id')) {
-      console.log('Google Analytics tracking ID not provided, skipping initialization');
+      // Google Analytics tracking ID not provided, skipping initialization
       return;
     }
 
@@ -51,6 +51,10 @@ class GoogleAnalyticsService {
       
       // Start periodic flush
       this.startFlushTimer();
+      
+      // Send initial page view
+      this.trackScreenView('App Launch');
+      
     } catch (error) {
       console.error('Failed to initialize Google Analytics:', error);
     }
@@ -97,40 +101,46 @@ class GoogleAnalyticsService {
 
     const events = [...this.eventQueue];
     this.eventQueue = [];
+    
 
-    // For development, just simulate success without logging
-    if (Environment.isDevelopment) {
-      return;
-    }
-
-    // Production: Send to Google Analytics
+    // Send to Google Analytics
     try {
       const payload = {
         client_id: this.clientId,
         events: events
       };
+      
 
-      const response = await fetch(
-        `https://www.google-analytics.com/mp/collect?measurement_id=${this.measurementId}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const url = `https://www.google-analytics.com/mp/collect?measurement_id=${this.measurementId}`;
+      
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+      }, 5000); // 5 second timeout
+      
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      
 
       if (response.ok) {
-        console.log('✅ Google Analytics Events sent successfully:', events.length, 'events');
+        // Analytics events sent successfully
       } else {
-        console.warn('❌ Failed to send analytics events:', response.status, response.statusText);
-        // Re-queue events for retry
+        // Failed to send analytics events - re-queue for retry
         this.eventQueue.unshift(...events);
       }
     } catch (error) {
-      console.warn('❌ Error sending analytics events:', error);
-      // Re-queue events for retry
+      // Error sending analytics events - re-queue for retry
       this.eventQueue.unshift(...events);
     }
   }
