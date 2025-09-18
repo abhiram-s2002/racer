@@ -70,10 +70,10 @@ function HomeScreen() {
   const [selectedListing, setSelectedListing] = useState<any>(null);
   const [showPinPopup, setShowPinPopup] = useState(false);
   const [mapRegion, setMapRegion] = useState({
-    latitude: 37.78825,
-    longitude: -122.4324,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
+    latitude: 10.8505, // Kerala center latitude
+    longitude: 76.2711, // Kerala center longitude
+    latitudeDelta: 0.5, // Wider view to show more of Kerala
+    longitudeDelta: 0.5,
   });
   const errorHandler = ErrorHandler.getInstance();
 
@@ -406,8 +406,8 @@ function HomeScreen() {
     setMapRegion({
       latitude,
       longitude,
-      latitudeDelta: 0.01,
-      longitudeDelta: 0.01,
+      latitudeDelta: 0.009, // ~1km radius around user
+      longitudeDelta: 0.009,
     });
     updateLocation();
   };
