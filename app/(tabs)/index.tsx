@@ -783,11 +783,11 @@ function HomeScreen() {
         <TouchableOpacity 
           style={[
             styles.filterButton, 
-            (sortByDistanceState || maxDistance !== null || hookSortOption !== 'location') && { backgroundColor: '#DCFCE7' }
+            hookSortOption === 'newest' && { backgroundColor: '#DCFCE7' }
           ]}
           onPress={handleToggleSortByDistance}
         >
-          <Filter size={20} color={(sortByDistanceState || maxDistance !== null || hookSortOption !== 'location') ? '#10B981' : '#64748B'} />
+          <Filter size={20} color={hookSortOption === 'newest' ? '#10B981' : '#64748B'} />
         </TouchableOpacity>
         <TouchableOpacity 
           style={[styles.mapButton, isMapView && styles.activeMapButton]}
@@ -1482,16 +1482,17 @@ const styles = StyleSheet.create({
   mapLoadMoreContainer: {
     position: 'absolute',
     bottom: 20,
-    left: 20,
-    right: 20,
+    left: '50%',
+    transform: [{ translateX: -100 }], // Half of button width (200/2)
     zIndex: 1,
   },
   mapLoadMoreButton: {
     backgroundColor: '#10B981',
     paddingVertical: 12,
     paddingHorizontal: 20,
-    borderRadius: 25,
+    borderRadius: 22,
     alignItems: 'center',
+    width: 200,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,

@@ -128,7 +128,7 @@ function ListingDetailScreen() {
   const fetchUserFromDatabase = async (username: string, isRequester = false) => {
     const { data: userData, error: userError } = await supabase
       .from('users')
-      .select('username, name, avatar_url, phone, location_display, bio, expires_at')
+      .select('username, name, avatar_url, phone, location_display, bio, verification_status, verified_at, expires_at')
       .eq('username', username)
       .single();
     
