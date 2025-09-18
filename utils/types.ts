@@ -28,52 +28,69 @@ export interface User {
 }
 
 /**
- * Marketplace listing
+ * Item type for marketplace items
  */
-export interface Listing {
+export type ItemType = 'listing' | 'request';
+
+/**
+ * Unified marketplace item (works for both listings and requests)
+ */
+export interface MarketplaceItem {
   id: string;
-  username: string;
+  username: string; // For listings: seller username, For requests: requester username
   title: string;
   description?: string;
-  price: number;
-  price_unit: PriceUnit;
+  price: number; // For listings: price, For requests: budget_min (budget_max handled separately)
+  price_unit?: PriceUnit; // Optional for requests (they don't use pricing units)
   category: Category;
+  item_type: ItemType; // 'listing' or 'request'
+  
+  // Image fields (same for both)
   thumbnail_images: string[];
   preview_images: string[];
   image_url?: string; // Legacy field for backward compatibility
+  
+  // Location fields (same for both)
   latitude?: number;
   longitude?: number;
   location?: any; // PostGIS geography type
-  distance_km?: number; // Distance from user to listing
+  distance_km?: number; // Distance from user to item
+  
+  // Expiration (same for both)
   expires_at?: string;
+  
+  // Listing-specific fields
   extension_count?: number;
-  view_count?: number; // Total views of this listing
-  ping_count?: number; // Total pings received for this listing
+  view_count?: number;
+  ping_count?: number;
+  
+  // Request-specific fields (budget can be single or range)
+  budget_min?: number; // Single budget or min of range
+  budget_max?: number; // Max of range (optional - if not provided, it's a single budget)
+  
+  // Pickup and delivery options (for both listings and requests)
+  pickup_available?: boolean;
+  delivery_available?: boolean;
+  
+  // Common fields
   created_at: string;
+  updated_at?: string;
 }
 
 /**
- * Service request
+ * Marketplace listing (backward compatibility)
  */
-export interface Request {
-  id: string;
-  requester_username: string; // Username for contact/call functionality
-  requester_name?: string; // Requester name from database join
-  requester_verified?: boolean; // Verification status from database
-  title: string;
-  description?: string;
-  budget_min?: number;
-  budget_max?: number;
-  category: RequestCategory;
-  location?: string;
-  location_name?: string;
-  location_district?: string;
-  location_state?: string;
-  latitude?: number;
-  longitude?: number;
-  distance_km?: number; // Distance from user to request
-  expires_at?: string; // ISO timestamp when request expires
-  updated_at: string;
+export interface Listing extends MarketplaceItem {
+  item_type: 'listing';
+}
+
+/**
+ * Service request (backward compatibility)
+ */
+export interface Request extends MarketplaceItem {
+  item_type: 'request';
+  budget_min?: number; // Single budget or min of range
+  budget_max?: number; // Max of range (optional - if not provided, it's a single budget)
 }
 
 /**
@@ -109,6 +126,8 @@ export interface Message {
 export interface Ping {
   id: string;
   listing_id: string;
+  request_id?: string;
+  item_type?: ItemType; // 'listing' | 'request'
   sender_username: string;
   receiver_username: string;
   message: string;
@@ -576,6 +595,9 @@ export interface ListingFormData {
   price_unit: PriceUnit;
   category: Category;
   images: string[];
+  pickup_available?: boolean;
+  delivery_available?: boolean;
+  expires_at?: string;
 }
 
 /**
@@ -603,6 +625,10 @@ export interface RequestFormData {
   budget_max?: number;
   category: RequestCategory;
   location?: string;
+  pickup_available?: boolean;
+  delivery_available?: boolean;
+  images?: string[];
+  expires_at?: string;
 }
 
 // ============================================================================

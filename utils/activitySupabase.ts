@@ -36,18 +36,13 @@ export interface Activity {
 // Updated interface for the actual pings table schema
 export interface Ping {
   id: string;
-  listing_id: string;
+  item_type: 'listing' | 'request';
+  target_id: string;
   sender_username: string;
   receiver_username: string;
   message: string;
   status: PingStatus;
-  response_time_minutes?: number;
-  first_response_at?: string;
-  responded_at?: string;
-  response_message?: string;
-  ping_count?: number;
-  last_ping_at?: string;
-  created_at: string;
+  updated_at: string;
   listings?: {
     title: string;
     price: number;
@@ -91,14 +86,22 @@ export interface PingLimit {
 export async function getActivities(userId: string, page = 1, pageSize = 20): Promise<Activity[]> {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
-  const { data, error } = await supabase
-    .from('activities')
-    .select('*')
-    .eq('username', userId)
-    .order('created_at', { ascending: false })
-    .range(from, to);
-  if (error) throw error;
-  return data as Activity[];
+  try {
+    const { data, error } = await supabase
+      .from('activities')
+      .select('*')
+      .eq('username', userId)
+      .order('created_at', { ascending: false })
+      .range(from, to);
+    if (error) throw error;
+    return data as Activity[];
+  } catch (err: any) {
+    // If the activities table doesn't exist, return an empty list gracefully
+    if (err && (err.code === '42P01' || (typeof err.message === 'string' && err.message.includes('relation "public.activities" does not exist')))) {
+      return [];
+    }
+    throw err;
+  }
 }
 
 // Add a new ping activity
@@ -114,15 +117,8 @@ export async function addPingActivity(activity: Omit<Activity, 'id' | 'created_a
 
 // Update ping status
 export async function updatePingStatus(pingId: string, status: PingStatus, responseMessage?: string): Promise<Ping> {
-  const updateData: any = { 
-    status,
-    responded_at: new Date().toISOString()
-  };
-  
-  if (responseMessage) {
-    updateData.response_message = responseMessage;
-  }
-  
+  const updateData: any = { status };
+  // response fields removed in new schema
   const { data, error } = await supabase
     .from('pings')
     .update(updateData)
@@ -145,11 +141,12 @@ export async function deleteActivity(id: string): Promise<void> {
 // ===== NEW PING FUNCTIONS =====
 
 // Create a new ping using the time-based system
-export async function createPing(ping: Omit<Ping, 'id' | 'created_at'>): Promise<Ping> {
+export async function createPing(ping: Omit<Ping, 'id' | 'updated_at'>): Promise<Ping> {
   // Use the new time-based ping creation function
   const { data, error } = await supabase
-    .rpc('create_ping_with_limits', {
-      listing_id_param: ping.listing_id,
+    .rpc('create_ping_with_limits_unified', {
+      target_id_param: (ping as any).target_id,
+      item_type_param: (ping as any).item_type || 'listing',
       sender_username_param: ping.sender_username,
       receiver_username_param: ping.receiver_username,
       message_param: ping.message
@@ -184,60 +181,51 @@ export async function createPing(ping: Omit<Ping, 'id' | 'created_at'>): Promise
   // Return the created ping data
   return {
     id: result.ping_id,
-    listing_id: ping.listing_id,
+    item_type: (ping as any).item_type || 'listing',
+    target_id: (ping as any).target_id,
     sender_username: ping.sender_username,
     receiver_username: ping.receiver_username,
     message: ping.message,
     status: 'pending',
-    response_time_minutes: result.response_time_minutes,
-    first_response_at: result.first_response_at,
-    responded_at: result.responded_at,
-    response_message: result.response_message,
-    ping_count: result.ping_count,
-    last_ping_at: result.last_ping_at,
-    created_at: result.created_at
+    updated_at: result.updated_at || new Date().toISOString(),
   } as Ping;
 }
 
 // Get pings sent by a user
 export async function getSentPings(username: string): Promise<Ping[]> {
   const { data, error } = await supabase
-    .from('pings')
+    .from('v_pings_unified')
     .select(`
       id,
-      listing_id,
+      item_type,
+      target_id,
       sender_username,
       receiver_username,
       message,
       status,
-      response_time_minutes,
-      first_response_at,
-      responded_at,
-      response_message,
-      ping_count,
-      last_ping_at,
-      created_at,
-      listings (
-        title, 
-        price, 
-        images, 
-        thumbnail_images, 
-        preview_images, 
-        image_metadata, 
-        username,
-        latitude,
-        longitude
-      )
+      updated_at,
+      listing_title,
+      listing_price,
+      listing_thumbnail_images,
+      listing_preview_images,
+      listing_latitude,
+      listing_longitude,
+      request_title,
+      request_budget_min,
+      request_thumbnail_images,
+      request_preview_images,
+      request_latitude,
+      request_longitude
     `)
     .eq('sender_username', username)
-    .order('created_at', { ascending: false });
+    .order('updated_at', { ascending: false });
 
   if (error) {
     throw error;
   }
 
   // Fetch user data separately for better control
-  const pingsWithUserData = await Promise.all((data || []).map(async (ping) => {
+  const pingsWithUserData = await Promise.all((data || []).map(async (ping: any) => {
     // Fetch sender data
     const { data: senderData } = await supabase
       .from('users')
@@ -252,11 +240,42 @@ export async function getSentPings(username: string): Promise<Ping[]> {
       .eq('username', ping.receiver_username)
       .single();
 
-    return {
-      ...ping,
+    const listings = ping.item_type === 'listing' ? {
+      title: ping.listing_title,
+      price: ping.listing_price,
+      images: ping.listing_preview_images || [],
+      thumbnail_images: ping.listing_thumbnail_images || [],
+      preview_images: ping.listing_preview_images || [],
+      username: ping.receiver_username,
+      latitude: ping.listing_latitude,
+      longitude: ping.listing_longitude,
+    } : undefined;
+
+    const requestPseudoListing = ping.item_type === 'request' ? {
+      title: ping.request_title,
+      price: ping.request_budget_min,
+      images: ping.request_preview_images || [],
+      thumbnail_images: ping.request_thumbnail_images || [],
+      preview_images: ping.request_preview_images || [],
+      username: ping.receiver_username,
+      latitude: ping.request_latitude,
+      longitude: ping.request_longitude,
+    } : undefined;
+
+    const result: Ping = {
+      id: ping.id,
+      item_type: ping.item_type,
+      target_id: ping.target_id,
+      sender_username: ping.sender_username,
+      receiver_username: ping.receiver_username,
+      message: ping.message,
+      status: ping.status,
+      updated_at: ping.updated_at,
+      listings: listings || requestPseudoListing,
       sender: senderData,
       receiver: receiverData
-    };
+    } as Ping;
+    return result;
   }));
   
   
@@ -266,42 +285,38 @@ export async function getSentPings(username: string): Promise<Ping[]> {
 // Get pings received by a user
 export async function getReceivedPings(username: string): Promise<Ping[]> {
   const { data, error } = await supabase
-    .from('pings')
+    .from('v_pings_unified')
     .select(`
       id,
-      listing_id,
+      item_type,
+      target_id,
       sender_username,
       receiver_username,
       message,
       status,
-      response_time_minutes,
-      first_response_at,
-      responded_at,
-      response_message,
-      ping_count,
-      last_ping_at,
-      created_at,
-      listings (
-        title, 
-        price, 
-        images, 
-        thumbnail_images, 
-        preview_images, 
-        image_metadata, 
-        username,
-        latitude,
-        longitude
-      )
+      updated_at,
+      listing_title,
+      listing_price,
+      listing_thumbnail_images,
+      listing_preview_images,
+      listing_latitude,
+      listing_longitude,
+      request_title,
+      request_budget_min,
+      request_thumbnail_images,
+      request_preview_images,
+      request_latitude,
+      request_longitude
     `)
     .eq('receiver_username', username)
-    .order('created_at', { ascending: false });
+    .order('updated_at', { ascending: false });
 
   if (error) {
     throw error;
   }
 
   // Fetch user data separately for better control
-  const pingsWithUserData = await Promise.all((data || []).map(async (ping) => {
+  const pingsWithUserData = await Promise.all((data || []).map(async (ping: any) => {
     // Fetch sender data
     const { data: senderData } = await supabase
       .from('users')
@@ -316,11 +331,42 @@ export async function getReceivedPings(username: string): Promise<Ping[]> {
       .eq('username', ping.receiver_username)
       .single();
 
-    return {
-      ...ping,
+    const listings = ping.item_type === 'listing' ? {
+      title: ping.listing_title,
+      price: ping.listing_price,
+      images: ping.listing_preview_images || [],
+      thumbnail_images: ping.listing_thumbnail_images || [],
+      preview_images: ping.listing_preview_images || [],
+      username: ping.sender_username,
+      latitude: ping.listing_latitude,
+      longitude: ping.listing_longitude,
+    } : undefined;
+
+    const requestPseudoListing = ping.item_type === 'request' ? {
+      title: ping.request_title,
+      price: ping.request_budget_min,
+      images: ping.request_preview_images || [],
+      thumbnail_images: ping.request_thumbnail_images || [],
+      preview_images: ping.request_preview_images || [],
+      username: ping.sender_username,
+      latitude: ping.request_latitude,
+      longitude: ping.request_longitude,
+    } : undefined;
+
+    const result: Ping = {
+      id: ping.id,
+      item_type: ping.item_type,
+      target_id: ping.target_id,
+      sender_username: ping.sender_username,
+      receiver_username: ping.receiver_username,
+      message: ping.message,
+      status: ping.status,
+      updated_at: ping.updated_at,
+      listings: listings || requestPseudoListing,
       sender: senderData,
       receiver: receiverData
-    };
+    } as Ping;
+    return result;
   }));
   
   
@@ -512,12 +558,12 @@ export async function checkPingTimeLimit(username: string, listingId: string): P
 } 
 
 // Check if user already has a pending ping to a listing
-export const checkExistingPing = async (listingId: string, senderUsername: string): Promise<boolean> => {
+export const checkExistingPing = async (itemId: string, senderUsername: string, itemType: 'listing' | 'request' = 'listing'): Promise<boolean> => {
   try {
     const { data, error } = await supabase
       .from('pings')
       .select('id')
-      .eq('listing_id', listingId)
+      .eq('target_id', itemId)
       .eq('sender_username', senderUsername)
       .eq('status', 'pending')
       .limit(1);

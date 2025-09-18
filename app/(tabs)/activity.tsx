@@ -11,7 +11,7 @@ import {
   Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { MessageCircle, Send, Trash2, Check, X, MapPin, Star } from 'lucide-react-native';
+import { MessageCircle, Send, Trash2, Check, X, MapPin, Star, UserCircle2, EyeOff } from 'lucide-react-native';
 import RatingModal from '@/components/RatingModal';
 import { Activity } from '@/utils/activitySupabase';
 import { supabase } from '@/utils/supabaseClient';
@@ -52,7 +52,7 @@ const openInGoogleMaps = (latitude: number, longitude: number) => {
 function ActivityScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'received' | 'sent'>('received');
+  const [activeTab, setActiveTab] = useState<'mine' | 'received' | 'sent'>('received');
   const [refreshing, setRefreshing] = useState(false);
   // const isFocused = useIsFocused();
   const [username, setUsername] = useState<string | null>(null);
@@ -79,6 +79,7 @@ function ActivityScreen() {
   const {
     sentPings,
     receivedPings,
+    myItems,
     userProfiles,
     loading,
     refresh,
@@ -190,6 +191,10 @@ function ActivityScreen() {
 
 
   const filteredActivities = (() => {
+    if (activeTab === 'mine') {
+      // mine tab does not use ping status filters
+      return myItems as any[];
+    }
     if (activeTab === 'received') {
       return receivedPings.filter(activity => {
         if (statusFilter !== 'all' && activity.status !== statusFilter) {
@@ -595,6 +600,125 @@ function ActivityScreen() {
   );
   };
 
+  const hideOrDeleteMineItem = async (item: any) => {
+    try {
+      if (item.type === 'listing') {
+        Alert.alert(
+          'Manage Listing',
+          'What would you like to do with this listing?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Hide',
+              onPress: async () => {
+                const { hideListing } = await import('@/utils/contentManagement');
+                const result = await hideListing(item.id);
+                if (!result.success) {
+                  Alert.alert('Error', result.error || 'Failed to hide listing');
+                } else {
+                  Alert.alert('Hidden', 'Listing hidden from your feed.');
+                }
+              }
+            },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                const { error } = await supabase.from('listings').delete().eq('id', item.id);
+                if (error) {
+                  Alert.alert('Error', 'Failed to delete listing');
+                } else {
+                  await refresh();
+                }
+              }
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          'Manage Request',
+          'What would you like to do with this request?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Hide',
+              onPress: async () => {
+                const { hideRequest } = await import('@/utils/contentManagement');
+                const result = await hideRequest(item.id);
+                if (!(result as any).success) {
+                  Alert.alert('Error', (result as any).error || 'Failed to hide request');
+                } else {
+                  Alert.alert('Hidden', 'Request hidden from your feed.');
+                }
+              }
+            },
+            {
+              text: 'Delete',
+              style: 'destructive',
+              onPress: async () => {
+                const { error } = await supabase.from('requests').delete().eq('id', item.id);
+                if (error) {
+                  Alert.alert('Error', 'Failed to delete request');
+                } else {
+                  await refresh();
+                }
+              }
+            },
+          ]
+        );
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Action failed. Please try again.');
+    }
+  };
+
+  const renderMineItem = ({ item }: { item: any }) => {
+    return (
+      <View style={styles.activityCard}>
+        <View style={styles.pingHeader}>
+          <View style={styles.pingUser}>
+            <UserCircle2 size={40} color="#22C55E" />
+            <View style={styles.pingDetails}>
+              <View style={styles.pingUserNameRow}>
+                <Text style={styles.pingUserName}>{item.title}</Text>
+              </View>
+              <Text style={styles.pingUserLabel}>
+                {item.type === 'listing' ? 'My Listing' : 'My Request'} • {item.category}
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View style={styles.pingProduct}>
+          <NewRobustImage 
+            thumbnailImages={item.thumbnail_images}
+            previewImages={item.preview_images}
+            style={styles.productImage}
+            placeholderText="No Image"
+            size="preview"
+            title={item.title}
+          />
+          <View style={styles.productDetails}>
+            <Text style={styles.productTitle}>{item.title}</Text>
+            {item.type === 'listing' && item.price ? (
+              <Text style={styles.productPrice}>{formatPriceWithUnit(item.price, item.price_unit)}</Text>
+            ) : null}
+            {item.type === 'request' && (
+              <Text style={styles.pingMessage}>
+                {item.budget_min || item.budget_max ? `Budget: ${item.budget_min ?? ''} - ${item.budget_max ?? ''} ${item.price_unit ?? ''}` : 'No budget specified'}
+              </Text>
+            )}
+          </View>
+          <TouchableOpacity style={styles.chatIconButton} onPress={() => hideOrDeleteMineItem(item)}>
+            <EyeOff size={22} color="#64748B" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.deletePingButton} onPress={() => hideOrDeleteMineItem(item)}>
+            <Trash2 size={18} color="#EF4444" />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
   // const getRatingRole = (pingId: string) => {
   //   const ping = sentPings.find(p => p.id === pingId) || receivedPings.find(p => p.id === pingId);
   //   if (!ping) return 'User';
@@ -633,6 +757,15 @@ function ActivityScreen() {
 
       <View style={styles.tabContainer}>
         <TouchableOpacity
+          style={[styles.tab, activeTab === 'mine' && styles.activeTab]}
+          onPress={() => {
+            setActiveTab('mine');
+          }}
+        >
+          <UserCircle2 size={20} color={activeTab === 'mine' ? '#22C55E' : '#64748B'} />
+          <Text style={[styles.tabText, activeTab === 'mine' && styles.activeTabText]}>My Items</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
           style={[styles.tab, activeTab === 'received' && styles.activeTab]}
           onPress={() => {
             setActiveTab('received');
@@ -655,6 +788,7 @@ function ActivityScreen() {
       </View>
 
       {/* Filter Options */}
+        {activeTab !== 'mine' && (
         <View style={styles.filterOptions}>
           <Text style={styles.filterTitle}>Filter by Status:</Text>
           <View style={styles.filterButtons}>
@@ -692,6 +826,7 @@ function ActivityScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        )}
       {loading ? (
         <View style={styles.loadingContainer}>
           <Text style={styles.loadingText}>Loading activities...</Text>
@@ -699,7 +834,7 @@ function ActivityScreen() {
       ) : (
         <FlatList
           data={filteredActivities}
-          renderItem={({ item }) => renderPingItem({ item })}
+          renderItem={({ item }) => activeTab === 'mine' ? renderMineItem({ item }) : renderPingItem({ item })}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.activityList}
           showsVerticalScrollIndicator={false}
@@ -708,12 +843,14 @@ function ActivityScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>
-                {statusFilter !== 'all' 
+                {activeTab === 'mine' 
+                  ? 'No items found'
+                  : statusFilter !== 'all' 
                     ? `No ${statusFilter} pings found` 
                     : 'No activities found'
                 }
               </Text>
-              {statusFilter !== 'all' && (
+              {activeTab !== 'mine' && statusFilter !== 'all' && (
                 <TouchableOpacity 
                   style={styles.clearFiltersButton}
                   onPress={() => setStatusFilter('all')}

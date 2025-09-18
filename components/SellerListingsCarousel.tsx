@@ -9,22 +9,13 @@ import {
 } from 'react-native';
 import NewRobustImage from './NewRobustImage';
 import { formatPriceWithUnit } from '@/utils/formatters';
+import { MarketplaceItem } from '@/utils/types';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = (width - 60) / 2.5; // Account for padding and gap
 
-interface Listing {
-  id: string;
-  title: string;
-  price: number;
-  price_unit: string;
-  thumbnail_images: string[];
-  preview_images: string[];
-  category: string;
-}
-
 interface SellerListingsCarouselProps {
-  listings: Listing[];
+  listings: MarketplaceItem[];
   onListingPress: (listingId: string) => void;
   sellerName: string;
   sellerUsername?: string;
@@ -47,7 +38,7 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
   }, [onListingPress]);
 
   // Render individual listing item
-  const renderListingItem = useCallback(({ item }: { item: Listing }) => (
+  const renderListingItem = useCallback(({ item }: { item: MarketplaceItem }) => (
     <View style={styles.listingItem}>
       <TouchableOpacity
         style={styles.listingContent}
@@ -67,11 +58,24 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
         </View>
 
         <View style={styles.listingDetails}>
+          <View style={styles.typeRow}>
+            <Text
+              style={[
+                styles.typeBadge,
+                item.item_type === 'request' ? styles.requestBadge : styles.listingBadge,
+              ]}
+            >
+              {item.item_type === 'request' ? 'REQUEST' : 'LISTING'}
+            </Text>
+          </View>
           <Text style={styles.listingTitle} numberOfLines={2}>
             {item.title}
           </Text>
           <Text style={styles.listingPrice}>
-            {formatPriceWithUnit(item.price.toString(), item.price_unit)}
+            {item.item_type === 'request' 
+              ? (item.budget_max ? `₹${item.budget_min || 0} - ₹${item.budget_max}` : `₹${item.budget_min || 0}`)
+              : formatPriceWithUnit(item.price.toString(), item.price_unit || 'per_item')
+            }
           </Text>
           <Text style={styles.listingCategory}>
             {item.category.charAt(0).toUpperCase() + item.category.slice(1).toLowerCase()}
@@ -82,7 +86,7 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
   ), [handleListingPress]);
 
   // Memoize the key extractor
-  const keyExtractor = useCallback((item: Listing) => item.id, []);
+  const keyExtractor = useCallback((item: MarketplaceItem) => item.id, []);
 
   // Memoize the getItemLayout for better performance
   const getItemLayout = useCallback((data: any, index: number) => ({
@@ -102,7 +106,7 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
           More from {sellerName}
         </Text>
         <Text style={styles.listingCount}>
-          {listings.length} listing{listings.length !== 1 ? 's' : ''}
+          {listings.length} item{listings.length !== 1 ? 's' : ''}
         </Text>
       </View>
 
@@ -175,6 +179,27 @@ const styles = StyleSheet.create({
   },
   listingDetails: {
     padding: 12,
+  },
+  typeRow: {
+    flexDirection: 'row',
+    marginBottom: 6,
+  },
+  typeBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    overflow: 'hidden',
+    alignSelf: 'flex-start',
+  },
+  listingBadge: {
+    backgroundColor: '#DBEAFE',
+    color: '#2563EB',
+  },
+  requestBadge: {
+    backgroundColor: '#F3E8FF',
+    color: '#7C3AED',
   },
   listingTitle: {
     fontSize: 13,

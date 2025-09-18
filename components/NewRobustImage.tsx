@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Image, View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { Package } from 'lucide-react-native';
 
 // Define the missing interfaces
 export interface ImageSet {
@@ -74,6 +75,8 @@ interface NewRobustImageProps {
   height?: number;
   useCacheBusting?: boolean;
   title?: string;
+  category?: string;
+  itemType?: 'listing' | 'request';
 }
 
 export const NewRobustImage: React.FC<NewRobustImageProps> = ({
@@ -91,7 +94,9 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
   // width,
   // height,
   // useCacheBusting = true,
-  title = 'Unknown'
+  title = 'Unknown',
+  category,
+  itemType = 'listing'
 }) => {
   const [imageSet, setImageSet] = useState<ImageSet>({
     thumbnail: NewImageService.getFallbackImageUrl(),
@@ -210,8 +215,21 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
 
     if (!currentImageUrl || currentImageUrl === NewImageService.getFallbackImageUrl()) {
       return (
-        <View style={[styles.errorContainer, style]}>
-          <Text style={styles.errorText}>{placeholderText}</Text>
+        <View style={[styles.placeholderContainer, style]}>
+          {placeholder ? (
+            placeholder
+          ) : (
+            <View style={[styles.iconFallbackContainer, style]}> 
+              <View style={[styles.iconBadge, itemType === 'request' ? styles.requestBadge : styles.listingBadge]}>
+                <Package size={24} color="#FFFFFF" />
+              </View>
+              {!!category && (
+                <Text style={styles.categoryLabel} numberOfLines={1}>
+                  {category}
+                </Text>
+              )}
+            </View>
+          )}
         </View>
       );
     }
@@ -242,6 +260,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f0f0f0',
+  },
+  iconFallbackContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    padding: 8,
+  },
+  iconBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  listingBadge: {
+    backgroundColor: '#3B82F6',
+  },
+  requestBadge: {
+    backgroundColor: '#7C3AED',
+  },
+  categoryLabel: {
+    fontSize: 11,
+    color: '#64748B',
+    fontFamily: 'Inter-Medium',
+    maxWidth: '90%',
   },
   errorContainer: {
     justifyContent: 'center',

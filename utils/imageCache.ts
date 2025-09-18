@@ -1,4 +1,8 @@
-import { Listing } from './types';
+// Minimal shape needed for caching
+type ImageFields = {
+  thumbnail_images?: string[];
+  preview_images?: string[];
+};
 
 interface CachedImageData {
   thumbnail_images: string[];
@@ -55,8 +59,8 @@ class ImageCache {
     return this.isEnabled;
   }
 
-  // Cache images for a listing
-  setListingImages(listingId: string, listing: Partial<Listing>): void {
+  // Cache images for a listing/request
+  setListingImages(listingId: string, listing: ImageFields): void {
     if (!this.isReady()) return;
     
     try {

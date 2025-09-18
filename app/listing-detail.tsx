@@ -27,7 +27,7 @@ import { incrementViewCount } from '@/utils/listingMetrics';
 import { getPhoneWithPermission } from '@/utils/phoneSharingUtils';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { Listing } from '@/utils/types';
+import { Listing, Request, MarketplaceItem, ItemType } from '@/utils/types';
 
 // Import our optimized components
 import ListingHeroImage from '@/components/ListingHeroImage';
@@ -45,16 +45,37 @@ interface SellerInfo {
   expires_at?: string;
 }
 
+interface RequesterInfo {
+  username: string;
+  name: string;
+  avatar_url: string;
+  phone: string;
+  location_display: string;
+  bio: string;
+  expires_at?: string;
+}
+
 function ListingDetailScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const { id, sellerData } = useLocalSearchParams();
+  const { id, sellerData, type } = useLocalSearchParams();
   const { user } = useAuth();
   
   // State management
-  const [listing, setListing] = useState<Listing | null>(null);
+  const [item, setItem] = useState<MarketplaceItem | null>(null);
+  const [itemType, setItemType] = useState<ItemType>('listing');
   const [sellerInfo, setSellerInfo] = useState<SellerInfo | null>(null);
-  const [sellerListings, setSellerListings] = useState<Listing[]>([]);
+  const [requesterInfo, setRequesterInfo] = useState<RequesterInfo | null>(null);
+  const [ratingStats, setRatingStats] = useState<{
+    average_rating: number;
+    total_ratings: number;
+    five_star_count: number;
+    four_star_count: number;
+    three_star_count: number;
+    two_star_count: number;
+    one_star_count: number;
+  } | null>(null);
+  const [sellerListings, setSellerListings] = useState<MarketplaceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +94,8 @@ function ListingDetailScreen() {
   const [showOptionsModal, setShowOptionsModal] = useState(false);
 
   // Memoized values to prevent unnecessary re-renders
-  const listingId = useMemo(() => id as string, [id]);
+  const itemId = useMemo(() => id as string, [id]);
+  const currentItemType = useMemo(() => (type as ItemType) || 'listing', [type]);
   
   // Ping-related hooks
   const { user: currentUser } = useAuth();
@@ -92,26 +114,64 @@ function ListingDetailScreen() {
   
   // Check for existing ping
   const checkExistingPingStatus = useCallback(async () => {
-    if (!listing?.id || !currentUser?.username) return;
+    if (!item?.id || !currentUser?.username) return;
     
     try {
-      const hasExistingPing = await checkExistingPing(listing.id, currentUser.username);
+      const hasExistingPing = await checkExistingPing(item.id, currentUser.username, currentItemType === 'request' ? 'request' : 'listing');
       setExistingPing(hasExistingPing);
     } catch (error) {
       console.error('Error checking existing ping:', error);
     }
-  }, [listing?.id, currentUser?.username]);
+  }, [item?.id, currentUser?.username]);
   
-  // Helper function to fetch seller data from database
-  const fetchSellerFromDatabase = async (username: string) => {
-    const { data: sellerData, error: sellerError } = await supabase
+  // Helper function to fetch seller/requester data from database
+  const fetchUserFromDatabase = async (username: string, isRequester = false) => {
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select('username, name, avatar_url, phone, location_display, bio, expires_at')
       .eq('username', username)
       .single();
     
-    if (sellerError) throw sellerError;
-    setSellerInfo(sellerData);
+    if (userError) throw userError;
+    
+    if (isRequester) {
+      setRequesterInfo(userData);
+    } else {
+      setSellerInfo(userData);
+    }
+  };
+
+  // Fetch rating stats for a user
+  const fetchRatingStats = async (username: string) => {
+    try {
+      const { data, error } = await supabase
+        .rpc('get_user_rating_stats', { target_username: username });
+
+      if (error) {
+        console.error('Error fetching rating stats:', error);
+        return null;
+      }
+
+      if (data && data.length > 0) {
+        const stats = data[0];
+        const distribution = stats.rating_distribution || {};
+        
+        return {
+          average_rating: parseFloat(stats.average_rating) || 0,
+          total_ratings: parseInt(stats.total_ratings) || 0,
+          five_star_count: parseInt(distribution['5']) || 0,
+          four_star_count: parseInt(distribution['4']) || 0,
+          three_star_count: parseInt(distribution['3']) || 0,
+          two_star_count: parseInt(distribution['2']) || 0,
+          one_star_count: parseInt(distribution['1']) || 0,
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching rating stats:', error);
+      return null;
+    }
   };
 
   // Check phone sharing permission
@@ -139,112 +199,259 @@ function ListingDetailScreen() {
     }
   };
   
-  // Fetch listing data
-  const fetchListingData = useCallback(async () => {
-    if (!listingId) return;
+  // Fetch item data (listing or request)
+  const fetchItemData = useCallback(async () => {
+    if (!itemId) return;
     
     try {
       setLoading(true);
       setError(null);
+      setItemType(currentItemType);
       
       // Check image cache first for instant loading
       let cachedImages = null;
       try {
         if (imageCache.isReady()) {
-          cachedImages = imageCache.getListingImages(listingId);
+          cachedImages = imageCache.getListingImages(itemId);
         }
       } catch (error) {
         console.warn('Failed to get cached images:', error);
       }
       
-      // Fetch listing details including engagement metrics
-      const { data: listingData, error: listingError } = await supabase
-        .from('listings')
-        .select('*, view_count, ping_count, expires_at')
-        .eq('id', listingId)
-        .single();
+      let itemData: MarketplaceItem | null = null;
       
-      if (listingError) throw listingError;
-      if (!listingData) throw new Error('Listing not found');
-      
-      // If we have cached images, merge them with the listing data
-      if (cachedImages) {
-        listingData.thumbnail_images = cachedImages.thumbnail_images;
-        listingData.preview_images = cachedImages.preview_images;
-      }
-      
-      setListing(listingData);
-      
-      // Increment view count
-      await incrementViewCount(listingId);
-      
-      // Use passed seller data if available, otherwise fetch from database
-      if (sellerData) {
-        try {
-          const parsedSellerData = JSON.parse(sellerData as string);
-          setSellerInfo(parsedSellerData);
-          // Check phone sharing permission
-          await checkPhoneSharingPermission(parsedSellerData.username);
-        } catch (error) {
-          // If parsing fails, fall back to database fetch
-          await fetchSellerFromDatabase(listingData.username);
-          await checkPhoneSharingPermission(listingData.username);
-        }
+      if (currentItemType === 'request') {
+        // Fetch request details
+        const { data: requestData, error: requestError } = await supabase
+          .from('requests')
+          .select('*')
+          .eq('id', itemId)
+          .single();
+        
+        if (requestError) throw requestError;
+        if (!requestData) throw new Error('Request not found');
+        
+        // Convert request to MarketplaceItem format
+        itemData = {
+          id: requestData.id,
+          username: requestData.requester_username,
+          title: requestData.title,
+          description: requestData.description,
+          price: requestData.budget_min || 0,
+          price_unit: undefined,
+          category: requestData.category,
+          item_type: 'request' as ItemType,
+          thumbnail_images: requestData.thumbnail_images || [],
+          preview_images: requestData.preview_images || [],
+          latitude: requestData.latitude,
+          longitude: requestData.longitude,
+          expires_at: requestData.expires_at,
+          budget_min: requestData.budget_min,
+          budget_max: requestData.budget_max,
+          pickup_available: requestData.pickup_available,
+          delivery_available: requestData.delivery_available,
+          created_at: requestData.created_at,
+          updated_at: requestData.updated_at,
+        };
       } else {
-        await fetchSellerFromDatabase(listingData.username);
-        await checkPhoneSharingPermission(listingData.username);
+        // Fetch listing details including engagement metrics
+        const { data: listingData, error: listingError } = await supabase
+          .from('listings')
+          .select('*, view_count, ping_count, expires_at')
+          .eq('id', itemId)
+          .single();
+        
+        if (listingError) throw listingError;
+        if (!listingData) throw new Error('Listing not found');
+        
+        // Convert listing to MarketplaceItem format
+        itemData = {
+          id: listingData.id,
+          username: listingData.username,
+          title: listingData.title,
+          description: listingData.description,
+          price: listingData.price,
+          price_unit: listingData.price_unit,
+          category: listingData.category,
+          item_type: 'listing' as ItemType,
+          thumbnail_images: listingData.thumbnail_images || [],
+          preview_images: listingData.preview_images || [],
+          latitude: listingData.latitude,
+          longitude: listingData.longitude,
+          expires_at: listingData.expires_at,
+          view_count: listingData.view_count,
+          ping_count: listingData.ping_count,
+          extension_count: listingData.extension_count,
+          pickup_available: listingData.pickup_available,
+          delivery_available: listingData.delivery_available,
+          created_at: listingData.created_at,
+          updated_at: listingData.updated_at,
+        };
       }
       
-      // Fetch seller's other listings
-      const { data: otherListings, error: listingsError } = await supabase
-        .from('listings')
-        .select('*')
-        .eq('username', listingData.username)
-        .neq('id', listingId)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      // If we have cached images, merge them with the item data
+      if (cachedImages && itemData) {
+        itemData.thumbnail_images = cachedImages.thumbnail_images;
+        itemData.preview_images = cachedImages.preview_images;
+      }
       
-      if (listingsError) throw listingsError;
-      setSellerListings(otherListings || []);
+      if (itemData) {
+        setItem(itemData);
+      }
+      
+      // Increment view count for listings
+      if (currentItemType === 'listing') {
+        await incrementViewCount(itemId);
+      }
+      
+      // Use passed user data if available, otherwise fetch from database
+      if (itemData) {
+        if (sellerData) {
+          try {
+            const parsedUserData = JSON.parse(sellerData as string);
+            if (currentItemType === 'request') {
+              setRequesterInfo(parsedUserData);
+            } else {
+              setSellerInfo(parsedUserData);
+            }
+            
+            // Fetch rating stats for the user
+            const stats = await fetchRatingStats(parsedUserData.username);
+            setRatingStats(stats);
+            
+            // Check phone sharing permission
+            await checkPhoneSharingPermission(parsedUserData.username);
+          } catch (error) {
+            // If parsing fails, fall back to database fetch
+            await fetchUserFromDatabase(itemData.username, currentItemType === 'request');
+            const stats = await fetchRatingStats(itemData.username);
+            setRatingStats(stats);
+            await checkPhoneSharingPermission(itemData.username);
+          }
+        } else {
+          await fetchUserFromDatabase(itemData.username, currentItemType === 'request');
+          const stats = await fetchRatingStats(itemData.username);
+          setRatingStats(stats);
+          await checkPhoneSharingPermission(itemData.username);
+        }
+      }
+      
+      // Fetch user's other items (both listings and requests) and show together
+      if (itemData) {
+        const [otherListingsRes, otherRequestsRes] = await Promise.all([
+          supabase
+            .from('listings')
+            .select('*')
+            .eq('username', itemData.username)
+            .neq('id', itemId)
+            .order('created_at', { ascending: false })
+            .limit(10),
+          supabase
+            .from('requests')
+            .select('*')
+            .eq('requester_username', itemData.username)
+            .neq('id', itemId)
+            .order('created_at', { ascending: false })
+            .limit(10)
+        ]);
+
+        const listingsError = (otherListingsRes as any).error;
+        const requestsError = (otherRequestsRes as any).error;
+        if (listingsError) throw listingsError;
+        if (requestsError) throw requestsError;
+
+        const otherListings = (otherListingsRes as any).data || [];
+        const otherRequests = (otherRequestsRes as any).data || [];
+
+        const convertedListings = otherListings.map((listing: any) => ({
+          id: listing.id,
+          username: listing.username,
+          title: listing.title,
+          description: listing.description,
+          price: listing.price,
+          price_unit: listing.price_unit,
+          category: listing.category,
+          item_type: 'listing' as ItemType,
+          thumbnail_images: listing.thumbnail_images || [],
+          preview_images: listing.preview_images || [],
+          latitude: listing.latitude,
+          longitude: listing.longitude,
+          expires_at: listing.expires_at,
+          view_count: listing.view_count,
+          ping_count: listing.ping_count,
+          extension_count: listing.extension_count,
+          pickup_available: listing.pickup_available,
+          delivery_available: listing.delivery_available,
+          created_at: listing.created_at,
+          updated_at: listing.updated_at,
+        }));
+
+        const convertedRequests = otherRequests.map((req: any) => ({
+          id: req.id,
+          username: req.requester_username,
+          title: req.title,
+          description: req.description,
+          price: req.budget_min || 0,
+          price_unit: undefined,
+          category: req.category,
+          item_type: 'request' as ItemType,
+          thumbnail_images: req.thumbnail_images || [],
+          preview_images: req.preview_images || [],
+          latitude: req.latitude,
+          longitude: req.longitude,
+          expires_at: req.expires_at,
+          budget_min: req.budget_min,
+          budget_max: req.budget_max,
+          pickup_available: req.pickup_available,
+          delivery_available: req.delivery_available,
+          created_at: req.created_at,
+          updated_at: req.updated_at,
+        }));
+
+        // Combine and limit to a reasonable number (e.g., 12)
+        const combined: any[] = [...convertedListings, ...convertedRequests].slice(0, 12);
+        setSellerListings(combined);
+      }
       
     } catch (err) {
-      // Error fetching listing data
-      setError(err instanceof Error ? err.message : 'Failed to load listing');
+      // Error fetching item data
+      setError(err instanceof Error ? err.message : `Failed to load ${currentItemType}`);
     } finally {
       setLoading(false);
     }
-  }, [listingId]);
+  }, [itemId, currentItemType]);
 
   // Handle refresh
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     
-    // Clear image cache for this listing to get fresh images
-    if (listingId) {
+    // Clear image cache for this item to get fresh images
+    if (itemId) {
       // Note: We don't clear the cache here as it might be useful for other views
       // The cache will auto-expire after 5 minutes anyway
     }
     
-    await fetchListingData();
+    await fetchItemData();
     setRefreshing(false);
-  }, [fetchListingData, listingId]);
+  }, [fetchItemData, itemId]);
 
-  // Load data on mount and when listingId changes
+  // Load data on mount and when itemId changes
   useEffect(() => {
     // Check if we have cached images first
     try {
       if (imageCache.isReady()) {
-        const cachedImages = imageCache.getListingImages(listingId);
+        const cachedImages = imageCache.getListingImages(itemId);
         
         if (cachedImages) {
           // We have cached images, show them immediately
-          setListing({
-            id: listingId,
+          setItem({
+            id: itemId,
             title: 'Loading...', // Placeholder
             description: '',
             price: 0,
             price_unit: 'per_item',
             category: 'other',
+            item_type: currentItemType,
             thumbnail_images: cachedImages.thumbnail_images,
             preview_images: cachedImages.preview_images,
             username: '',
@@ -252,7 +459,7 @@ function ListingDetailScreen() {
             longitude: 0,
             created_at: '',
             updated_at: ''
-          } as Listing);
+          } as MarketplaceItem);
           setLoading(false);
         }
       }
@@ -261,52 +468,52 @@ function ListingDetailScreen() {
     }
     
     // Always fetch fresh data from database
-    fetchListingData();
-  }, [fetchListingData, listingId]);
+    fetchItemData();
+  }, [fetchItemData, itemId, currentItemType]);
 
-  // Check for existing ping when listing and user are available
+  // Check for existing ping when item and user are available
   useEffect(() => {
-    if (listing && currentUser) {
+    if (item && currentUser) {
       checkExistingPingStatus();
     }
-  }, [listing, currentUser, checkExistingPingStatus]);
+  }, [item, currentUser, checkExistingPingStatus]);
 
-  // Load favorites status when listing changes
+  // Load favorites status when item changes
   useEffect(() => {
-    if (listing?.id) {
-      refreshFavoritesStatus([listing.id]);
+    if (item?.id) {
+      refreshFavoritesStatus([item.id]);
     }
-  }, [listing?.id, refreshFavoritesStatus]);
+  }, [item?.id, refreshFavoritesStatus]);
 
-  // Handle navigation to other listings
-  const handleListingPress = useCallback((listingId: string) => {
-    router.push(`/listing-detail?id=${listingId}`);
+  // Handle navigation to other items
+  const handleItemPress = useCallback((itemId: string, itemType: ItemType) => {
+    router.push(`/listing-detail?id=${itemId}&type=${itemType}`);
   }, [router]);
 
-  // Handle report listing
+  // Handle report item
   const handleReport = useCallback(async () => {
-    if (!user || !listing) {
-      Alert.alert('Error', 'You must be logged in to report listings');
+    if (!user || !item) {
+      Alert.alert('Error', `You must be logged in to report ${itemType}s`);
       return;
     }
 
     try {
       const result = await reportListing({
-        listing_id: listing.id,
-        seller_username: listing.username,
+        listing_id: item.id,
+        seller_username: item.username,
         reason: 'inappropriate_content',
-        description: 'Reported via listing detail page'
+        description: `Reported via ${itemType} detail page`
       });
 
       if (!result.success) {
-        Alert.alert('Error', result.error || 'Failed to report listing. Please try again.');
+        Alert.alert('Error', result.error || `Failed to report ${itemType}. Please try again.`);
         return;
       }
 
-      // Ask if user wants to hide the listing after reporting
+      // Ask if user wants to hide the item after reporting
       Alert.alert(
         'Report Submitted',
-        'Thank you for your report. We will review this listing and take appropriate action.\n\nWould you like to hide this listing from your feed?',
+        `Thank you for your report. We will review this ${itemType} and take appropriate action.\n\nWould you like to hide this ${itemType} from your feed?`,
         [
           {
             text: 'No, Keep Visible',
@@ -315,18 +522,18 @@ function ListingDetailScreen() {
           {
             text: 'Yes, Hide It',
             onPress: async () => {
-              // Hide the listing
-              const hideResult = await hideListing(listing.id);
+              // Hide the item
+              const hideResult = await hideListing(item.id);
               if (hideResult.success) {
                 Alert.alert(
-                  'Listing Hidden',
-                  'This listing has been hidden from your feed.',
+                  `${itemType.charAt(0).toUpperCase() + itemType.slice(1)} Hidden`,
+                  `This ${itemType} has been hidden from your feed.`,
                   [{ text: 'OK', onPress: () => router.back() }]
                 );
               } else {
                 Alert.alert(
                   'Report Submitted',
-                  'Your report was submitted, but we couldn\'t hide the listing. You can hide it manually from the listing options.',
+                  `Your report was submitted, but we couldn't hide the ${itemType}. You can hide it manually from the ${itemType} options.`,
                   [{ text: 'OK' }]
                 );
               }
@@ -335,114 +542,119 @@ function ListingDetailScreen() {
         ]
       );
     } catch (error) {
-      console.error('Error reporting listing:', error);
-      Alert.alert('Error', 'Failed to report listing. Please try again.');
+      console.error(`Error reporting ${itemType}:`, error);
+      Alert.alert('Error', `Failed to report ${itemType}. Please try again.`);
     }
-  }, [user, listing, router]);
+  }, [user, item, itemType, router]);
 
-  // Handle hide listing
+  // Handle hide item
   const handleHide = useCallback(async () => {
-    if (!user || !listing) {
-      Alert.alert('Error', 'You must be logged in to hide listings');
+    if (!user || !item) {
+      Alert.alert('Error', `You must be logged in to hide ${itemType}s`);
       return;
     }
 
     try {
-      const result = await hideListing(listing.id);
+      const result = await hideListing(item.id);
 
       if (!result.success) {
-        Alert.alert('Error', result.error || 'Failed to hide listing. Please try again.');
+        Alert.alert('Error', result.error || `Failed to hide ${itemType}. Please try again.`);
         return;
       }
 
       Alert.alert(
-        'Listing Hidden',
-        'This listing has been hidden from your feed.',
+        `${itemType.charAt(0).toUpperCase() + itemType.slice(1)} Hidden`,
+        `This ${itemType} has been hidden from your feed.`,
         [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (error) {
-      console.error('Error hiding listing:', error);
-      Alert.alert('Error', 'Failed to hide listing. Please try again.');
+      console.error(`Error hiding ${itemType}:`, error);
+      Alert.alert('Error', `Failed to hide ${itemType}. Please try again.`);
     }
-  }, [user, listing, router]);
+  }, [user, item, itemType, router]);
 
   // Handle block user
   const handleBlock = useCallback(async () => {
-    if (!user || !listing) {
+    if (!user || !item) {
       Alert.alert('Error', 'You must be logged in to block users');
       return;
     }
 
     try {
-      // First, get the seller's user ID
-      const { data: sellerData, error: sellerError } = await supabase
+      // First, get the user's ID
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('id')
-        .eq('username', listing.username)
+        .eq('username', item.username)
         .single();
 
-      if (sellerError || !sellerData) {
-        console.error('Error finding seller:', sellerError);
-        Alert.alert('Error', 'Failed to find seller. Please try again.');
+      if (userError || !userData) {
+        console.error('Error finding user:', userError);
+        Alert.alert('Error', 'Failed to find user. Please try again.');
         return;
       }
 
-      const result = await blockUser(sellerData.id);
+      const result = await blockUser(userData.id);
 
       if (!result.success) {
         Alert.alert('Error', result.error || 'Failed to block user. Please try again.');
         return;
       }
 
+      const userType = itemType === 'request' ? 'requester' : 'seller';
       Alert.alert(
         'User Blocked',
-        `You have blocked ${listing.username}. You will no longer see their listings.`,
+        `You have blocked ${item.username}. You will no longer see their ${itemType}s.`,
         [{ text: 'OK', onPress: () => router.back() }]
       );
     } catch (error) {
       console.error('Error blocking user:', error);
       Alert.alert('Error', 'Failed to block user. Please try again.');
     }
-  }, [user, listing, router]);
+  }, [user, item, itemType, router]);
 
-  // Handle share listing
-  const handleShareListing = useCallback(async () => {
-    if (!listing) return;
+  // Handle share item
+  const handleShareItem = useCallback(async () => {
+    if (!item) return;
 
     try {
-      // Generate deep link for the listing
-      const deepLink = `geomart://listing/${listing.id}`;
+      // Generate deep link for the item
+      const deepLink = `geomart://${itemType}/${item.id}`;
       
-      // Create share message with listing details
-      const shareMessage = `Check out this ${listing.category} listing on GeoMart!\n\n` +
-        `"${listing.title}"\n` +
-        `Price: ${listing.price} ${listing.price_unit}\n` +
-        `Seller: ${listing.username}\n\n` +
+      // Create share message with item details
+      const priceText = itemType === 'request' 
+        ? (item.budget_max ? `Budget: ₹${item.budget_min} - ₹${item.budget_max}` : `Budget: ₹${item.budget_min}`)
+        : `Price: ₹${item.price} ${item.price_unit || 'per item'}`;
+      
+      const shareMessage = `Check out this ${item.category} ${itemType} on GeoMart!\n\n` +
+        `"${item.title}"\n` +
+        `${priceText}\n` +
+        `${itemType === 'request' ? 'Requester' : 'Seller'}: ${item.username}\n\n` +
         `View it here: ${deepLink}\n\n` +
         `Download GeoMart: https://play.google.com/store/apps/details?id=com.geomart.app`;
 
       await Share.share({
         message: shareMessage,
         url: deepLink, // This will be used by apps that support URL sharing
-        title: `Share ${listing.title} - GeoMart`,
+        title: `Share ${item.title} - GeoMart`,
       });
     } catch (error) {
-      console.error('Error sharing listing:', error);
-      Alert.alert('Error', 'Failed to share listing. Please try again.');
+      console.error(`Error sharing ${itemType}:`, error);
+      Alert.alert('Error', `Failed to share ${itemType}. Please try again.`);
     }
-  }, [listing]);
+  }, [item, itemType]);
 
   // Handle toggle favorite
   const handleToggleFavorite = useCallback(async () => {
-    if (!listing) return;
+    if (!item) return;
 
-    const isCurrentlyFavorited = isFavorited(listing.id);
+    const isCurrentlyFavorited = isFavorited(item.id);
     const newFavoriteState = !isCurrentlyFavorited;
     
     // Immediate visual feedback - change color instantly
     setFavorites(prev => ({
       ...prev,
-      [listing.id]: newFavoriteState
+      [item.id]: newFavoriteState
     }));
     
     // Show confirmation dialog after a short delay to see the color change
@@ -450,8 +662,8 @@ function ListingDetailScreen() {
       Alert.alert(
         isCurrentlyFavorited ? 'Remove from Favorites' : 'Add to Favorites',
         isCurrentlyFavorited 
-          ? 'Are you sure you want to remove this listing from your favorites?' 
-          : 'Add this listing to your favorites?',
+          ? `Are you sure you want to remove this ${itemType} from your favorites?` 
+          : `Add this ${itemType} to your favorites?`,
         [
           {
             text: 'Cancel',
@@ -460,7 +672,7 @@ function ListingDetailScreen() {
               // Revert the visual change if cancelled
               setFavorites(prev => ({
                 ...prev,
-                [listing.id]: isCurrentlyFavorited
+                [item.id]: isCurrentlyFavorited
               }));
             }
           },
@@ -469,12 +681,12 @@ function ListingDetailScreen() {
             onPress: async () => {
               // Perform the actual database operation
               try {
-                await toggleFavoriteStatus(listing.id, listing.username);
+                await toggleFavoriteStatus(item.id, item.username);
               } catch (error) {
                 // Revert on error
                 setFavorites(prev => ({
                   ...prev,
-                  [listing.id]: isCurrentlyFavorited
+                  [item.id]: isCurrentlyFavorited
                 }));
                 console.error('Error toggling favorite:', error);
                 Alert.alert('Error', 'Failed to update favorites. Please try again.');
@@ -484,7 +696,7 @@ function ListingDetailScreen() {
         ]
       );
     }, 100);
-  }, [listing, isFavorited, setFavorites, toggleFavoriteStatus]);
+  }, [item, itemType, isFavorited, setFavorites, toggleFavoriteStatus]);
 
   // Show options menu
   const showOptionsMenu = useCallback(() => {
@@ -497,7 +709,7 @@ function ListingDetailScreen() {
     
     switch (option) {
       case 'share':
-        handleShareListing();
+        handleShareItem();
         break;
       case 'favorite':
         handleToggleFavorite();
@@ -512,7 +724,7 @@ function ListingDetailScreen() {
         handleBlock();
         break;
     }
-  }, [handleShareListing, handleToggleFavorite, handleReport, handleHide, handleBlock]);
+  }, [handleShareItem, handleToggleFavorite, handleReport, handleHide, handleBlock]);
 
   // Handle phone call
   const handleCall = useCallback(() => {
@@ -527,17 +739,21 @@ function ListingDetailScreen() {
 
     const phoneNumber = phoneSharingInfo.phone;
     if (!phoneNumber) {
+      const userType = itemType === 'request' ? 'requester' : 'seller';
       Alert.alert(
         'No Phone Number',
-        'This seller has not provided a phone number.',
+        `This ${userType} has not provided a phone number.`,
         [{ text: 'OK', style: 'default' }]
       );
       return;
     }
 
+    const userInfo = itemType === 'request' ? requesterInfo : sellerInfo;
+    const userType = itemType === 'request' ? 'Requester' : 'Seller';
+    
     Alert.alert(
-      'Call Seller',
-      `Call ${sellerInfo?.name || 'seller'}?`,
+      `Call ${userType}`,
+      `Call ${userInfo?.name || userType.toLowerCase()}?`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
@@ -549,7 +765,7 @@ function ListingDetailScreen() {
         }
       ]
     );
-  }, [sellerInfo]);
+  }, [itemType, sellerInfo, requesterInfo]);
 
   // Handle message/ping
   const handleMessage = useCallback(() => {
@@ -558,27 +774,31 @@ function ListingDetailScreen() {
       return;
     }
 
-    if (!listing) {
-      Alert.alert('Error', 'Listing information not available.');
+    if (!item) {
+      Alert.alert('Error', `${itemType.charAt(0).toUpperCase() + itemType.slice(1)} information not available.`);
       return;
     }
 
     // Prevent users from pinging themselves
-    if (currentUser.username === listing.username) {
+    if (currentUser.username === item.username) {
       Alert.alert('Cannot Send Ping', 'You cannot ping yourself.');
       return;
     }
 
     setShowPingModal(true);
-  }, [currentUser, listing]);
+  }, [currentUser, item, itemType]);
 
 
   // Send ping
   const sendPing = useCallback(async () => {
-    if (!currentUser || !listing || !sellerInfo) return;
+    if (!currentUser || !item) return;
+
+    const userInfo = itemType === 'request' ? requesterInfo : sellerInfo;
+    if (!userInfo) return;
 
     if (pingMessage.trim().length === 0) {
-      Alert.alert('Message Required', 'Please enter a message for the seller.');
+      const userType = itemType === 'request' ? 'requester' : 'seller';
+      Alert.alert('Message Required', `Please enter a message for the ${userType}.`);
       return;
     }
 
@@ -592,19 +812,21 @@ function ListingDetailScreen() {
     try {
       if (isOnline) {
         await createPing({
-          listing_id: listing.id,
+          target_id: item.id as any,
+          item_type: currentItemType,
           sender_username: currentUser.username,
-          receiver_username: listing.username,
+          receiver_username: item.username,
           message: pingMessage.trim(),
           status: 'pending'
-        });
+        } as any);
       } else {
         // Add to offline queue
         const { addPingAction } = useOfflineQueue();
         await addPingAction({
-          listing_id: listing.id,
+          target_id: item.id,
+          item_type: currentItemType,
           sender_username: currentUser.username,
-          receiver_username: listing.username,
+          receiver_username: item.username,
           message: pingMessage.trim(),
           status: 'pending'
         }, 'high');
@@ -614,21 +836,37 @@ function ListingDetailScreen() {
       setShowPingModal(false);
       setPingMessage('');
 
+      const userType = itemType === 'request' ? 'requester' : 'seller';
       Alert.alert(
         'Ping Sent!',
-        `Your ping has been sent to ${sellerInfo.name || 'the seller'}. You'll be able to chat once they accept your ping.`,
+        `Your ping has been sent to ${userInfo.name || `the ${userType}`}. You'll be able to chat once they accept your ping.`,
         [{ text: 'OK' }]
       );
     } catch (error) {
       console.error('Error sending ping:', error);
-      Alert.alert(
-        'Error',
-        error instanceof Error ? error.message : 'Failed to send ping. Please try again.'
-      );
+      const errMsg = error instanceof Error ? error.message : '';
+
+      // Friendly messages for known limits
+      if (errMsg.toLowerCase().includes('daily') || errMsg.toLowerCase().includes('limit')) {
+        Alert.alert(
+          'Daily Limit Reached',
+          'You’ve reached your daily ping limit (5). Please try again tomorrow.'
+        );
+      } else if (errMsg.toLowerCase().includes('minute') || errMsg.toLowerCase().includes('time') || errMsg.toLowerCase().includes('cooldown')) {
+        Alert.alert(
+          'Please Wait',
+          'You can ping this item again in about a minute.'
+        );
+      } else {
+        Alert.alert(
+          'Unable to Send Ping',
+          'Something went wrong while sending your ping. Please try again.'
+        );
+      }
     } finally {
       setIsPinging(false);
     }
-  }, [currentUser, listing, sellerInfo, pingMessage, isOnline]);
+  }, [currentUser, item, itemType, requesterInfo, sellerInfo, pingMessage, isOnline]);
 
 
 
@@ -640,17 +878,17 @@ function ListingDetailScreen() {
     return (
       <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
         <ActivityIndicator size="large" color="#22C55E" />
-        <Text style={styles.loadingText}>Loading listing...</Text>
+        <Text style={styles.loadingText}>Loading {itemType}...</Text>
       </View>
     );
   }
 
   // Error state
-  if (error || !listing) {
+  if (error || !item) {
     return (
       <View style={[styles.errorContainer, { paddingTop: insets.top }]}>
         <Text style={styles.errorText}>
-          {error || 'Failed to load listing'}
+          {error || `Failed to load ${itemType}`}
         </Text>
       </View>
     );
@@ -673,10 +911,10 @@ function ListingDetailScreen() {
         {/* Hero Image Section */}
         <View style={styles.heroImageContainer}>
           <ListingHeroImage
-            images={listing.thumbnail_images} // Use thumbnail_images as fallback for images
-            thumbnailImages={listing.thumbnail_images}
-            previewImages={listing.preview_images}
-            title={listing.title}
+            images={item.thumbnail_images} // Use thumbnail_images as fallback for images
+            thumbnailImages={item.thumbnail_images}
+            previewImages={item.preview_images}
+            title={item.title}
             onBackPress={() => router.back()}
           />
           
@@ -694,40 +932,55 @@ function ListingDetailScreen() {
         
 
 
-        {/* Unified Listing Information */}
-        {sellerInfo && (
+        {/* Unified Item Information */}
+        {(sellerInfo || requesterInfo) && (
           <UnifiedListingCard
-            title={listing.title}
-            description={listing.description || ''}
-            price={listing.price}
-            priceUnit={listing.price_unit}
-            category={listing.category}
-            createdAt={listing.created_at}
-            seller={sellerInfo}
-            viewCount={listing.view_count}
-            pingCount={listing.ping_count}
-            expiresAt={listing.expires_at}
-            onSellerPress={() => router.push(`/seller/${sellerInfo.username}` as any)}
+            title={item.title}
+            description={item.description || ''}
+            price={item.price}
+            priceUnit={item.price_unit || 'per_item'}
+            category={item.category}
+            createdAt={item.created_at}
+            seller={itemType === 'request' ? requesterInfo! : sellerInfo!}
+            viewCount={item.view_count}
+            pingCount={item.ping_count}
+            expiresAt={item.expires_at}
+            itemType={itemType}
+            budgetMin={item.budget_min}
+            budgetMax={item.budget_max}
+            pickupAvailable={item.pickup_available}
+            deliveryAvailable={item.delivery_available}
+            ratingStats={ratingStats || undefined}
+            onSellerPress={() => {
+              const userInfo = itemType === 'request' ? requesterInfo : sellerInfo;
+              router.push(`/seller/${userInfo?.username}` as any);
+            }}
           />
         )}
 
         {/* Compact Location Map */}
-        {listing.latitude && listing.longitude && (
+        {item.latitude && item.longitude && (
           <CompactLocationCard
-            latitude={listing.latitude}
-            longitude={listing.longitude}
-            title={listing.title}
-            sellerName={sellerInfo?.name || 'Seller'}
+            latitude={item.latitude}
+            longitude={item.longitude}
+            title={item.title}
+            sellerName={itemType === 'request' ? requesterInfo?.name || 'Requester' : sellerInfo?.name || 'Seller'}
           />
         )}
 
-        {/* Seller's Other Listings */}
+        {/* User's Other Items */}
         {sellerListings.length > 0 && (
           <SellerListingsCarousel
-            listings={sellerListings}
-            onListingPress={handleListingPress}
-            sellerName={sellerInfo?.name || 'Seller'}
-            sellerUsername={listing?.username}
+            listings={sellerListings as any}
+            onListingPress={(itemId) => {
+              // Find the item type from the listings array
+              const targetItem = sellerListings.find(l => l.id === itemId);
+              if (targetItem) {
+                handleItemPress(itemId, targetItem.item_type);
+              }
+            }}
+            sellerName={itemType === 'request' ? requesterInfo?.name || 'Requester' : sellerInfo?.name || 'Seller'}
+            sellerUsername={item?.username}
           />
         )}
       </ScrollView>
@@ -774,7 +1027,9 @@ function ListingDetailScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.pingModal}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Send Ping to {sellerInfo?.name || 'Seller'}</Text>
+              <Text style={styles.modalTitle}>
+                Send Ping to {itemType === 'request' ? requesterInfo?.name || 'Requester' : sellerInfo?.name || 'Seller'}
+              </Text>
               <TouchableOpacity onPress={() => setShowPingModal(false)}>
                 <X size={24} color="#64748B" />
               </TouchableOpacity>
@@ -790,7 +1045,9 @@ function ListingDetailScreen() {
             )}
             
             <View style={styles.messageSection}>
-              <Text style={styles.messageLabel}>Message to Seller:</Text>
+              <Text style={styles.messageLabel}>
+                Message to {itemType === 'request' ? 'Requester' : 'Seller'}:
+              </Text>
               
               <TextInput
                 style={styles.messageInput}
@@ -841,7 +1098,9 @@ function ListingDetailScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.optionsModal}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Listing Options</Text>
+              <Text style={styles.modalTitle}>
+                {itemType.charAt(0).toUpperCase() + itemType.slice(1)} Options
+              </Text>
               <TouchableOpacity onPress={() => setShowOptionsModal(false)}>
                 <X size={24} color="#64748B" />
               </TouchableOpacity>
@@ -853,7 +1112,9 @@ function ListingDetailScreen() {
                 onPress={() => handleOptionSelect('share')}
               >
                 <Share2 size={20} color="#22C55E" />
-                <Text style={styles.optionText}>Share Listing</Text>
+                <Text style={styles.optionText}>
+                  Share {itemType.charAt(0).toUpperCase() + itemType.slice(1)}
+                </Text>
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -862,11 +1123,11 @@ function ListingDetailScreen() {
               >
                 <Heart 
                   size={20} 
-                  color={listing ? (isFavorited(listing.id) ? "#EF4444" : "#64748B") : "#64748B"} 
-                  fill={listing ? (isFavorited(listing.id) ? "#EF4444" : "transparent") : "transparent"}
+                  color={item ? (isFavorited(item.id) ? "#EF4444" : "#64748B") : "#64748B"} 
+                  fill={item ? (isFavorited(item.id) ? "#EF4444" : "transparent") : "transparent"}
                 />
                 <Text style={styles.optionText}>
-                  {listing ? (isFavorited(listing.id) ? 'Remove from Favorites' : 'Add to Favorites') : 'Add to Favorites'}
+                  {item ? (isFavorited(item.id) ? 'Remove from Favorites' : 'Add to Favorites') : 'Add to Favorites'}
                 </Text>
               </TouchableOpacity>
               
@@ -875,7 +1136,9 @@ function ListingDetailScreen() {
                 onPress={() => handleOptionSelect('report')}
               >
                 <Flag size={20} color="#64748B" />
-                <Text style={styles.optionText}>Report Listing</Text>
+                <Text style={styles.optionText}>
+                  Report {itemType.charAt(0).toUpperCase() + itemType.slice(1)}
+                </Text>
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -883,7 +1146,9 @@ function ListingDetailScreen() {
                 onPress={() => handleOptionSelect('hide')}
               >
                 <EyeOff size={20} color="#64748B" />
-                <Text style={styles.optionText}>Hide Listing</Text>
+                <Text style={styles.optionText}>
+                  Hide {itemType.charAt(0).toUpperCase() + itemType.slice(1)}
+                </Text>
               </TouchableOpacity>
               
               <TouchableOpacity
@@ -892,7 +1157,7 @@ function ListingDetailScreen() {
               >
                 <UserX size={20} color="#64748B" />
                 <Text style={styles.optionText}>
-                  Block {listing?.username}
+                  Block {item?.username}
                 </Text>
               </TouchableOpacity>
             </View>

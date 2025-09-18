@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
-import { Home, User, Activity, Gift, ClipboardList } from 'lucide-react-native';
+import { Home, User, Activity, Gift, Plus, ClipboardList } from 'lucide-react-native';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Temporary Colors object until proper import is fixed
@@ -58,7 +58,13 @@ export default function TabLayout() {
             ),
           }}
         />
-
+        <Tabs.Screen
+          name="create"
+          options={{
+            title: 'Create',
+            tabBarIcon: ({ color }) => <Plus size={24} color={color} />,
+          }}
+        />
         <Tabs.Screen
           name="rewards"
           options={{

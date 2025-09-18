@@ -30,12 +30,10 @@ const categories = [
   { id: 'others', name: 'Others' },
 ];
 
-import AddListingModal from '@/components/AddListingModal';
 import FeedbackModal from '@/components/FeedbackModal';
 import { useRouter } from 'expo-router';
-import CategorySelectionModal from '@/components/CategorySelectionModal';
 import DistanceFilterModal from '@/components/DistanceFilterModal';
-import { useListings } from '@/hooks/useListings';
+import { useMarketplaceItems } from '@/hooks/useMarketplaceItems';
 import { supabase } from '@/utils/supabaseClient';
 
 import { formatDistance } from '@/utils/distance';
@@ -46,7 +44,7 @@ import NewRobustImage from '@/components/NewRobustImage';
 
 
 
-import { Category } from '@/utils/types';
+import { Category, ItemType } from '@/utils/types';
 import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
@@ -64,13 +62,11 @@ const ITEM_WIDTH = (width - 36) / 2; // Account for padding and gap
 function HomeScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedItemType, setSelectedItemType] = useState<ItemType | 'all'>('all');
   const errorHandler = ErrorHandler.getInstance();
 
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [selectedCategoryForListing, setSelectedCategoryForListing] = useState<Category | undefined>(undefined);
   const [showDistanceFilterModal, setShowDistanceFilterModal] = useState(false);
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [sellerInfoMap, setSellerInfoMap] = useState<Record<string, any>>({});
@@ -85,21 +81,24 @@ function HomeScreen() {
   
 
   
-  // Location-based sorting with updated useListings hook
+  // Location-based sorting with updated useMarketplaceItems hook
   const { 
-    listings, 
+    items: marketplaceItems, 
     loading, 
-    loadMoreListings, 
+    loadMoreItems, 
     hasMore, 
-    refreshListings,
+    refreshItems,
     toggleDistanceSort,
     sortByDistance: sortByDistanceState,
     maxDistance,
     setDistanceFilter,
+    itemType,
+    setItemTypeFilter,
+    selectedCategory: hookCategory,
+    setCategoryFilter,
     locationAvailable,
-    updateLocation,
-    markReturningFromNavigation
-  } = useListings();
+    updateLocation
+  } = useMarketplaceItems();
 
 
   
@@ -113,24 +112,24 @@ function HomeScreen() {
       setLoadingStage('loading');
     } else if (!networkMonitor.isOnline()) {
       setLoadingStage('offline');
-    } else if (listings.length === 0) {
+    } else if (marketplaceItems.length === 0) {
       setLoadingStage('empty');
     } else {
       setLoadingStage('initial');
     }
-  }, [loading, refreshing, listings.length]);
+  }, [loading, refreshing, marketplaceItems.length]);
 
-  // Load seller info for all listings using request batching
+  // Load seller info for all marketplace items using request batching
   useEffect(() => {
     async function loadSellerInfo() {
-      const uniqueSellerUsernames = Array.from(new Set(listings.map(l => l.username)));
-      if (uniqueSellerUsernames.length === 0) {
+      const uniqueUsernames = Array.from(new Set(marketplaceItems.map(l => l.username)));
+      if (uniqueUsernames.length === 0) {
         setSellerInfoMap({});
         return;
       }
       
       // Check if we already have all the seller info we need
-      const missingUsernames = uniqueSellerUsernames.filter(username => !sellerInfoMap[username]);
+      const missingUsernames = uniqueUsernames.filter(username => !sellerInfoMap[username]);
       if (missingUsernames.length === 0) {
         return; // Already have all the data we need
       }
@@ -158,10 +157,10 @@ function HomeScreen() {
       }
     }
     
-    if (listings.length > 0) {
+    if (marketplaceItems.length > 0) {
       loadSellerInfo();
     }
-  }, [listings]);
+  }, [marketplaceItems]);
 
   useEffect(() => {
     async function fetchUser() {
@@ -177,19 +176,19 @@ function HomeScreen() {
 
 
 
-  // Load ratings for all users in listings
+  // Load ratings for all users in marketplace items
   useEffect(() => {
-    if (listings.length > 0) {
+    if (marketplaceItems.length > 0) {
       loadUserRatings();
     }
-  }, [listings]);
+  }, [marketplaceItems]);
 
 
   const loadUserRatings = async () => {
     try {
       // Get unique usernames that need rating data
-      const usernamesToCheck = listings
-        .map(listing => listing.username)
+      const usernamesToCheck = marketplaceItems
+        .map(item => item.username)
         .filter(username => username && !userRatings[username]);
       
       if (usernamesToCheck.length === 0) {
@@ -239,29 +238,13 @@ function HomeScreen() {
       trackScreenView('Home Screen');
       
       // This runs when the screen comes into focus (returning from other screens)
-      if (listings.length > 0) {
-        markReturningFromNavigation();
+      if (marketplaceItems.length > 0) {
+        // Navigation return logic handled silently
       }
-    }, [listings.length, markReturningFromNavigation])
+    }, [marketplaceItems.length])
   );
 
 
-  // Handle back button for modal
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
-
-    const backAction = () => {
-      if (showAddModal) {
-        setShowAddModal(false);
-        return true; // Prevent default behavior
-      }
-      return false; // Let default behavior handle it
-    };
-
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-
-    return () => backHandler.remove();
-  }, [showAddModal]);
 
   const categoryIcons = {
     groceries: ShoppingCart,
@@ -276,31 +259,32 @@ function HomeScreen() {
     others: MoreHorizontal,
   };
 
-  // Corrected filteredListings with proper types
-  const filteredListings = useMemo(() => {
-    return listings.filter((listing: any) => {
-      const matchesSearch = listing.title.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === 'all' || listing.category === selectedCategory;
+  // Filtered marketplace items with proper types
+  const filteredItems = useMemo(() => {
+    return marketplaceItems.filter((item: any) => {
+      const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+      const matchesItemType = selectedItemType === 'all' || item.item_type === selectedItemType;
       
       // Apply verified sellers filter
       let matchesVerified = true;
       if (verifiedOnly) {
-        const seller = sellerInfoMap[listing.username];
+        const seller = sellerInfoMap[item.username];
         matchesVerified = seller ? isUserVerified(seller) : false;
       }
       
-      return matchesSearch && matchesCategory && matchesVerified;
+      return matchesSearch && matchesCategory && matchesItemType && matchesVerified;
     });
-  }, [listings, searchQuery, selectedCategory, verifiedOnly, sellerInfoMap]);
+  }, [marketplaceItems, searchQuery, selectedCategory, selectedItemType, verifiedOnly, sellerInfoMap]);
 
-  // Convert listing format for display with proper types
-  const displayListings = useMemo(() => {
-    return filteredListings.map((listing: any) => {
+  // Convert marketplace items format for display with proper types
+  const displayItems = useMemo(() => {
+    return filteredItems.map((item: any) => {
       return {
-        ...listing,
+        ...item,
       };
     });
-  }, [filteredListings]);
+  }, [filteredItems]);
 
 
 
@@ -316,18 +300,20 @@ function HomeScreen() {
     // Get seller data from cache
     const seller = sellerInfoMap[listing.username];
     
-    // Navigate to listing detail page with seller data
+    // Navigate to detail page with seller data and item type
     if (seller) {
       router.push({
         pathname: '/listing-detail',
         params: {
           id: listing.id,
-          sellerData: JSON.stringify(seller)
+          sellerData: JSON.stringify(seller),
+          type: listing.item_type || 'listing'
         }
       });
     } else {
-      // Fallback to just ID if seller data not available
-      router.push(`/listing-detail?id=${listing.id}`);
+      // Fallback to just ID and type if seller data not available
+      const typeParam = listing.item_type ? `&type=${listing.item_type}` : '';
+      router.push(`/listing-detail?id=${listing.id}${typeParam}`);
     }
   }, [router, sellerInfoMap]);
 
@@ -406,6 +392,14 @@ function HomeScreen() {
               previewImages={item.preview_images}
               size="thumbnail"
               style={styles.listingImage}
+              placeholder={(
+                <View style={{ justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
+                  {(() => {
+                    const IconComponent = categoryIcons[(item.category as keyof typeof categoryIcons)] || MoreHorizontal;
+                    return <IconComponent size={28} color="#94A3B8" />;
+                  })()}
+                </View>
+              )}
               placeholderText="No Image"
               title={item.title}
               onError={(error, imageSet, metadata) => {
@@ -435,8 +429,20 @@ function HomeScreen() {
 
             {/* Seller Name with Verification Badge */}
             <View style={styles.sellerInfo}>
-              <Text style={styles.sellerName}>{seller.name || 'Unknown Seller'}</Text>
+              <Text style={styles.sellerName}>
+                {item.item_type === 'request' ? 'Requester' : 'Seller'}: {seller.name || 'Unknown'}
+              </Text>
               {isUserVerified(seller) && <VerificationBadge size="small" />}
+            </View>
+
+            {/* Type Badge */}
+            <View style={[
+              styles.typeBadge,
+              item.item_type === 'request' ? styles.requestBadge : styles.listingBadge
+            ]}>
+              <Text style={styles.typeBadgeText}>
+                {item.item_type === 'request' ? 'REQUEST' : 'FOR SALE'}
+              </Text>
             </View>
 
             {/* Listing Title */}
@@ -444,13 +450,22 @@ function HomeScreen() {
 
             {/* Price with Unit Badge */}
             <View style={styles.priceContainer}>
-              <Text style={styles.listingPrice}>₹{item.price}</Text>
+              <Text style={styles.listingPrice}>
+                {item.item_type === 'request' ? (
+                  item.budget_min && item.budget_max && item.budget_min !== item.budget_max
+                    ? `₹${item.budget_min}-${item.budget_max}`
+                    : `₹${item.price}`
+                ) : (
+                  `₹${item.price}`
+                )}
+              </Text>
               <View style={styles.priceUnitBadge}>
                 <Text style={styles.priceUnitText}>
-                  {item.price_unit ? 
-                    (item.price_unit === 'per_item' ? 'per item' : item.price_unit.replace('per_', 'per ')) 
-                    : 'per item'
-                  }
+                  {item.item_type === 'request' ? 'budget' : (
+                    item.price_unit ? 
+                      (item.price_unit === 'per_item' ? 'per item' : item.price_unit.replace('per_', 'per ')) 
+                      : 'per item'
+                  )}
                 </Text>
               </View>
             </View>
@@ -488,10 +503,6 @@ function HomeScreen() {
     );
   }, [sellerInfoMap, username, expandedDescriptions]);
 
-  // Handler for the floating add button
-  const handleAddListing = useCallback(() => {
-    setShowCategoryModal(true);
-  }, []);
 
   // Handler for the feedback button
   const handleFeedback = useCallback(() => {
@@ -586,12 +597,6 @@ function HomeScreen() {
     }
   }, [username]);
 
-  // Handler for category selection
-  const handleCategorySelect = useCallback((categoryId: string) => {
-    setSelectedCategoryForListing(categoryId as Category);
-    setShowCategoryModal(false);
-    setShowAddModal(true);
-  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -608,8 +613,8 @@ function HomeScreen() {
         return;
       }
 
-      // Only wait for listings refresh, not ratings
-      await refreshListings();
+      // Only wait for items refresh, not ratings
+      await refreshItems();
       
       // Load ratings in background (don't wait for it)
       loadUserRatings().catch(() => {
@@ -623,21 +628,21 @@ function HomeScreen() {
     } finally {
       setRefreshing(false);
     }
-  }, [refreshListings, loadUserRatings]);
+  }, [refreshItems, loadUserRatings]);
 
   const handleRetry = useCallback(async () => {
     setLoadingStage('loading');
     try {
-      await refreshListings();
+      await refreshItems();
       await loadUserRatings();
     } catch (error) {
       setLoadingStage('error');
       await errorHandler.handleError(error, {
-        operation: 'retry_listings',
+        operation: 'retry_items',
         component: 'HomeScreen',
       });
     }
-  }, [refreshListings, loadUserRatings, errorHandler]);
+  }, [refreshItems, loadUserRatings, errorHandler]);
 
   // Memoized values for FlatList props
   const sectionTitle = useMemo(() => 
@@ -652,9 +657,9 @@ function HomeScreen() {
 
   const onEndReachedHandler = useCallback(() => {
     if (hasMore && !loading) {
-      loadMoreListings();
+      loadMoreItems();
     }
-  }, [hasMore, loading, loadMoreListings]);
+  }, [hasMore, loading, loadMoreItems]);
 
   const refreshControlComponent = useMemo(() => 
     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#22C55E" />
@@ -676,19 +681,6 @@ function HomeScreen() {
       {/* Offline Queue Indicator */}
       {/* OfflineQueueIndicator removed - no UI monitoring needed */}
       
-      {/* Add Listing Modal */}
-      <AddListingModal 
-        visible={showAddModal} 
-        onClose={() => setShowAddModal(false)} 
-        preSelectedCategory={selectedCategoryForListing}
-        sellerUsername={username || ''}
-      />
-      {/* Category Selection Modal */}
-      <CategorySelectionModal
-        visible={showCategoryModal}
-        onClose={() => setShowCategoryModal(false)}
-        onSelectCategory={handleCategorySelect}
-      />
 
       {/* Distance Filter Modal */}
       <DistanceFilterModal
@@ -714,7 +706,7 @@ function HomeScreen() {
             onChangeText={(text) => {
               setSearchQuery(text);
               if (text.length > 2) {
-                trackSearch(text, filteredListings.length);
+                trackSearch(text, filteredItems.length);
               }
             }}
           />
@@ -752,6 +744,41 @@ function HomeScreen() {
         />
       </View>
 
+      {/* Item Type Selection */}
+      <View style={styles.typeSelectionSection}>
+        <FlatList
+          data={[
+            { id: 'all', name: 'All', icon: '📋' },
+            { id: 'listing', name: 'For Sale', icon: '🛍️' },
+            { id: 'request', name: 'Requests', icon: '🙋‍♂️' }
+          ]}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.typeCard,
+                selectedItemType === item.id && styles.selectedType
+              ]}
+              onPress={() => {
+                setSelectedItemType(item.id as ItemType | 'all');
+                setItemTypeFilter(item.id as ItemType | 'all');
+              }}
+            >
+              <Text style={styles.typeIcon}>{item.icon}</Text>
+              <Text style={[
+                styles.typeText,
+                selectedItemType === item.id && styles.selectedTypeText
+              ]}>
+                {item.name}
+              </Text>
+            </TouchableOpacity>
+          )}
+          keyExtractor={(item) => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.typeSelectionContainer}
+        />
+      </View>
+
       {/* Listings */}
       <View style={styles.listingsSection}>
         
@@ -771,14 +798,14 @@ function HomeScreen() {
             onRetry={handleRetry}
             errorMessage="Failed to load listings. Please try again."
           />
-        ) : displayListings.length === 0 ? (
+        ) : displayItems.length === 0 ? (
           <HomeLoadingStates 
             stage="empty"
             onRetry={handleRetry}
           />
         ) : (
           <FlatList
-            data={displayListings}
+            data={displayItems}
             renderItem={renderListing}
             keyExtractor={keyExtractor}
             numColumns={2}
@@ -790,20 +817,13 @@ function HomeScreen() {
             windowSize={10}
             initialNumToRender={10}
             onEndReached={onEndReachedHandler}
-            onEndReachedThreshold={0.5}
+            onEndReachedThreshold={0.7}
             refreshControl={refreshControlComponent}
             ListFooterComponent={footerComponent}
           />
         )}
       </View>
 
-      {/* Floating Add Button */}
-      <TouchableOpacity 
-        style={styles.floatingButton}
-        onPress={handleAddListing}
-      >
-        <Plus size={24} color="#FFFFFF" />
-      </TouchableOpacity>
 
       {/* Floating Feedback Button */}
       <TouchableOpacity 
@@ -881,6 +901,43 @@ const styles = StyleSheet.create({
   },
   categoriesContainer: {
     paddingHorizontal: 16,
+  },
+  typeSelectionSection: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  typeSelectionContainer: {
+    paddingHorizontal: 16,
+  },
+  typeCard: {
+    alignItems: 'center',
+    marginRight: 12,
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    minWidth: 60,
+  },
+  selectedType: {
+    backgroundColor: '#22C55E',
+    borderColor: '#22C55E',
+  },
+  typeIcon: {
+    fontSize: 16,
+    marginBottom: 4,
+  },
+  typeText: {
+    fontSize: 10,
+    fontFamily: 'Inter-Medium',
+    color: '#64748B',
+    textAlign: 'center',
+  },
+  selectedTypeText: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter-SemiBold',
   },
   categoryCard: {
     alignItems: 'center',
@@ -1165,6 +1222,24 @@ const styles = StyleSheet.create({
     color: '#1E293B',
     marginBottom: 0,
   },
+  typeBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  listingBadge: {
+    backgroundColor: '#3B82F6',
+  },
+  requestBadge: {
+    backgroundColor: '#9333EA',
+  },
+  typeBadgeText: {
+    fontSize: 8,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
+  },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1210,22 +1285,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: '#64748B',
-  },
-  floatingButton: {
-    position: 'absolute',
-    bottom: 120,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#22C55E',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
   },
   feedbackButton: {
     position: 'absolute',

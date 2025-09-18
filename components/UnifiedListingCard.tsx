@@ -10,7 +10,33 @@ import { Package, Calendar, MapPin, Eye, MessageCircle, Clock } from 'lucide-rea
 import { LocationUtils } from '@/utils/locationUtils';
 import HomeRatingDisplay from './HomeRatingDisplay';
 import VerificationBadge from './VerificationBadge';
+import StarRating from './StarRating';
 import { isUserVerified } from '@/utils/verificationUtils';
+
+// Helper function to format pricing unit labels
+const getPricingUnitLabel = (unit: string) => {
+  const labels = {
+    per_kg: 'per kg',
+    per_piece: 'per piece',
+    per_pack: 'per pack',
+    per_bundle: 'per bundle',
+    per_dozen: 'per dozen',
+    per_basket: 'per basket',
+    per_plate: 'per plate',
+    per_serving: 'per serving',
+    per_hour: 'per hour',
+    per_service: 'per service',
+    per_session: 'per session',
+    per_day: 'per day',
+    per_commission: 'per commission',
+    per_project: 'per project',
+    per_week: 'per week',
+    per_month: 'per month',
+    per_year: 'per year',
+    per_item: 'per item',
+  };
+  return labels[unit as keyof typeof labels] || 'per item';
+};
 
 interface SellerInfo {
   username: string;
@@ -35,6 +61,20 @@ interface UnifiedListingCardProps {
   viewCount?: number;
   pingCount?: number;
   expiresAt?: string;
+  itemType?: 'listing' | 'request';
+  budgetMin?: number;
+  budgetMax?: number;
+  pickupAvailable?: boolean;
+  deliveryAvailable?: boolean;
+  ratingStats?: {
+    average_rating: number;
+    total_ratings: number;
+    five_star_count: number;
+    four_star_count: number;
+    three_star_count: number;
+    two_star_count: number;
+    one_star_count: number;
+  };
   onSellerPress?: () => void;
 }
 
@@ -49,6 +89,12 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
   viewCount = 0,
   pingCount = 0,
   expiresAt,
+  itemType = 'listing',
+  budgetMin,
+  budgetMax,
+  pickupAvailable,
+  deliveryAvailable,
+  ratingStats,
   onSellerPress,
 }) => {
   const formattedDate = useMemo(() => {
@@ -96,7 +142,7 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
       const now = new Date();
       const diffMs = expiry.getTime() - now.getTime();
       
-      if (diffMs <= 0) return 'Listing expired';
+      if (diffMs <= 0) return `${itemType === 'request' ? 'Request' : 'Listing'} expired`;
       
       const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
       
@@ -107,7 +153,7 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
     } catch (error) {
       return null;
     }
-  }, [expiresAt]);
+  }, [expiresAt, itemType]);
 
   const viewCountText = useMemo(() => {
     if (viewCount === 0) return 'No views yet';
@@ -117,31 +163,43 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
   }, [viewCount]);
 
   const pingCountText = useMemo(() => {
-    if (pingCount === 0) return 'No interest yet';
-    if (pingCount === 1) return '1 person interested';
-    if (pingCount < 100) return `${pingCount} people interested`;
-    return `${pingCount.toLocaleString()} people interested`;
-  }, [pingCount]);
+    if (itemType === 'request') {
+      if (pingCount === 0) return 'No offers yet';
+      if (pingCount === 1) return '1 person offered';
+      if (pingCount < 100) return `${pingCount} people offered`;
+      return `${pingCount.toLocaleString()} people offered`;
+    } else {
+      if (pingCount === 0) return 'No interest yet';
+      if (pingCount === 1) return '1 person interested';
+      if (pingCount < 100) return `${pingCount} people interested`;
+      return `${pingCount.toLocaleString()} people interested`;
+    }
+  }, [pingCount, itemType]);
 
   return (
     <View style={styles.container}>
       {/* Title and Price Section */}
       <View style={styles.headerSection}>
         <Text style={styles.title} numberOfLines={3}>
-          {title || 'Untitled Listing'}
+          {title || `Untitled ${itemType === 'request' ? 'Request' : 'Listing'}`}
         </Text>
         
         <View style={styles.priceSection}>
-          <Text style={styles.price}>₹{price || 0}</Text>
-          <Text style={styles.priceUnit}>
-            {priceUnit === 'per_item' ? 'per item' : 
-             priceUnit === 'per_hour' ? 'per hour' :
-             priceUnit === 'per_day' ? 'per day' :
-             priceUnit === 'per_week' ? 'per week' :
-             priceUnit === 'per_month' ? 'per month' :
-             priceUnit === 'per_year' ? 'per year' :
-             (priceUnit && typeof priceUnit === 'string' ? priceUnit.replace('per_', 'per ').toLowerCase() : 'per item')}
-          </Text>
+          {itemType === 'request' ? (
+            <View>
+              <Text style={styles.price}>
+                {budgetMax ? `₹${budgetMin || 0} - ₹${budgetMax}` : `₹${budgetMin || 0}`}
+              </Text>
+              <Text style={styles.priceUnit}>Budget</Text>
+            </View>
+          ) : (
+            <View>
+              <Text style={styles.price}>₹{price || 0}</Text>
+              <Text style={styles.priceUnit}>
+                {getPricingUnitLabel(priceUnit)}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 
@@ -156,6 +214,17 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
           <Text style={styles.detailText}>{formattedDate}</Text>
         </View>
       </View>
+
+      {(pickupAvailable || deliveryAvailable) && (
+        <View style={styles.availabilitySection}>
+          {pickupAvailable && (
+            <Text style={styles.detailText}>Pickup: Available</Text>
+          )}
+          {deliveryAvailable && (
+            <Text style={styles.detailText}>Delivery: Available</Text>
+          )}
+        </View>
+      )}
 
       {/* Engagement Metrics Section */}
       <View style={styles.engagementSection}>
@@ -177,12 +246,12 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
           <View style={styles.expiryRow}>
             <View style={[
               styles.expiryBadge,
-              timeRemaining === 'Listing expired' ? styles.expiredBadge : styles.activeBadge
+              timeRemaining?.includes('expired') ? styles.expiredBadge : styles.activeBadge
             ]}>
-              <Clock size={12} color={timeRemaining === 'Listing expired' ? '#DC2626' : '#059669'} />
+              <Clock size={12} color={timeRemaining?.includes('expired') ? '#DC2626' : '#059669'} />
               <Text style={[
                 styles.expiryText,
-                { color: timeRemaining === 'Listing expired' ? '#DC2626' : '#059669' }
+                { color: timeRemaining?.includes('expired') ? '#DC2626' : '#059669' }
               ]}>
                 {timeRemaining}
               </Text>
@@ -200,6 +269,8 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
         </View>
       )}
 
+      
+
       {/* Seller Information - Compact */}
       <TouchableOpacity 
         style={styles.sellerSection}
@@ -216,7 +287,9 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
           />
           <View style={styles.sellerDetails}>
             <View style={styles.sellerNameRow}>
-              <Text style={styles.sellerName}>{seller.name || 'Unknown Seller'}</Text>
+              <Text style={styles.sellerName}>
+                {seller.name || `Unknown ${itemType === 'request' ? 'Requester' : 'Seller'}`}
+              </Text>
               {isUserVerified(seller) && <VerificationBadge size="small" />}
             </View>
             <View style={styles.sellerMeta}>
@@ -224,13 +297,6 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
                 <MapPin size={12} color="#6B7280" />
                 <Text style={styles.locationText}>{formattedLocation}</Text>
               </View>
-              <HomeRatingDisplay 
-                username={seller.username}
-                size="small"
-                showCount={false}
-                showAverage={true}
-                compact={true}
-              />
             </View>
           </View>
         </View>
@@ -240,6 +306,55 @@ const UnifiedListingCard: React.FC<UnifiedListingCardProps> = React.memo(({
             {truncatedBio}
           </Text>
         )}
+        
+        {/* Professional Ratings Section */}
+        <View style={styles.ratingsSection}>
+          <Text style={styles.ratingsSectionTitle}>Seller Rating</Text>
+          <View style={styles.ratingsContent}>
+            <View style={styles.ratingMain}>
+              <Text style={styles.ratingNumber}>
+                {ratingStats?.average_rating?.toFixed(1) || '0.0'}
+              </Text>
+              <View style={styles.ratingStars}>
+                <StarRating 
+                  rating={Math.round(ratingStats?.average_rating || 0)} 
+                  size="medium" 
+                  readonly={true} 
+                />
+              </View>
+              <Text style={styles.ratingCount}>
+                {ratingStats?.total_ratings || 0} {ratingStats?.total_ratings === 1 ? 'rating' : 'ratings'}
+              </Text>
+            </View>
+            
+            {/* Rating Breakdown */}
+            {ratingStats && ratingStats.total_ratings > 0 && (
+              <View style={styles.ratingBreakdown}>
+                {[5, 4, 3, 2, 1].map((stars) => {
+                  const count = ratingStats[`${stars}_star_count` as keyof typeof ratingStats] as number || 0;
+                  const percentage = ratingStats.total_ratings > 0 ? (count / ratingStats.total_ratings) * 100 : 0;
+                  
+                  return (
+                    <View key={stars} style={styles.ratingBarRow}>
+                      <Text style={styles.starLabel}>{stars}★</Text>
+                      <View style={styles.ratingBarContainer}>
+                        <View style={styles.ratingBarBackground}>
+                          <View 
+                            style={[
+                              styles.ratingBarFill, 
+                              { width: `${percentage}%` }
+                            ]} 
+                          />
+                        </View>
+                      </View>
+                      <Text style={styles.ratingBarCount}>{count}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        </View>
       </TouchableOpacity>
     </View>
   );
@@ -266,9 +381,9 @@ const styles = StyleSheet.create({
   
   // Price Section
   priceSection: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
   },
   price: {
     fontSize: 28,
@@ -276,7 +391,7 @@ const styles = StyleSheet.create({
     color: '#059669',
   },
   priceUnit: {
-    fontSize: 16,
+    fontSize: 14,
     fontFamily: 'Inter-Medium',
     color: '#6B7280',
   },
@@ -301,6 +416,10 @@ const styles = StyleSheet.create({
   // Engagement Section
   engagementSection: {
     marginBottom: 20,
+  },
+  availabilitySection: {
+    marginTop: 4,
+    marginBottom: 8,
   },
   engagementRow: {
     flexDirection: 'row',
@@ -350,6 +469,39 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#374151',
     lineHeight: 24,
+  },
+
+  // Delivery Section
+  deliverySection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  deliveryLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#6B7280',
+    marginRight: 8,
+  },
+  deliveryOptions: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  deliveryBadge: {
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#22C55E',
+  },
+  deliveryBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Inter-Medium',
+    color: '#22C55E',
   },
 
   // Seller Section
@@ -405,6 +557,78 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     lineHeight: 20,
     fontStyle: 'italic',
+  },
+
+  // Professional Ratings Section
+  ratingsSection: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  ratingsSectionTitle: {
+    fontSize: 15,
+    fontFamily: 'Inter-SemiBold',
+    color: '#111827',
+    marginBottom: 10,
+  },
+  ratingsContent: {
+    gap: 12,
+  },
+  ratingMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  ratingNumber: {
+    fontSize: 28,
+    fontFamily: 'Inter-Bold',
+    color: '#111827',
+    minWidth: 44,
+  },
+  ratingStars: {
+    flex: 1,
+  },
+  ratingCount: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#6B7280',
+  },
+  ratingBreakdown: {
+    gap: 6,
+  },
+  ratingBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  starLabel: {
+    fontSize: 11,
+    fontFamily: 'Inter-Medium',
+    color: '#6B7280',
+    width: 18,
+  },
+  ratingBarContainer: {
+    flex: 1,
+    height: 6,
+  },
+  ratingBarBackground: {
+    height: 6,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  ratingBarFill: {
+    height: '100%',
+    backgroundColor: '#F59E0B',
+    borderRadius: 4,
+  },
+  ratingBarCount: {
+    fontSize: 11,
+    fontFamily: 'Inter-Medium',
+    color: '#6B7280',
+    minWidth: 18,
+    textAlign: 'right',
   },
 });
 

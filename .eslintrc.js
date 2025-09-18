@@ -27,7 +27,25 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'warn', // Make 'any' types warnings instead of errors
     '@typescript-eslint/no-unused-vars': 'warn', // Make unused vars warnings
     '@typescript-eslint/no-non-null-assertion': 'warn', // Make non-null assertions warnings
+    // Safeguard: prevent direct tel: usage outside legal pages
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector:
+          "CallExpression[callee.object.name='Linking'][callee.property.name='openURL'] > Literal.arguments[value=/^tel:/]",
+        message:
+          'Direct tel: links are restricted. Use getPhoneWithPermission and centralized helpers instead.',
+      },
+    ],
   },
+  overrides: [
+    {
+      files: ['app/legal/**'],
+      rules: {
+        'no-restricted-syntax': 'off',
+      },
+    },
+  ],
   settings: {
     react: {
       version: 'detect',

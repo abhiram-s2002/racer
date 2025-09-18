@@ -1,6 +1,6 @@
 /* global console */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Activity, getActivities, getSentPings, getReceivedPings } from '@/utils/activitySupabase';
+import { Activity, getSentPings, getReceivedPings } from '@/utils/activitySupabase';
 import { supabase } from '@/utils/supabaseClient';
 import { enhancedCache } from '@/utils/enhancedCacheManager';
 import { performanceMonitor } from '@/utils/performanceMonitor';
@@ -10,6 +10,8 @@ interface CachedActivitiesState {
   sentPings: Activity[];
   receivedPings: Activity[];
   myListings: any[];
+  myRequests: any[];
+  myItems: any[];
   userProfiles: Record<string, any>;
   loading: boolean;
   lastFetch: number | null;
@@ -21,6 +23,8 @@ const CACHE_KEYS = {
   SENT_PINGS: 'cached_sent_pings',
   RECEIVED_PINGS: 'cached_received_pings',
   MY_LISTINGS: 'cached_my_listings',
+  MY_REQUESTS: 'cached_my_requests',
+  MY_ITEMS: 'cached_my_items',
   USER_PROFILES: 'cached_user_profiles',
 };
 
@@ -30,6 +34,8 @@ export function useCachedActivities(username: string | null) {
     sentPings: [],
     receivedPings: [],
     myListings: [],
+    myRequests: [],
+    myItems: [],
     userProfiles: {},
     loading: false,
     lastFetch: null,
@@ -58,22 +64,28 @@ export function useCachedActivities(username: string | null) {
         cachedSentPings,
         cachedReceivedPings,
         cachedMyListings,
+        cachedMyRequests,
+        cachedMyItems,
         cachedUserProfiles,
       ] = await Promise.all([
         enhancedCache.get<Activity[]>(getCacheKey(CACHE_KEYS.ACTIVITIES)),
         enhancedCache.get<Activity[]>(getCacheKey(CACHE_KEYS.SENT_PINGS)),
         enhancedCache.get<Activity[]>(getCacheKey(CACHE_KEYS.RECEIVED_PINGS)),
         enhancedCache.get<any[]>(getCacheKey(CACHE_KEYS.MY_LISTINGS)),
+        enhancedCache.get<any[]>(getCacheKey(CACHE_KEYS.MY_REQUESTS)),
+        enhancedCache.get<any[]>(getCacheKey(CACHE_KEYS.MY_ITEMS)),
         enhancedCache.get<Record<string, any>>(getCacheKey(CACHE_KEYS.USER_PROFILES)),
       ]);
 
-      if (cachedActivities && cachedSentPings && cachedReceivedPings && cachedMyListings && cachedUserProfiles) {
+      if (cachedActivities && cachedSentPings && cachedReceivedPings && cachedMyListings && cachedMyRequests && cachedMyItems && cachedUserProfiles) {
         setState(prev => ({
           ...prev,
           activities: cachedActivities,
           sentPings: cachedSentPings,
           receivedPings: cachedReceivedPings,
           myListings: cachedMyListings,
+          myRequests: cachedMyRequests,
+          myItems: cachedMyItems,
           userProfiles: cachedUserProfiles,
           lastFetch: Date.now(),
         }));
@@ -91,6 +103,8 @@ export function useCachedActivities(username: string | null) {
     sentPings: Activity[];
     receivedPings: Activity[];
     myListings: any[];
+    myRequests: any[];
+    myItems: any[];
     userProfiles: Record<string, any>;
   }) => {
     if (!username) return;
@@ -101,6 +115,8 @@ export function useCachedActivities(username: string | null) {
         enhancedCache.set(getCacheKey(CACHE_KEYS.SENT_PINGS), data.sentPings),
         enhancedCache.set(getCacheKey(CACHE_KEYS.RECEIVED_PINGS), data.receivedPings),
         enhancedCache.set(getCacheKey(CACHE_KEYS.MY_LISTINGS), data.myListings),
+        enhancedCache.set(getCacheKey(CACHE_KEYS.MY_REQUESTS), data.myRequests),
+        enhancedCache.set(getCacheKey(CACHE_KEYS.MY_ITEMS), data.myItems),
         enhancedCache.set(getCacheKey(CACHE_KEYS.USER_PROFILES), data.userProfiles),
       ]);
     } catch (error) {
@@ -133,33 +149,36 @@ export function useCachedActivities(username: string | null) {
     try {
       // Track performance
       const result = await performanceMonitor.trackOperation('load_activities', async () => {
-        // Fetch all data in parallel
-        const [storedActivities, sentPings, receivedPings, myListings] = await Promise.all([
-          getActivities(username),
+        // Fetch all data in parallel (activities table removed)
+        const [sentPings, receivedPings, myListings, myRequests] = await Promise.all([
           getSentPings(username),
           getReceivedPings(username),
           fetchMyListings(username),
+          fetchMyRequests(username),
         ]);
+
+        const storedActivities: Activity[] = [];
+
+        
 
         // Convert pings to activity format for UI compatibility
         const pingActivities: Activity[] = [
-          ...sentPings.map(ping => ({
+          ...sentPings.map((ping: any) => ({
             id: ping.id,
             type: 'sent_ping' as const,
-            listing_id: ping.listing_id,
+            listing_id: ping.target_id,
             title: ping.listings?.title || '',
-            price: ping.listings?.price?.toString() || '',
+            price: (ping.listings?.price ?? ping.listings?.budget_min ?? '').toString() || '',
             image: ping.listings?.images?.[0] || '',
             images: ping.listings?.images || undefined,
             thumbnail_images: ping.listings?.thumbnail_images || undefined,
             preview_images: ping.listings?.preview_images || undefined,
-            image_metadata: ping.listings?.image_metadata || undefined,
             username: ping.receiver_username,
             user_name: '',
             user_avatar: '',
             status: ping.status,
             message: ping.message,
-            created_at: ping.created_at,
+            created_at: ping.updated_at,
             is_active: true,
             sender_username: ping.sender_username,
             sender_name: ping.sender?.name || ping.sender_username,
@@ -173,23 +192,22 @@ export function useCachedActivities(username: string | null) {
               longitude: ping.listings?.longitude
             }
           })),
-          ...receivedPings.map(ping => ({
+          ...receivedPings.map((ping: any) => ({
             id: ping.id,
             type: 'received_ping' as const,
-            listing_id: ping.listing_id,
+            listing_id: ping.target_id,
             title: ping.listings?.title || '',
-            price: ping.listings?.price?.toString() || '',
+            price: (ping.listings?.price ?? ping.listings?.budget_min ?? '').toString() || '',
             image: ping.listings?.images?.[0] || '',
             images: ping.listings?.images || undefined,
             thumbnail_images: ping.listings?.thumbnail_images || undefined,
             preview_images: ping.listings?.preview_images || undefined,
-            image_metadata: ping.listings?.image_metadata || undefined,
             username: ping.sender_username,
             user_name: '',
             user_avatar: '',
             status: ping.status,
             message: ping.message,
-            created_at: ping.created_at,
+            created_at: ping.updated_at,
             is_active: true,
             sender_username: ping.sender_username,
             sender_name: ping.sender?.name || ping.sender_username,
@@ -243,11 +261,44 @@ export function useCachedActivities(username: string | null) {
           }
         });
 
+        // Build unified myItems list (listings + requests)
+        const myItems = [
+          ...myListings.map((l: any) => ({
+            id: l.id,
+            type: 'listing' as const,
+            title: l.title,
+            price: l.price,
+            price_unit: l.price_unit,
+            thumbnail_images: l.thumbnail_images,
+            preview_images: l.preview_images,
+            created_at: l.created_at,
+            latitude: l.latitude,
+            longitude: l.longitude,
+            category: l.category,
+          })),
+          ...myRequests.map((r: any) => ({
+            id: r.id,
+            type: 'request' as const,
+            title: r.title,
+            budget_min: r.budget_min,
+            budget_max: r.budget_max,
+            price_unit: r.price_unit,
+            thumbnail_images: r.thumbnail_images,
+            preview_images: r.preview_images,
+            created_at: r.created_at,
+            latitude: r.latitude,
+            longitude: r.longitude,
+            category: r.category,
+          })),
+        ];
+
         return {
           activities: storedActivities,
           sentPings: pingActivities.filter(p => p.type === 'sent_ping'),
           receivedPings: pingActivities.filter(p => p.type === 'received_ping'),
           myListings,
+          myRequests,
+          myItems,
           userProfiles,
         };
       });
@@ -299,6 +350,25 @@ export function useCachedActivities(username: string | null) {
     }
   };
 
+  // Fetch my requests
+  const fetchMyRequests = async (username: string) => {
+    try {
+      const { data: requests, error } = await supabase
+        .from('requests')
+        .select('id, title, description, budget_min, budget_max, price_unit, category, thumbnail_images, preview_images, latitude, longitude, created_at')
+        .eq('requester_username', username)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        return [];
+      }
+
+      return requests || [];
+    } catch (err) {
+      return [];
+    }
+  };
+
   // Refresh data (clear cache and reload)
   const refresh = useCallback(async () => {
     // Clear cache
@@ -308,6 +378,8 @@ export function useCachedActivities(username: string | null) {
         enhancedCache.delete(getCacheKey(CACHE_KEYS.SENT_PINGS)),
         enhancedCache.delete(getCacheKey(CACHE_KEYS.RECEIVED_PINGS)),
         enhancedCache.delete(getCacheKey(CACHE_KEYS.MY_LISTINGS)),
+        enhancedCache.delete(getCacheKey(CACHE_KEYS.MY_REQUESTS)),
+        enhancedCache.delete(getCacheKey(CACHE_KEYS.MY_ITEMS)),
         enhancedCache.delete(getCacheKey(CACHE_KEYS.USER_PROFILES)),
       ]);
     }
@@ -336,6 +408,8 @@ export function useCachedActivities(username: string | null) {
         sentPings: newState.sentPings,
         receivedPings: newState.receivedPings,
         myListings: newState.myListings,
+        myRequests: newState.myRequests,
+        myItems: newState.myItems,
         userProfiles: newState.userProfiles,
       });
 
@@ -359,6 +433,8 @@ export function useCachedActivities(username: string | null) {
         sentPings: newState.sentPings,
         receivedPings: newState.receivedPings,
         myListings: newState.myListings,
+        myRequests: newState.myRequests,
+        myItems: newState.myItems,
         userProfiles: newState.userProfiles,
       });
 
@@ -382,6 +458,8 @@ export function useCachedActivities(username: string | null) {
         sentPings: newState.sentPings,
         receivedPings: newState.receivedPings,
         myListings: newState.myListings,
+        myRequests: newState.myRequests,
+        myItems: newState.myItems,
         userProfiles: newState.userProfiles,
       });
 

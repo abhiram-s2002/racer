@@ -52,12 +52,22 @@ export default function HomeRatingDisplay({
     );
   }
 
-  if (!ratingStats || ratingStats.total_ratings === 0) {
-    return null; // Don't show anything if no ratings
-  }
+  // Always show a rating row even when there are no ratings yet
+  const safeStats: UserRatingStats = ratingStats || {
+    average_rating: 0,
+    total_ratings: 0,
+    five_star_count: 0,
+    four_star_count: 0,
+    three_star_count: 0,
+    two_star_count: 0,
+    one_star_count: 0,
+  } as any;
 
-  const { average_rating, total_ratings } = ratingStats;
+  const { average_rating, total_ratings } = safeStats;
   const roundedRating = Math.round(average_rating);
+  
+  // Show "No ratings yet" when there are no ratings
+  const hasRatings = total_ratings > 0;
 
   const Container = onPress ? TouchableOpacity : View;
 
@@ -76,20 +86,31 @@ export default function HomeRatingDisplay({
       
       {/* Rating Info */}
       <View style={styles.ratingInfo}>
-        {showAverage && (
+        {hasRatings ? (
+          <>
+            {showAverage && (
+              <Text style={[
+                styles.averageRating,
+                compact && styles.compactAverageRating
+              ]}>
+                {average_rating.toFixed(1)}
+              </Text>
+            )}
+            {showCount && (
+              <Text style={[
+                styles.ratingCount,
+                compact && styles.compactRatingCount
+              ]}>
+                ({total_ratings})
+              </Text>
+            )}
+          </>
+        ) : (
           <Text style={[
-            styles.averageRating,
-            compact && styles.compactAverageRating
+            styles.noRatingsText,
+            compact && styles.compactNoRatingsText
           ]}>
-            {average_rating.toFixed(1)}
-          </Text>
-        )}
-        {showCount && (
-          <Text style={[
-            styles.ratingCount,
-            compact && styles.compactRatingCount
-          ]}>
-            ({total_ratings})
+            No ratings yet
           </Text>
         )}
       </View>
@@ -129,6 +150,14 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 12,
     color: '#94A3B8',
+  },
+  noRatingsText: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontStyle: 'italic',
+  },
+  compactNoRatingsText: {
+    fontSize: 10,
   },
 });
 

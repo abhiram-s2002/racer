@@ -1,159 +1,98 @@
-import { Request } from './types';
+// Utilities to format WhatsApp messages and build deep links
 
-export interface WhatsAppMessageData {
-  type: 'request' | 'ping' | 'activity';
-  title: string;
-  description?: string;
-  category?: string;
-  budget?: string;
-  location?: string;
-  requesterName?: string;
-  requesterUsername?: string;
-  distance?: number;
-  expiresAt?: string;
-  additionalInfo?: string;
-}
+export type ActivityForWhatsApp = {
+  type?: 'listing' | 'request' | 'ping';
+  title?: string;
+  description?: string | null;
+  category?: string | null;
+  price?: number | string | undefined;
+  location?: string | null;
+  userName?: string | null;
+  userUsername?: string | null;
+  distance?: number | null | undefined; // in km
+  message?: string | null;
+};
+
+const formatDistanceKm = (km?: number | null) => {
+  if (km === null || km === undefined) return undefined;
+  try {
+    if (km < 1) return `${Math.round(km * 1000)} m`;
+    return `${Number(km).toFixed(1)} km`;
+  } catch {
+    return undefined;
+  }
+};
 
 /**
- * Formats request details into a WhatsApp message
+ * Creates a human-friendly WhatsApp message body describing an activity.
  */
-export function formatRequestForWhatsApp(request: Request, requesterName?: string): string {
+export function formatActivityForWhatsApp(activity: ActivityForWhatsApp): string {
   const lines: string[] = [];
-  
-  // Personal greeting
-  lines.push(`Hi! I saw your request for "${request.title}" and I'm interested in helping you out.`);
-  lines.push('');
-  
-  // Description
-  if (request.description) {
-    lines.push(`Here's what I understand you need:`);
-    lines.push(request.description);
+
+  const header = activity.type === 'request'
+    ? '🙋 Request'
+    : activity.type === 'listing'
+      ? '🛍️ Listing'
+      : '📩 Activity';
+  lines.push(`${header}: ${activity.title || 'Untitled'}`);
+
+  if (activity.description) {
+    lines.push(`📝 ${activity.description}`);
+  }
+
+  if (activity.category) {
+    lines.push(`🏷️ Category: ${activity.category}`);
+  }
+
+  if (activity.price !== undefined && activity.price !== null && activity.price !== '') {
+    lines.push(`💰 Price/Budget: ₹${activity.price}`);
+  }
+
+  const distanceText = formatDistanceKm(activity.distance ?? undefined);
+  if (activity.location || distanceText) {
+    const parts = [] as string[];
+    if (activity.location) parts.push(activity.location);
+    if (distanceText) parts.push(distanceText);
+    lines.push(`📍 ${parts.join(' • ')}`);
+  }
+
+  if (activity.userName || activity.userUsername) {
+    const name = activity.userName || '';
+    const username = activity.userUsername ? `@${activity.userUsername}` : '';
+    const sep = name && username ? ' ' : '';
+    lines.push(`👤 ${name}${sep}${username}`);
+  }
+
+  if (activity.message) {
     lines.push('');
+    lines.push('💬 Message:');
+    lines.push(activity.message);
   }
-  
-  // Budget (if specified)
-  if (request.budget_min && request.budget_max) {
-    if (request.budget_min === request.budget_max) {
-      lines.push(`I see your budget is around ₹${request.budget_min}.`);
-    } else {
-      lines.push(`I see your budget is between ₹${request.budget_min} - ₹${request.budget_max}.`);
-    }
-  } else if (request.budget_min) {
-    lines.push(`I see your budget starts from ₹${request.budget_min}.`);
-  } else if (request.budget_max) {
-    lines.push(`I see your budget is up to ₹${request.budget_max}.`);
-  }
-  
-  
+
   lines.push('');
-  lines.push(`Would love to discuss the details with you! When would be a good time to chat?`);
-  
+  lines.push('Sent from GeoMart');
+
   return lines.join('\n');
 }
 
 /**
- * Formats ping/listing details into a WhatsApp message
- */
-export function formatPingForWhatsApp(pingData: {
-  title: string;
-  description?: string;
-  category?: string;
-  price?: number;
-  location?: string;
-  sellerName?: string;
-  sellerUsername?: string;
-  distance?: number;
-  message?: string;
-}): string {
-  const lines: string[] = [];
-  
-  // Personal greeting
-  lines.push(`Hi! I'm interested in your "${pingData.title}" listing.`);
-  lines.push('');
-  
-  // Custom message (if provided)
-  if (pingData.message) {
-    lines.push(pingData.message);
-    lines.push('');
-  }
-  
-  // Description
-  if (pingData.description) {
-    lines.push(`I can see it's about: ${pingData.description}`);
-    lines.push('');
-  }
-  
-  // Price
-  if (pingData.price) {
-    lines.push(`I see the price is ₹${pingData.price}.`);
-  }
-  
-  lines.push('');
-  lines.push(`Would love to know more details! Is it still available?`);
-  
-  return lines.join('\n');
-}
-
-/**
- * Formats activity details into a WhatsApp message
- */
-export function formatActivityForWhatsApp(activityData: {
-  type: string;
-  title: string;
-  description?: string;
-  category?: string;
-  price?: number;
-  location?: string;
-  userName?: string;
-  userUsername?: string;
-  distance?: number;
-  message?: string;
-}): string {
-  const lines: string[] = [];
-  
-  // Personal greeting based on activity type
-  if (activityData.type === 'listing') {
-    lines.push(`Hi! I'm interested in your "${activityData.title}" listing.`);
-  } else {
-    lines.push(`Hi! I saw your activity about "${activityData.title}" and I'm interested.`);
-  }
-  lines.push('');
-  
-  // Custom message (if provided)
-  if (activityData.message) {
-    lines.push(activityData.message);
-    lines.push('');
-  }
-  
-  // Description
-  if (activityData.description) {
-    lines.push(`I can see it's about: ${activityData.description}`);
-    lines.push('');
-  }
-  
-  // Price
-  if (activityData.price) {
-    lines.push(`I see the price is ₹${activityData.price}.`);
-  }
-  
-  lines.push('');
-  lines.push(`Would love to know more details! Let's chat about it.`);
-  
-  return lines.join('\n');
-}
-
-/**
- * Creates a WhatsApp URL with pre-filled message
+ * whatsapp:// deep link (mobile apps)
  */
 export function createWhatsAppURL(phoneNumber: string, message: string): string {
-  const encodedMessage = encodeURIComponent(message);
-  return `whatsapp://send?phone=${phoneNumber}&text=${encodedMessage}`;
+  const encoded = encodeURIComponent(message);
+  // Ensure we strip spaces and dashes that sometimes sneak into numbers
+  const normalizedPhone = (phoneNumber || '').replace(/[^\d+]/g, '');
+  return `whatsapp://send?phone=${normalizedPhone}&text=${encoded}`;
 }
 
 /**
- * Creates a WhatsApp Web URL with pre-filled message
+ * Web fallback for browsers / when app is unavailable
  */
 export function createWhatsAppWebURL(phoneNumber: string, message: string): string {
-  const encodedMessage = encodeURIComponent(message);
-  return `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+  const encoded = encodeURIComponent(message);
+  const normalizedPhone = (phoneNumber || '').replace(/[^\d+]/g, '');
+  return `https://wa.me/${normalizedPhone}?text=${encoded}`;
 }
+
+
+

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   RefreshControl,
   Alert,
   Share,
+  Platform,
+  Linking,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,6 +19,9 @@ import {
   ArrowLeft, 
   Package,
   MoreVertical,
+  Phone,
+  MessageCircle,
+  MapPin,
   Share2,
   X,
   UserX
@@ -26,8 +31,13 @@ import { blockUser } from '@/utils/contentManagement';
 import { useAuth } from '@/hooks/useAuth';
 import UnifiedSellerProfileCard from '@/components/UnifiedSellerProfileCard';
 import SingleColumnListingItem from '@/components/SingleColumnListingItem';
+import SingleColumnRequestItem from '@/components/SingleColumnRequestItem';
+import { getPhoneWithPermission } from '@/utils/phoneSharingUtils';
+import { useLocation } from '@/hooks/useLocation';
+import { createWhatsAppURL, createWhatsAppWebURL } from '@/utils/whatsappMessageFormatter';
 
 interface SellerProfile {
+  id?: string;
   username: string;
   name: string;
   avatar_url?: string;
@@ -55,14 +65,29 @@ interface SellerListing {
   expires_at?: string;
 }
 
+interface SellerRequest {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  budget_min?: number;
+  budget_max?: number;
+  thumbnail_images?: string[];
+  preview_images?: string[];
+  created_at: string;
+  expires_at?: string;
+}
+
 export default function SellerProfileScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
+  const { latitude, longitude } = useLocation();
   
   const [sellerProfile, setSellerProfile] = useState<SellerProfile | null>(null);
   const [sellerListings, setSellerListings] = useState<SellerListing[]>([]);
+  const [sellerRequests, setSellerRequests] = useState<SellerRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +101,7 @@ export default function SellerProfileScreen() {
       const { data, error } = await supabase
         .from('users')
         .select(`
+          id,
           username,
           name,
           avatar_url,
@@ -137,6 +163,40 @@ export default function SellerProfileScreen() {
     }
   };
 
+  // Fetch seller's requests
+  const fetchSellerRequests = async () => {
+    if (!username) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('requests')
+        .select(`
+          id,
+          title,
+          description,
+          category,
+          budget_min,
+          budget_max,
+          thumbnail_images,
+          preview_images,
+          created_at,
+          expires_at
+        `)
+        .eq('requester_username', username)
+        .order('created_at', { ascending: false })
+        .limit(12);
+
+      if (error) {
+        throw error;
+      }
+
+      setSellerRequests(data || []);
+    } catch (err) {
+      console.error('Error fetching seller requests:', err);
+      setError('Failed to load seller requests');
+    }
+  };
+
   // Load all data
   const loadData = async () => {
     setLoading(true);
@@ -144,7 +204,8 @@ export default function SellerProfileScreen() {
     
     await Promise.all([
       fetchSellerProfile(),
-      fetchSellerListings()
+      fetchSellerListings(),
+      fetchSellerRequests(),
     ]);
     
     setLoading(false);
@@ -250,12 +311,103 @@ export default function SellerProfileScreen() {
     }
   }, [username]);
 
+  const handleCallSeller = useCallback(async () => {
+    try {
+      if (!sellerProfile) return;
+      const { data: auth } = await supabase.auth.getUser();
+      const currentUser = auth?.user;
+      if (!currentUser) {
+        Alert.alert('Login Required', 'Please log in to contact the seller.');
+        return;
+      }
+      if (!sellerProfile.id) {
+        Alert.alert('Unavailable', 'Seller contact is unavailable.');
+        return;
+      }
+      const { phone, canShare } = await getPhoneWithPermission(sellerProfile.id, currentUser.id);
+      if (!canShare) {
+        Alert.alert('Phone Not Available', 'Phone number will be available after ping is accepted or if the seller shares with everyone.');
+        return;
+      }
+      if (!phone) {
+        Alert.alert('No Phone Number', 'This seller has not provided a phone number.');
+        return;
+      }
+      const phoneUrl = `tel:${phone}`;
+      Linking.openURL(phoneUrl);
+    } catch (e) {
+      Alert.alert('Error', 'Failed to start a call. Please try again.');
+    }
+  }, [sellerProfile]);
+
+  const handleWhatsAppSeller = useCallback(async () => {
+    try {
+      if (!sellerProfile) return;
+      const { data: auth } = await supabase.auth.getUser();
+      const currentUser = auth?.user;
+      if (!currentUser) {
+        Alert.alert('Login Required', 'Please log in to message the seller.');
+        return;
+      }
+      if (!sellerProfile.id) {
+        Alert.alert('Unavailable', 'Seller contact is unavailable.');
+        return;
+      }
+      const { phone, canShare } = await getPhoneWithPermission(sellerProfile.id, currentUser.id);
+      if (!canShare) {
+        Alert.alert('Phone Not Available', 'Phone number will be available after ping is accepted or if the seller shares with everyone.');
+        return;
+      }
+      if (!phone) {
+        Alert.alert('No Phone Number', 'This seller has not provided a phone number for WhatsApp.');
+        return;
+      }
+      const cleanPhone = phone.replace(/[^\d+]/g, '');
+      const message = `Hi ${sellerProfile.name || sellerProfile.username}, I found your profile on GeoMart.`;
+      const url = createWhatsAppURL(cleanPhone, message);
+      Linking.openURL(url).catch(() => {
+        const webUrl = createWhatsAppWebURL(cleanPhone, message);
+        Linking.openURL(webUrl);
+      });
+    } catch (e) {
+      Alert.alert('Error', 'Failed to open WhatsApp. Please try again.');
+    }
+  }, [sellerProfile]);
+
+  const handleOpenDirections = useCallback(() => {
+    try {
+      if (!sellerProfile?.location_display) {
+        Alert.alert('Location Unavailable', 'This seller has not specified a location.');
+        return;
+      }
+      const destination = encodeURIComponent(sellerProfile.location_display);
+      const origin = latitude && longitude ? `${latitude},${longitude}` : '';
+      if (Platform.OS === 'ios') {
+        const url = `http://maps.apple.com/?daddr=${destination}${origin ? `&saddr=${origin}` : ''}`;
+        Linking.openURL(url);
+      } else {
+        const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}${origin ? `&origin=${origin}` : ''}`;
+        Linking.openURL(url);
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Failed to open maps. Please try again.');
+    }
+  }, [sellerProfile, latitude, longitude]);
+
 
   // Render listing item
   const renderListingItem = ({ item }: { item: SellerListing }) => (
     <SingleColumnListingItem
       listing={item}
       onPress={(listingId) => router.push(`/listing-detail?id=${listingId}`)}
+    />
+  );
+
+  // Render request item
+  const renderRequestItem = ({ item }: { item: SellerRequest }) => (
+    <SingleColumnRequestItem
+      request={item}
+      onPress={(requestId) => router.push(`/listing-detail?id=${requestId}&type=request`)}
     />
   );
 
@@ -324,6 +476,22 @@ export default function SellerProfileScreen() {
         {/* Unified Seller Profile */}
         <UnifiedSellerProfileCard seller={sellerProfile} />
 
+        {/* Contact Actions */}
+        <View style={styles.contactActions}>
+          <TouchableOpacity style={[styles.contactButton, styles.callButton]} onPress={handleCallSeller} activeOpacity={0.7}>
+            <Phone size={18} color="#FFFFFF" />
+            <Text style={styles.contactButtonText}>Call</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.contactButton, styles.whatsappButton]} onPress={handleWhatsAppSeller} activeOpacity={0.7}>
+            <MessageCircle size={18} color="#22C55E" />
+            <Text style={[styles.contactButtonText, styles.whatsappText]}>WhatsApp</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.contactButton, styles.locationButton]} onPress={handleOpenDirections} activeOpacity={0.7}>
+            <MapPin size={18} color="#3B82F6" />
+            <Text style={[styles.contactButtonText, styles.locationText]}>Directions</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Listings Section */}
         <View style={styles.listingsSection}>
           <View style={styles.listingsHeader}>
@@ -346,6 +514,33 @@ export default function SellerProfileScreen() {
               <Text style={styles.noListingsTitle}>No Active Listings</Text>
               <Text style={styles.noListingsText}>
                 This seller doesn&apos;t have any active listings at the moment.
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Requests Section */}
+        <View style={styles.listingsSection}>
+          <View style={styles.listingsHeader}>
+            <Text style={styles.listingsTitle}>
+              Recent Requests ({sellerRequests.length})
+            </Text>
+          </View>
+
+          {sellerRequests.length > 0 ? (
+            <FlatList
+              data={sellerRequests}
+              renderItem={renderRequestItem}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              contentContainerStyle={styles.listingsContainer}
+            />
+          ) : (
+            <View style={styles.noListingsContainer}>
+              <Package size={48} color="#94A3B8" />
+              <Text style={styles.noListingsTitle}>No Active Requests</Text>
+              <Text style={styles.noListingsText}>
+                This user doesn&apos;t have any active requests at the moment.
               </Text>
             </View>
           )}
@@ -571,5 +766,48 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Medium',
     color: '#64748B',
+  },
+  // Contact Actions
+  contactActions: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  contactButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#F1F5F9',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  callButton: {
+    backgroundColor: '#22C55E',
+    borderColor: '#22C55E',
+  },
+  whatsappButton: {
+    backgroundColor: '#ECFDF5',
+    borderColor: '#DCFCE7',
+  },
+  locationButton: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#DBEAFE',
+  },
+  contactButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
+  },
+  whatsappText: {
+    color: '#16A34A',
+  },
+  locationText: {
+    color: '#2563EB',
   },
 });

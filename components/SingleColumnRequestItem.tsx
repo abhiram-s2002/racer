@@ -6,66 +6,60 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Package } from 'lucide-react-native';
-import { formatPriceWithUnit } from '@/utils/formatters';
 import NewRobustImage from './NewRobustImage';
 
-interface SellerListing {
+interface SellerRequest {
   id: string;
   title: string;
   description: string;
-  price: number;
-  price_unit: string;
   category: string;
+  budget_min?: number;
+  budget_max?: number;
   thumbnail_images?: string[];
   preview_images?: string[];
   created_at: string;
-  view_count?: number;
-  ping_count?: number;
   expires_at?: string;
 }
 
-interface SingleColumnListingItemProps {
-  listing: SellerListing;
-  onPress: (listingId: string) => void;
+interface SingleColumnRequestItemProps {
+  request: SellerRequest;
+  onPress: (requestId: string) => void;
 }
 
-const SingleColumnListingItem: React.FC<SingleColumnListingItemProps> = React.memo(({
-  listing,
-  onPress,
-}) => {
+const SingleColumnRequestItem: React.FC<SingleColumnRequestItemProps> = React.memo(({ request, onPress }) => {
   return (
     <TouchableOpacity 
       style={styles.container}
-      onPress={() => onPress(listing.id)}
+      onPress={() => onPress(request.id)}
       activeOpacity={0.7}
     >
       <View style={styles.imageContainer}>
         <NewRobustImage
-          thumbnailImages={listing.thumbnail_images}
-          previewImages={listing.preview_images}
+          thumbnailImages={request.thumbnail_images}
+          previewImages={request.preview_images}
           style={styles.image}
           placeholderText="No Image"
           size="thumbnail"
-          title={listing.title}
-          category={listing.category}
-          itemType="listing"
+          title={request.title}
+          category={request.category}
+          itemType="request"
         />
       </View>
       
       <View style={styles.content}>
         <Text style={styles.title} numberOfLines={2}>
-          {listing.title}
+          {request.title}
         </Text>
-        
+
         <View style={styles.detailsRow}>
           <View style={styles.categoryContainer}>
             <Package size={12} color="#6B7280" />
-            <Text style={styles.category}>{listing.category}</Text>
+            <Text style={styles.category}>{request.category}</Text>
           </View>
         </View>
-        
-        <Text style={styles.price}>
-          {formatPriceWithUnit(listing.price.toString(), listing.price_unit)}
+
+        <Text style={styles.budget}>
+          {request.budget_max ? `₹${request.budget_min || 0} - ₹${request.budget_max}` : `₹${request.budget_min || 0}`} <Text style={styles.budgetLabel}>Budget</Text>
         </Text>
       </View>
     </TouchableOpacity>
@@ -117,13 +111,20 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     textTransform: 'capitalize',
   },
-  price: {
+  budget: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: '#059669',
+    color: '#111827',
   },
+  budgetLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#6B7280',
+  }
 });
 
-SingleColumnListingItem.displayName = 'SingleColumnListingItem';
+SingleColumnRequestItem.displayName = 'SingleColumnRequestItem';
 
-export default SingleColumnListingItem;
+export default SingleColumnRequestItem;
+
+

@@ -19,6 +19,8 @@ interface ListingHeroImageProps {
   previewImages: string[];
   title: string;
   onBackPress?: () => void;
+  category?: string;
+  itemType?: 'listing' | 'request';
 }
 
 const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
@@ -27,6 +29,8 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
   previewImages,
   title,
   onBackPress,
+  category,
+  itemType = 'listing',
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageLoading, setImageLoading] = useState(true);
@@ -62,8 +66,29 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
     return (
       <View style={styles.container}>
         <View style={styles.placeholderContainer}>
-          <Text style={styles.placeholderText}>No Image Available</Text>
+          <NewRobustImage
+            thumbnailImages={[]}
+            previewImages={[]}
+            size="thumbnail"
+            style={styles.mainImage}
+            placeholderText={title}
+            title={title}
+            category={category}
+            itemType={itemType}
+          />
         </View>
+        {/* Back Button - Top Left (also show in no-image state) */}
+        {onBackPress && (
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={onBackPress}
+            activeOpacity={0.8}
+          >
+            <View style={styles.backButtonContent}>
+              <ArrowLeft size={20} color="#FFFFFF" />
+            </View>
+          </TouchableOpacity>
+        )}
       </View>
     );
   }
@@ -78,6 +103,9 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
           size="thumbnail"
           style={styles.mainImage}
           placeholderText={title}
+          title={title}
+          category={category}
+          itemType={itemType}
           onLoad={handleImageLoad}
           onError={handleImageError}
         />
