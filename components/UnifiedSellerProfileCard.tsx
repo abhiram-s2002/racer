@@ -88,8 +88,8 @@ const UnifiedSellerProfileCard: React.FC<UnifiedSellerProfileCardProps> = React.
             </View>
             {isUserVerified(seller) && (
               <View style={styles.statItem}>
-                <Shield size={14} color="#059669" />
-                <Text style={[styles.statText, { color: '#059669' }]}>Verified</Text>
+                <Shield size={14} color="#10B981" />
+                <Text style={[styles.statText, { color: '#10B981' }]}>Verified</Text>
               </View>
             )}
           </View>
@@ -120,11 +120,11 @@ const UnifiedSellerProfileCard: React.FC<UnifiedSellerProfileCardProps> = React.
         ]}>
           <View style={[
             styles.availabilityDot,
-            { backgroundColor: seller.isAvailable ? '#059669' : '#DC2626' }
+            { backgroundColor: seller.isAvailable ? '#10B981' : '#DC2626' }
           ]} />
           <Text style={[
             styles.availabilityText,
-            { color: seller.isAvailable ? '#059669' : '#DC2626' }
+            { color: seller.isAvailable ? '#10B981' : '#DC2626' }
           ]}>
             {seller.isAvailable ? 'Available' : 'Unavailable'}
           </Text>
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
   socialLinkText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
   },
 });
 

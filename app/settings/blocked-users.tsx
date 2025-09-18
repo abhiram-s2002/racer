@@ -188,7 +188,7 @@ const BlockedUsersScreen = () => {
           style={styles.unblockButton}
           onPress={() => confirmUnblock(item.blocked_id, item.user.username)}
         >
-          <UserCheck size={16} color="#22C55E" />
+          <UserCheck size={16} color="#10B981" />
           <Text style={styles.unblockButtonText}>Unblock</Text>
         </TouchableOpacity>
       </View>
@@ -205,7 +205,7 @@ const BlockedUsersScreen = () => {
           <Text style={styles.title}>Blocked Users</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#22C55E" />
+          <ActivityIndicator size="large" color="#10B981" />
           <Text style={styles.loadingText}>Loading blocked users...</Text>
         </View>
       </View>
@@ -239,8 +239,8 @@ const BlockedUsersScreen = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#22C55E']}
-              tintColor="#22C55E"
+              colors={['#10B981']}
+              tintColor="#10B981"
             />
           }
         />
@@ -372,12 +372,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
   },
   unblockButtonText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
     marginLeft: 4,
   },
 });

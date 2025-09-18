@@ -109,7 +109,7 @@ export default function LocationFilterModal({
           {/* Distance Filter Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <MapPin size={20} color="#22C55E" />
+              <MapPin size={20} color="#10B981" />
               <Text style={styles.sectionTitle}>Distance</Text>
             </View>
             
@@ -138,7 +138,7 @@ export default function LocationFilterModal({
           {/* Category Filter Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Filter size={20} color="#22C55E" />
+              <Filter size={20} color="#10B981" />
               <Text style={styles.sectionTitle}>Categories</Text>
             </View>
             

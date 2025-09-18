@@ -87,11 +87,11 @@ const ReportedContentScreen = () => {
   }, [fetchReports]);
 
   const getStatusIcon = () => {
-    return <CheckCircle size={16} color="#22C55E" />;
+    return <CheckCircle size={16} color="#10B981" />;
   };
 
   const getStatusColor = () => {
-    return '#22C55E';
+    return '#10B981';
   };
 
   const getStatusText = () => {
@@ -156,7 +156,7 @@ const ReportedContentScreen = () => {
           <Text style={styles.title}>Reported Content</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#22C55E" />
+          <ActivityIndicator size="large" color="#10B981" />
           <Text style={styles.loadingText}>Loading reports...</Text>
         </View>
       </View>
@@ -190,8 +190,8 @@ const ReportedContentScreen = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#22C55E']}
-              tintColor="#22C55E"
+              colors={['#10B981']}
+              tintColor="#10B981"
             />
           }
         />

@@ -45,7 +45,7 @@ export function TypeSelectionModal({ visible, onClose, onSelectType }: TypeSelec
             onPress={() => handleSelectType('listing')}
           >
             <View style={styles.optionIcon}>
-              <ShoppingBag size={32} color="#22C55E" />
+              <ShoppingBag size={32} color="#10B981" />
             </View>
             <View style={styles.optionContent}>
               <Text style={styles.optionTitle}>Create Listing</Text>

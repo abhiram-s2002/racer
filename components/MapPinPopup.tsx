@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 18,
     fontFamily: 'Inter-Bold',
-    color: '#22C55E',
+    color: '#10B981',
   },
   categoryBadge: {
     backgroundColor: '#F1F5F9',
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pingButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

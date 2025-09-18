@@ -211,7 +211,7 @@ function SettingsScreen() {
           <Switch
             value={switchValue}
             onValueChange={onSwitchChange}
-            trackColor={{ false: '#E2E8F0', true: '#22C55E' }}
+            trackColor={{ false: '#E2E8F0', true: '#10B981' }}
             thumbColor="#FFFFFF"
           />
         ) : showArrow ? (
@@ -224,7 +224,7 @@ function SettingsScreen() {
   if (loading) {
     return (
       <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#22C55E" />
+        <ActivityIndicator size="large" color="#10B981" />
         <Text style={{ marginTop: 16, color: '#64748B' }}>Loading settings...</Text>
       </View>
     );
@@ -234,7 +234,7 @@ function SettingsScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={{ color: '#64748B' }}>Failed to load settings</Text>
-        <TouchableOpacity onPress={refreshSettings} style={{ marginTop: 16, padding: 12, backgroundColor: '#22C55E', borderRadius: 8 }}>
+        <TouchableOpacity onPress={refreshSettings} style={{ marginTop: 16, padding: 12, backgroundColor: '#10B981', borderRadius: 8 }}>
           <Text style={{ color: '#FFFFFF' }}>Retry</Text>
         </TouchableOpacity>
       </View>
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
   settingValue: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
     marginTop: 2,
   },
   settingRight: {

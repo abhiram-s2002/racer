@@ -138,7 +138,7 @@ export function usePingLimits(username: string | null) {
     if (limitInfo.remainingPings === 1) {
       return '#F59E0B'; // Orange
     }
-    return '#22C55E'; // Green
+    return '#10B981'; // Green
   };
 
   // Check limits when username changes

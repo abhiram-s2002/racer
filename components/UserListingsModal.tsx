@@ -244,7 +244,7 @@ export function UserListingsModal({
 
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#22C55E" />
+            <ActivityIndicator size="large" color="#10B981" />
             <Text style={styles.loadingText}>Loading your requests...</Text>
           </View>
         ) : userRequests.length === 0 ? (
@@ -265,8 +265,8 @@ export function UserListingsModal({
               <RefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
-                colors={['#22C55E']}
-                tintColor="#22C55E"
+                colors={['#10B981']}
+                tintColor="#10B981"
               />
             }
             showsVerticalScrollIndicator={false}

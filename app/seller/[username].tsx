@@ -422,7 +422,7 @@ export default function SellerProfileScreen() {
           <View style={styles.headerSpacer} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#22C55E" />
+          <ActivityIndicator size="large" color="#10B981" />
           <Text style={styles.loadingText}>Loading seller profile...</Text>
         </View>
       </View>
@@ -468,8 +468,8 @@ export default function SellerProfileScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={['#22C55E']}
-            tintColor="#22C55E"
+            colors={['#10B981']}
+            tintColor="#10B981"
           />
         }
       >
@@ -483,7 +483,7 @@ export default function SellerProfileScreen() {
             <Text style={styles.contactButtonText}>Call</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.contactButton, styles.whatsappButton]} onPress={handleWhatsAppSeller} activeOpacity={0.7}>
-            <MessageCircle size={18} color="#22C55E" />
+            <MessageCircle size={18} color="#10B981" />
             <Text style={[styles.contactButtonText, styles.whatsappText]}>WhatsApp</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.contactButton, styles.locationButton]} onPress={handleOpenDirections} activeOpacity={0.7}>
@@ -563,7 +563,7 @@ export default function SellerProfileScreen() {
                 style={styles.optionItem}
                 onPress={() => handleOptionSelect('share')}
               >
-                <Share2 size={20} color="#22C55E" />
+                <Share2 size={20} color="#10B981" />
                 <Text style={styles.optionText}>Share Profile</Text>
               </TouchableOpacity>
               
@@ -687,7 +687,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   retryButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
@@ -788,8 +788,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   callButton: {
-    backgroundColor: '#22C55E',
-    borderColor: '#22C55E',
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
   whatsappButton: {
     backgroundColor: '#ECFDF5',
@@ -805,7 +805,7 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   whatsappText: {
-    color: '#16A34A',
+    color: '#10B981',
   },
   locationText: {
     color: '#2563EB',

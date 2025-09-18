@@ -220,17 +220,17 @@ function TermsScreen() {
           </Text>
           
           <TouchableOpacity style={styles.contactItem} onPress={handleContact}>
-            <Mail size={16} color="#22C55E" />
+            <Mail size={16} color="#10B981" />
             <Text style={styles.contactText}>risingsoup76@gmail.com</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.contactItem} onPress={handleCall}>
-            <Phone size={16} color="#22C55E" />
+            <Phone size={16} color="#10B981" />
             <Text style={styles.contactText}>+91 7306 51 9350</Text>
           </TouchableOpacity>
           
           <View style={styles.contactItem}>
-            <MapPin size={16} color="#22C55E" />
+            <MapPin size={16} color="#10B981" />
             <Text style={styles.contactText}>Kozhikode, Kerala, India</Text>
           </View>
           

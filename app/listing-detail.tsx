@@ -877,7 +877,7 @@ function ListingDetailScreen() {
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#22C55E" />
+        <ActivityIndicator size="large" color="#10B981" />
         <Text style={styles.loadingText}>Loading {itemType}...</Text>
       </View>
     );
@@ -904,7 +904,7 @@ function ListingDetailScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={['#22C55E']}
+            colors={['#10B981']}
           />
         }
       >
@@ -1011,7 +1011,7 @@ function ListingDetailScreen() {
             disabled={existingPing}
             activeOpacity={0.7}
           >
-            <MessageCircle size={20} color={existingPing ? "#94A3B8" : "#22C55E"} />
+            <MessageCircle size={20} color={existingPing ? "#94A3B8" : "#10B981"} />
             <Text style={[
               styles.actionButtonText, 
               existingPing ? styles.disabledButtonText : styles.messageButtonText
@@ -1111,7 +1111,7 @@ function ListingDetailScreen() {
                 style={styles.optionItem}
                 onPress={() => handleOptionSelect('share')}
               >
-                <Share2 size={20} color="#22C55E" />
+                <Share2 size={20} color="#10B981" />
                 <Text style={styles.optionText}>
                   Share {itemType.charAt(0).toUpperCase() + itemType.slice(1)}
                 </Text>
@@ -1279,10 +1279,10 @@ const styles = StyleSheet.create({
   messageButton: {
     backgroundColor: '#DCFCE7',
     borderWidth: 1,
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
   },
   messageButtonText: {
-    color: '#22C55E',
+    color: '#10B981',
   },
   // Ping Modal Styles
   modalOverlay: {
@@ -1383,7 +1383,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     alignItems: 'center',
   },
   sendButtonText: {

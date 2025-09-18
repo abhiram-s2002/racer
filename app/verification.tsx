@@ -162,7 +162,7 @@ const VerificationPage = () => {
           {/* Verification Success Section */}
           <View style={styles.verifiedContainer}>
             <View style={styles.successIcon}>
-              <CheckCircle size={48} color="#22C55E" />
+              <CheckCircle size={48} color="#10B981" />
             </View>
             <Text style={styles.successTitle}>You&apos;re Verified! 🎉</Text>
             <Text style={styles.successSubtitle}>
@@ -176,7 +176,7 @@ const VerificationPage = () => {
             
             <View style={styles.detailRow}>
               <View style={styles.detailIcon}>
-                <Shield size={20} color="#22C55E" />
+                <Shield size={20} color="#10B981" />
               </View>
               <View style={styles.detailContent}>
                 <Text style={styles.detailLabel}>Status</Text>
@@ -224,27 +224,27 @@ const VerificationPage = () => {
             <Text style={styles.sectionTitle}>Your Verification Benefits</Text>
             
             <View style={styles.benefitItem}>
-              <CheckCircle size={16} color="#22C55E" />
+              <CheckCircle size={16} color="#10B981" />
               <Text style={styles.benefitText}>Verified badge on your profile</Text>
             </View>
             
             <View style={styles.benefitItem}>
-              <CheckCircle size={16} color="#22C55E" />
+              <CheckCircle size={16} color="#10B981" />
               <Text style={styles.benefitText}>Higher response rates from buyers</Text>
             </View>
             
             <View style={styles.benefitItem}>
-              <CheckCircle size={16} color="#22C55E" />
+              <CheckCircle size={16} color="#10B981" />
               <Text style={styles.benefitText}>Extra OMNI tokens for transactions</Text>
             </View>
             
             <View style={styles.benefitItem}>
-              <CheckCircle size={16} color="#22C55E" />
+              <CheckCircle size={16} color="#10B981" />
               <Text style={styles.benefitText}>Early access to new features</Text>
             </View>
             
             <View style={styles.benefitItem}>
-              <CheckCircle size={16} color="#22C55E" />
+              <CheckCircle size={16} color="#10B981" />
               <Text style={styles.benefitText}>Premium gamification benefits</Text>
             </View>
           </View>
@@ -287,7 +287,7 @@ const VerificationPage = () => {
         {/* Hero Section */}
         <View style={styles.heroContainer}>
           <View style={styles.heroIcon}>
-            <Shield size={48} color="#22C55E" />
+            <Shield size={48} color="#10B981" />
           </View>
           <Text style={styles.heroTitle}>Build Trust, Get More Sales!</Text>
           <Text style={styles.heroSubtitle}>
@@ -315,32 +315,32 @@ const VerificationPage = () => {
           <Text style={styles.sectionTitle}>Verification Benefits</Text>
           
           <View style={styles.benefitItem}>
-            <Star size={16} color="#22C55E" />
+            <Star size={16} color="#10B981" />
             <Text style={styles.benefitText}>Build trust with buyers & sellers</Text>
           </View>
           
           <View style={styles.benefitItem}>
-            <Star size={16} color="#22C55E" />
+            <Star size={16} color="#10B981" />
             <Text style={styles.benefitText}>Verified badge on your profile</Text>
           </View>
           
           <View style={styles.benefitItem}>
-            <Star size={16} color="#22C55E" />
+            <Star size={16} color="#10B981" />
             <Text style={styles.benefitText}>Higher response rates from buyers</Text>
           </View>
           
           <View style={styles.benefitItem}>
-            <Star size={16} color="#22C55E" />
+            <Star size={16} color="#10B981" />
             <Text style={styles.benefitText}>Extra OMNI tokens for every transaction</Text>
           </View>
           
           <View style={styles.benefitItem}>
-            <Star size={16} color="#22C55E" />
+            <Star size={16} color="#10B981" />
             <Text style={styles.benefitText}>Early access to future app features</Text>
           </View>
           
           <View style={styles.benefitItem}>
-            <Star size={16} color="#22C55E" />
+            <Star size={16} color="#10B981" />
             <Text style={styles.benefitText}>Premium gamification benefits</Text>
           </View>
         </View>
@@ -714,13 +714,13 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   demoVerificationBadge: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
-    shadowColor: '#22C55E',
+    shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.3,
     shadowRadius: 2,
@@ -779,7 +779,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   planOptionSelected: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
   },
   planOptionText: {
     fontSize: 16,
@@ -804,7 +804,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   pricingCardSelected: {
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
     backgroundColor: '#F0FDF4',
   },
   pricingHeader: {
@@ -819,7 +819,7 @@ const styles = StyleSheet.create({
     color: '#1E293B',
   },
   selectedBadge: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
@@ -843,7 +843,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   currentPrice: {
-    color: '#22C55E',
+    color: '#10B981',
     fontSize: 18,
     fontFamily: 'Inter-Bold',
   },
@@ -859,14 +859,14 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
   },
   purchaseButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
     borderRadius: 12,
     marginTop: 20,
-    shadowColor: '#22C55E',
+    shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
@@ -928,14 +928,14 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   primaryButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 16,
     borderRadius: 12,
     marginBottom: 12,
-    shadowColor: '#22C55E',
+    shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 6,

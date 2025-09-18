@@ -219,7 +219,7 @@ function ActivityScreen() {
       case 'pending':
         return '#F59E0B';
       case 'accepted':
-        return '#22C55E';
+        return '#10B981';
       case 'rejected':
         return '#EF4444';
       default:
@@ -510,13 +510,13 @@ function ActivityScreen() {
                 }
               }}
             >
-              <MapPin size={22} color="#22C55E" />
+              <MapPin size={22} color="#10B981" />
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.chatIconButton}
               onPress={handleChatPress}
             >
-              <MessageCircle size={22} color="#22C55E" />
+              <MessageCircle size={22} color="#10B981" />
             </TouchableOpacity>
           </View>
         )}
@@ -677,7 +677,7 @@ function ActivityScreen() {
       <View style={styles.activityCard}>
         <View style={styles.pingHeader}>
           <View style={styles.pingUser}>
-            <UserCircle2 size={40} color="#22C55E" />
+            <UserCircle2 size={40} color="#10B981" />
             <View style={styles.pingDetails}>
               <View style={styles.pingUserNameRow}>
                 <Text style={styles.pingUserName}>{item.title}</Text>
@@ -762,7 +762,7 @@ function ActivityScreen() {
             setActiveTab('mine');
           }}
         >
-          <UserCircle2 size={20} color={activeTab === 'mine' ? '#22C55E' : '#64748B'} />
+          <UserCircle2 size={20} color={activeTab === 'mine' ? '#10B981' : '#64748B'} />
           <Text style={[styles.tabText, activeTab === 'mine' && styles.activeTabText]}>My Items</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -772,7 +772,7 @@ function ActivityScreen() {
             setStatusFilter('all');
           }}
         >
-          <MessageCircle size={20} color={activeTab === 'received' ? '#22C55E' : '#64748B'} />
+          <MessageCircle size={20} color={activeTab === 'received' ? '#10B981' : '#64748B'} />
           <Text style={[styles.tabText, activeTab === 'received' && styles.activeTabText]}>Received</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -782,7 +782,7 @@ function ActivityScreen() {
             setStatusFilter('all');
           }}
         >
-          <Send size={20} color={activeTab === 'sent' ? '#22C55E' : '#64748B'} />
+          <Send size={20} color={activeTab === 'sent' ? '#10B981' : '#64748B'} />
           <Text style={[styles.tabText, activeTab === 'sent' && styles.activeTabText]}>Sent</Text>
         </TouchableOpacity>
       </View>
@@ -913,7 +913,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTab: {
-    borderBottomColor: '#22C55E',
+    borderBottomColor: '#10B981',
   },
   tabText: {
     fontSize: 14,
@@ -921,7 +921,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   activeTabText: {
-    color: '#22C55E',
+    color: '#10B981',
   },
 
   filterOptions: {
@@ -946,7 +946,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1F5F9',
   },
   filterOptionActive: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
   },
   filterOptionText: {
     fontSize: 12,
@@ -972,7 +972,7 @@ const styles = StyleSheet.create({
   clearSearchText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
     textDecorationLine: 'underline',
   },
   activityList: {
@@ -1081,7 +1081,7 @@ const styles = StyleSheet.create({
   productPrice: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: '#22C55E',
+    color: '#10B981',
   },
   pingMessage: {
     fontSize: 14,
@@ -1118,7 +1118,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingVertical: 10,
     borderRadius: 6,
     gap: 4,
@@ -1193,7 +1193,7 @@ const styles = StyleSheet.create({
   editRatingText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#16A34A',
+    color: '#10B981',
   },
   ratingDisplay: {
     flexDirection: 'column',
@@ -1208,13 +1208,13 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#16A34A',
+    color: '#10B981',
     fontWeight: '600',
   },
   categoryText: {
     fontSize: 10,
     fontFamily: 'Inter-Regular',
-    color: '#059669',
+    color: '#10B981',
     textTransform: 'capitalize',
   },
   messageRatingRow: {

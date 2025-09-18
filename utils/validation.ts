@@ -583,8 +583,8 @@ export const getPasswordStrength = (password: string): { score: number; label: s
     { label: 'Very Weak', color: '#EF4444' },
     { label: 'Weak', color: '#F97316' },
     { label: 'Fair', color: '#EAB308' },
-    { label: 'Good', color: '#22C55E' },
-    { label: 'Strong', color: '#16A34A' }
+    { label: 'Good', color: '#10B981' },
+    { label: 'Strong', color: '#10B981' }
   ];
 
   return {

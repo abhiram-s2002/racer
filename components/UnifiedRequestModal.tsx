@@ -400,11 +400,11 @@ function UnifiedRequestModal({ visible, onClose, preSelectedCategory, sellerUser
             <Text style={styles.label}>Images (Optional)</Text>
             <View style={styles.imageUploadContainer}>
               <TouchableOpacity style={styles.imageUploadButton} onPress={pickImage}>
-                <ImageIcon size={20} color="#22C55E" />
+                <ImageIcon size={20} color="#10B981" />
                 <Text style={styles.imageUploadText}>Gallery</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.imageUploadButton} onPress={takePhoto}>
-                <Camera size={20} color="#22C55E" />
+                <Camera size={20} color="#10B981" />
                 <Text style={styles.imageUploadText}>Camera</Text>
               </TouchableOpacity>
             </View>
@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
   currencyPrefix: {
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
-    color: '#22C55E',
+    color: '#10B981',
     paddingLeft: 10,
   },
   budgetTextInput: {
@@ -625,7 +625,7 @@ const styles = StyleSheet.create({
     color: '#EF4444',
   },
   updateLocationButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectedDeliveryOption: {
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
     backgroundColor: '#F0FDF4',
   },
   deliveryOptionText: {
@@ -691,14 +691,14 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   selectedDeliveryOptionText: {
-    color: '#22C55E',
+    color: '#10B981',
   },
   
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     marginHorizontal: 16,
     marginBottom: 20,
     padding: 12,
@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
   imageUploadText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
   },
   imagePreviewContainer: {
     flexDirection: 'row',

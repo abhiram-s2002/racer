@@ -507,7 +507,7 @@ export default function CreateScreen() {
           onPress={() => handleTypeSelect('listing')}
         >
           <View style={styles.optionIcon}>
-            <ShoppingBag size={32} color="#22C55E" />
+            <ShoppingBag size={32} color="#10B981" />
           </View>
           <Text style={styles.optionTitle}>Sell Item</Text>
           <Text style={styles.optionDescription}>
@@ -553,7 +553,7 @@ export default function CreateScreen() {
               <View style={[styles.categoryIcon, isSelected && styles.selectedCategoryIcon]}>
                 <IconComponent 
                   size={24} 
-                  color={isSelected ? '#FFFFFF' : '#22C55E'} 
+                  color={isSelected ? '#FFFFFF' : '#10B981'} 
                 />
               </View>
               <Text style={[
@@ -748,11 +748,11 @@ export default function CreateScreen() {
         {formData.images.length === 0 ? (
           <View style={styles.imageUploadContainer}>
             <TouchableOpacity style={styles.imageUploadButton} onPress={pickImage}>
-              <ImageIcon size={20} color="#22C55E" />
+              <ImageIcon size={20} color="#10B981" />
               <Text style={styles.imageUploadText}>Gallery</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.imageUploadButton} onPress={takePhoto}>
-              <Camera size={20} color="#22C55E" />
+              <Camera size={20} color="#10B981" />
               <Text style={styles.imageUploadText}>Camera</Text>
             </TouchableOpacity>
           </View>
@@ -769,11 +769,11 @@ export default function CreateScreen() {
             </View>
             <View style={styles.imageReplaceButtons}>
               <TouchableOpacity style={styles.replaceImageButton} onPress={pickImage}>
-                <ImageIcon size={16} color="#22C55E" />
+                <ImageIcon size={16} color="#10B981" />
                 <Text style={styles.replaceImageButtonText}>Replace from Gallery</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.replaceImageButton} onPress={takePhoto}>
-                <Camera size={16} color="#22C55E" />
+                <Camera size={16} color="#10B981" />
                 <Text style={styles.replaceImageButtonText}>Replace from Camera</Text>
               </TouchableOpacity>
             </View>
@@ -1052,8 +1052,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   selectedCategoryCard: {
-    backgroundColor: '#22C55E',
-    borderColor: '#22C55E',
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
   categoryIcon: {
     width: 50,
@@ -1065,7 +1065,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   selectedCategoryIcon: {
-    backgroundColor: '#16A34A',
+    backgroundColor: '#10B981',
   },
   categoryText: {
     fontSize: 12,
@@ -1114,7 +1114,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectedPriceType: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
   },
   priceTypeText: {
     fontSize: 12,
@@ -1136,7 +1136,7 @@ const styles = StyleSheet.create({
   currencyPrefix: {
     fontSize: 14,
     fontFamily: 'Inter-SemiBold',
-    color: '#22C55E',
+    color: '#10B981',
     paddingLeft: 12,
   },
   priceInput: {
@@ -1163,8 +1163,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   selectedPricingUnitBadge: {
-    backgroundColor: '#22C55E',
-    borderColor: '#22C55E',
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
   pricingUnitBadgeText: {
     fontSize: 11,
@@ -1188,8 +1188,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   selectedDuration: {
-    backgroundColor: '#22C55E',
-    borderColor: '#22C55E',
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
   durationText: {
     fontSize: 12,
@@ -1223,7 +1223,7 @@ const styles = StyleSheet.create({
   },
   currentLocationButton: {
     flex: 1,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -1241,13 +1241,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
     alignItems: 'center',
   },
   pickLocationButtonText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
   },
   imageHelperText: {
     fontSize: 12,
@@ -1276,7 +1276,7 @@ const styles = StyleSheet.create({
   imageUploadText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
   },
   singleImagePreviewContainer: {
     alignItems: 'center',
@@ -1320,13 +1320,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 6,
     borderWidth: 1,
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
     gap: 6,
   },
   replaceImageButtonText: {
     fontSize: 11,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
   },
   textArea: {
     borderWidth: 1,
@@ -1358,7 +1358,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectedDeliveryOption: {
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
     backgroundColor: '#F0FDF4',
   },
   deliveryOptionText: {
@@ -1367,14 +1367,14 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   selectedDeliveryOptionText: {
-    color: '#22C55E',
+    color: '#10B981',
   },
   
   submitButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     padding: 16,
     borderRadius: 10,
     marginTop: 16,
@@ -1398,7 +1398,7 @@ const styles = StyleSheet.create({
   
   // Green Header (like profile page)
   mapHeaderGreen: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingTop: 48,
     paddingBottom: 16,
     paddingHorizontal: 16,
@@ -1450,7 +1450,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 8,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     alignItems: 'center',
   },
   mapDoneButtonText: {
@@ -1463,7 +1463,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 20,
     right: 20,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     width: 50,
     height: 50,
     borderRadius: 25,
@@ -1483,7 +1483,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 120,
     right: 16,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,

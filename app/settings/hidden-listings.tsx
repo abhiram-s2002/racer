@@ -170,7 +170,7 @@ const HiddenListingsScreen = () => {
               style={styles.unhideButton}
               onPress={() => confirmUnhide(item.id, 'Unknown Listing')}
             >
-              <Eye size={16} color="#22C55E" />
+              <Eye size={16} color="#10B981" />
               <Text style={styles.unhideButtonText}>Unhide</Text>
             </TouchableOpacity>
           </View>
@@ -214,7 +214,7 @@ const HiddenListingsScreen = () => {
             style={styles.unhideButton}
             onPress={() => confirmUnhide(item.id, item.listing?.title || 'Unknown Listing')}
           >
-            <Eye size={16} color="#22C55E" />
+            <Eye size={16} color="#10B981" />
             <Text style={styles.unhideButtonText}>Unhide</Text>
           </TouchableOpacity>
         </View>
@@ -232,7 +232,7 @@ const HiddenListingsScreen = () => {
           <Text style={styles.title}>Hidden Listings</Text>
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#22C55E" />
+          <ActivityIndicator size="large" color="#10B981" />
           <Text style={styles.loadingText}>Loading hidden listings...</Text>
         </View>
       </View>
@@ -266,8 +266,8 @@ const HiddenListingsScreen = () => {
             <RefreshControl
               refreshing={refreshing}
               onRefresh={onRefresh}
-              colors={['#22C55E']}
-              tintColor="#22C55E"
+              colors={['#10B981']}
+              tintColor="#10B981"
             />
           }
         />
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
   listingPrice: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
     marginBottom: 4,
   },
   listingCategory: {
@@ -410,12 +410,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
   },
   unhideButtonText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
     marginLeft: 4,
   },
 });

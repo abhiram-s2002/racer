@@ -1351,55 +1351,6 @@ export async function canAffordVerification(
   }
 }
 
-// ============================================================================
-// VERIFIED USER DAILY CHECK-IN BONUS
-// ============================================================================
-
-export interface VerifiedCheckinResult {
-  success: boolean;
-  reward_amount: number;
-  is_verified: boolean;
-  new_balance: number;
-  message: string;
-  error?: string;
-}
-
-// Process daily check-in with verification bonus
-export async function processDailyCheckinWithVerification(
-  username: string,
-  userId: string
-): Promise<VerifiedCheckinResult> {
-  try {
-    const { data, error } = await supabase.rpc('process_daily_checkin_with_verification', {
-      p_username: username,
-      p_user_id: userId
-    });
-
-    if (error) {
-      console.error('Error processing daily check-in with verification:', error);
-      return {
-        success: false,
-        reward_amount: 0,
-        is_verified: false,
-        new_balance: 0,
-        message: 'Failed to process check-in',
-        error: error.message
-      };
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error in processDailyCheckinWithVerification:', error);
-    return {
-      success: false,
-      reward_amount: 0,
-      is_verified: false,
-      new_balance: 0,
-      message: 'Failed to process check-in',
-      error: error instanceof Error ? error.message : 'Unknown error'
-    };
-  }
-}
 
 // Check if user is currently verified
 export async function isUserCurrentlyVerified(userId: string): Promise<boolean> {
@@ -1420,37 +1371,6 @@ export async function isUserCurrentlyVerified(userId: string): Promise<boolean> 
   }
 }
 
-// Get reward amounts for different user types
-export async function getRewardAmounts(): Promise<{
-  daily_checkin_regular: number;
-  daily_checkin_verified: number;
-  verified_bonus: number;
-  description: string;
-}> {
-  try {
-    const { data, error } = await supabase.rpc('get_reward_amounts');
-
-    if (error) {
-      console.error('Error getting reward amounts:', error);
-      return {
-        daily_checkin_regular: 10,
-        daily_checkin_verified: 20,
-        verified_bonus: 10,
-        description: 'Verified users get 20 OMNI for daily check-in (10 base + 10 bonus)'
-      };
-    }
-
-    return data;
-  } catch (error) {
-    console.error('Error in getRewardAmounts:', error);
-    return {
-      daily_checkin_regular: 10,
-      daily_checkin_verified: 20,
-      verified_bonus: 10,
-      description: 'Verified users get 20 OMNI for daily check-in (10 base + 10 bonus)'
-    };
-  }
-}
 
 // ============================================================================
 // CACHE MANAGEMENT (FOR FUTURE SCALING)

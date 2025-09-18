@@ -149,7 +149,7 @@ export default function LocationSortingModal({
   const getLocationStatusColor = () => {
     if (isLoading || refreshingLocation) return '#3B82F6';
     if (permissionStatus === 'denied') return '#EF4444';
-    if (userLocation) return '#22C55E';
+    if (userLocation) return '#10B981';
     return '#F59E0B';
   };
 
@@ -220,7 +220,7 @@ export default function LocationSortingModal({
                   <View style={styles.sortOptionContent}>
                     <IconComponent 
                       size={20} 
-                      color={isSelected ? '#22C55E' : '#64748B'} 
+                      color={isSelected ? '#10B981' : '#64748B'} 
                     />
                     <View style={styles.sortOptionText}>
                       <Text style={[styles.sortOptionTitle, isSelected && styles.selectedText]}>
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 8,
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   selectedSortOption: {
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
     backgroundColor: '#F0FDF4',
   },
   sortOptionContent: {
@@ -395,10 +395,10 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   selectedText: {
-    color: '#22C55E',
+    color: '#10B981',
   },
   selectedDescription: {
-    color: '#16A34A',
+    color: '#10B981',
   },
   selectedIndicator: {
     marginLeft: 8,
@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
   },
   distanceOption: {
     backgroundColor: '#FFFFFF',
@@ -421,7 +421,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   selectedDistanceOption: {
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
     backgroundColor: '#F0FDF4',
   },
   distanceOptionText: {

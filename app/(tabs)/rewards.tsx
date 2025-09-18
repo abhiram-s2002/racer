@@ -303,7 +303,7 @@ function RewardsScreen() {
                 styles.progressFill,
                 { 
                   width: `${progress}%`,
-                  backgroundColor: isCompleted ? '#22C55E' : '#3B82F6'
+                  backgroundColor: isCompleted ? '#10B981' : '#3B82F6'
                 }
               ]} 
             />
@@ -315,7 +315,7 @@ function RewardsScreen() {
 
         {isCompleted && (
           <View style={styles.achievementCompletedBadge}>
-            <CheckCircle size={12} color="#16A34A" />
+            <CheckCircle size={12} color="#10B981" />
             <Text style={styles.achievementCompletedBadgeText}>Completed</Text>
           </View>
         )}
@@ -344,7 +344,7 @@ function RewardsScreen() {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.titleSection}>
-            <Gift size={24} color="#22C55E" />
+            <Gift size={24} color="#10B981" />
             <View style={styles.titleText}>
               <Text style={styles.title}>Rewards</Text>
               <Text style={styles.subtitle}>Earn OMNI tokens</Text>
@@ -365,7 +365,7 @@ function RewardsScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statCard}>
               <View style={styles.statIcon}>
-                <Coins size={24} color="#22C55E" />
+                <Coins size={24} color="#10B981" />
               </View>
               <Text style={styles.statValue}>{getUserBalance()}</Text>
               <Text style={styles.statLabel}>Current $OMNI Balance</Text>
@@ -400,7 +400,7 @@ function RewardsScreen() {
         <View style={styles.checkInSection}>
           <View style={styles.checkInHeader}>
             <View style={styles.checkInTitleSection}>
-              <Calendar size={24} color="#22C55E" />
+              <Calendar size={24} color="#10B981" />
               <View style={styles.checkInTitleText}>
                 <Text style={styles.checkInTitle}>Daily Check-in</Text>
                 <Text style={styles.checkInSubtitle}>Earn rewards every day</Text>
@@ -1062,7 +1062,7 @@ const styles = StyleSheet.create({
   referralCode: {
     fontSize: 24,
     fontFamily: 'Inter-Bold',
-    color: '#22C55E',
+    color: '#10B981',
     letterSpacing: 2,
   },
   referralCodeDescription: {
@@ -1098,7 +1098,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingVertical: 10,
     borderRadius: 6,
     gap: 6,
@@ -1126,7 +1126,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -1185,7 +1185,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   checkInButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
@@ -1388,7 +1388,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkedInDate: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
   },
   todayDate: {
     backgroundColor: '#FEF3C7',
@@ -1426,7 +1426,7 @@ const styles = StyleSheet.create({
   rewardValue: {
     fontSize: 14,
     fontFamily: 'Inter-Bold',
-    color: '#22C55E',
+    color: '#10B981',
   },
   achievementsSection: {
     backgroundColor: '#FFFFFF',
@@ -1502,7 +1502,7 @@ const styles = StyleSheet.create({
   achievementRewardText: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: '#22C55E',
+    color: '#10B981',
   },
   achievementRewardLabel: {
     fontSize: 12,
@@ -1546,7 +1546,7 @@ const styles = StyleSheet.create({
   achievementCompletedBadgeText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#16A34A',
+    color: '#10B981',
   },
 
   achievementsList: {
@@ -1642,7 +1642,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
   },
   completedText: {
-    color: '#16A34A',
+    color: '#10B981',
   },
   pendingText: {
     color: '#D97706',
@@ -1650,7 +1650,7 @@ const styles = StyleSheet.create({
   earningsAmount: {
     fontSize: 14,
     fontFamily: 'Inter-Bold',
-    color: '#22C55E',
+    color: '#10B981',
   },
   emptyHistory: {
     alignItems: 'center',
@@ -1693,13 +1693,13 @@ const styles = StyleSheet.create({
   commissionTitle: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#065F46',
+    color: '#10B981',
     marginBottom: 4,
   },
   commissionDescription: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#047857',
+    color: '#10B981',
     marginBottom: 8,
   },
   commissionAmount: {
@@ -1830,7 +1830,7 @@ const styles = StyleSheet.create({
   networkValueTotal: {
     fontSize: 18,
     fontFamily: 'Inter-Bold',
-    color: '#059669',
+    color: '#10B981',
   },
   leaderboardSection: {
     margin: 16,
@@ -1928,7 +1928,7 @@ const styles = StyleSheet.create({
   currentUserRankText: {
     fontSize: 24,
     fontFamily: 'Inter-Bold',
-    color: '#059669',
+    color: '#10B981',
   },
   currentUserInfo: {
     flex: 1,
@@ -1936,13 +1936,13 @@ const styles = StyleSheet.create({
   currentUserUsername: {
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
-    color: '#065F46',
+    color: '#10B981',
     marginBottom: 4,
   },
   currentUserOmni: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#047857',
+    color: '#10B981',
   },
   commissionBreakdownCard: {
     backgroundColor: '#F8FAFC',
@@ -2001,7 +2001,7 @@ const styles = StyleSheet.create({
   userActivityText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#059669',
+    color: '#10B981',
     marginTop: 2,
   },
 

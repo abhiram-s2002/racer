@@ -88,7 +88,7 @@ export default function DistanceFilterModal({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
-            <MapPin size={20} color="#22C55E" />
+            <MapPin size={20} color="#10B981" />
             <Text style={styles.title}>Filter by Distance</Text>
           </View>
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -139,9 +139,9 @@ export default function DistanceFilterModal({
                 value={sliderValue}
                 onValueChange={handleSliderChange}
                 onSlidingComplete={handleSlidingComplete}
-                minimumTrackTintColor="#22C55E"
+                minimumTrackTintColor="#10B981"
                 maximumTrackTintColor="#E2E8F0"
-                thumbTintColor="#22C55E"
+                thumbTintColor="#10B981"
               />
             </View>
             
@@ -194,7 +194,7 @@ export default function DistanceFilterModal({
           {onSelectVerifiedOnly && (
             <View style={styles.verifiedSection}>
               <View style={styles.sectionHeader}>
-                <Shield size={20} color="#22C55E" />
+                <Shield size={20} color="#10B981" />
                 <Text style={styles.sectionTitle}>Verified Sellers</Text>
               </View>
               
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
   },
   selectedOption: {
     backgroundColor: '#DCFCE7',
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
   },
   optionContent: {
     flexDirection: 'row',
@@ -301,14 +301,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   selectedOptionText: {
-    color: '#22C55E',
+    color: '#10B981',
     fontWeight: '600',
   },
   checkmarkContainer: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
   sliderValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#22C55E',
+    color: '#10B981',
   },
   sliderWrapper: {
     marginBottom: 8,
@@ -395,7 +395,7 @@ const styles = StyleSheet.create({
   },
   selectedQuickOption: {
     backgroundColor: '#DCFCE7',
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
   },
   quickOptionText: {
     fontSize: 14,
@@ -403,7 +403,7 @@ const styles = StyleSheet.create({
     color: '#1E293B',
   },
   selectedQuickOptionText: {
-    color: '#22C55E',
+    color: '#10B981',
     fontWeight: '600',
   },
   infoContainer: {
@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   },
   selectedVerifiedOption: {
     backgroundColor: '#F0FDF4',
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
   },
   verifiedOptionContent: {
     flexDirection: 'row',
@@ -462,8 +462,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   checkedCheckbox: {
-    backgroundColor: '#22C55E',
-    borderColor: '#22C55E',
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
   verifiedOptionText: {
     fontSize: 16,
@@ -471,7 +471,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   selectedVerifiedOptionText: {
-    color: '#16A34A',
+    color: '#10B981',
     fontWeight: '600',
   },
 }); 

@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: '#059669',
+    color: '#10B981',
   },
 });
 

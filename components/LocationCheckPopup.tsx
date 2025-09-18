@@ -189,7 +189,7 @@ const LocationCheckPopup = memo(function LocationCheckPopup({
               <Ionicons 
                 name={permissionStatus === 'granted' ? 'checkmark-circle' : 'close-circle'} 
                 size={20} 
-                color={permissionStatus === 'granted' ? '#22C55E' : '#EF4444'} 
+                color={permissionStatus === 'granted' ? '#10B981' : '#EF4444'} 
               />
               <Text style={styles.statusText}>
                 Location Permission: {permissionStatus === 'granted' ? 'Granted' : 'Required'}
@@ -200,7 +200,7 @@ const LocationCheckPopup = memo(function LocationCheckPopup({
               <Ionicons 
                 name={gpsEnabled ? 'checkmark-circle' : 'close-circle'} 
                 size={20} 
-                color={gpsEnabled ? '#22C55E' : '#EF4444'} 
+                color={gpsEnabled ? '#10B981' : '#EF4444'} 
               />
               <Text style={styles.statusText}>
                 GPS: {gpsEnabled ? 'Enabled' : 'Disabled'}
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   primaryButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
   },
   fullWidthButton: {
     marginTop: 12,

@@ -45,11 +45,11 @@ const VerificationBadge: React.FC<VerificationBadgeProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#22C55E', // Green color like your app theme
+    backgroundColor: '#10B981', // Green color like your app theme
     flexDirection: 'row',
     alignItems: 'center',
     marginLeft: 6,
-    shadowColor: '#22C55E',
+    shadowColor: '#10B981',
     shadowOffset: {
       width: 0,
       height: 2,

@@ -199,7 +199,7 @@ const PhonePrivacyScreen = () => {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#22C55E" />
+          <ActivityIndicator size="large" color="#10B981" />
           <Text style={styles.loadingText}>Loading phone privacy settings...</Text>
         </View>
       </View>
@@ -230,7 +230,7 @@ const PhonePrivacyScreen = () => {
         {/* Phone Sharing Preference Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Shield size={24} color="#22C55E" />
+            <Shield size={24} color="#10B981" />
             <Text style={styles.sectionTitle}>Phone Sharing Preference</Text>
           </View>
           
@@ -249,7 +249,7 @@ const PhonePrivacyScreen = () => {
           >
             <View style={styles.preferenceContent}>
               <View style={styles.preferenceIcon}>
-                <Users size={20} color={phoneSharingPreference === 'everyone' ? '#22C55E' : '#64748B'} />
+                <Users size={20} color={phoneSharingPreference === 'everyone' ? '#10B981' : '#64748B'} />
               </View>
               <View style={styles.preferenceText}>
                 <Text style={[
@@ -264,7 +264,7 @@ const PhonePrivacyScreen = () => {
               </View>
               <View style={styles.preferenceIndicator}>
                 {phoneSharingPreference === 'everyone' ? (
-                  <CheckCircle size={20} color="#22C55E" />
+                  <CheckCircle size={20} color="#10B981" />
                 ) : (
                   <View style={styles.radioButton} />
                 )}
@@ -283,7 +283,7 @@ const PhonePrivacyScreen = () => {
           >
             <View style={styles.preferenceContent}>
               <View style={styles.preferenceIcon}>
-                <Lock size={20} color={phoneSharingPreference === 'ping_confirmation' ? '#22C55E' : '#64748B'} />
+                <Lock size={20} color={phoneSharingPreference === 'ping_confirmation' ? '#10B981' : '#64748B'} />
               </View>
               <View style={styles.preferenceText}>
                 <Text style={[
@@ -298,7 +298,7 @@ const PhonePrivacyScreen = () => {
               </View>
               <View style={styles.preferenceIndicator}>
                 {phoneSharingPreference === 'ping_confirmation' ? (
-                  <CheckCircle size={20} color="#22C55E" />
+                  <CheckCircle size={20} color="#10B981" />
                 ) : (
                   <View style={styles.radioButton} />
                 )}
@@ -308,7 +308,7 @@ const PhonePrivacyScreen = () => {
 
           {saving && (
             <View style={styles.savingIndicator}>
-              <ActivityIndicator size="small" color="#22C55E" />
+              <ActivityIndicator size="small" color="#10B981" />
               <Text style={styles.savingText}>Updating preference...</Text>
             </View>
           )}
@@ -318,7 +318,7 @@ const PhonePrivacyScreen = () => {
         {phoneSharingPreference === 'ping_confirmation' && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Settings size={24} color="#22C55E" />
+              <Settings size={24} color="#10B981" />
               <Text style={styles.sectionTitle}>Phone Access Management</Text>
             </View>
             
@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
   },
   preferenceOptionSelected: {
     backgroundColor: '#F0FDF4',
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
   },
   preferenceContent: {
     flexDirection: 'row',
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   preferenceTitleSelected: {
-    color: '#22C55E',
+    color: '#10B981',
   },
   preferenceDescription: {
     fontSize: 14,
@@ -531,7 +531,7 @@ const styles = StyleSheet.create({
   savingText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
   },
   accessListHeader: {
     flexDirection: 'row',

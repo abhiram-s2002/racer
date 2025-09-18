@@ -343,7 +343,7 @@ function ProfileSetup() {
               {/* Header */}
               <View style={styles.header}>
                 <View style={styles.logoContainer}>
-                  <Sparkles size={24} color="#22C55E" />
+                  <Sparkles size={24} color="#10B981" />
                 </View>
                 <Text style={styles.welcomeText}>Complete Your Profile</Text>
               </View>
@@ -356,7 +356,7 @@ function ProfileSetup() {
                   onPress={randomizeAvatar}
                   activeOpacity={0.7}
                 >
-                  <RefreshCw size={14} color="#22C55E" />
+                  <RefreshCw size={14} color="#10B981" />
                   <Text style={styles.randomizeButtonText}>Randomize</Text>
                 </TouchableOpacity>
               </View>
@@ -525,7 +525,7 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 40,
     borderWidth: 3,
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
     marginBottom: 8,
   },
   randomizeButton: {
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   randomizeButtonText: {
-    color: '#22C55E',
+    color: '#10B981',
     fontSize: 12,
     fontWeight: '500',
     marginLeft: 4,
@@ -582,10 +582,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingVertical: 14,
     borderRadius: 12,
-    shadowColor: '#22C55E',
+    shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -626,7 +626,7 @@ const styles = StyleSheet.create({
   },
   successText: {
     fontSize: 11,
-    color: '#22C55E',
+    color: '#10B981',
     marginTop: 2,
     fontFamily: 'Inter-Regular',
   },

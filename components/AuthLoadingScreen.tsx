@@ -68,7 +68,7 @@ export default function AuthLoadingScreen({ message = "Setting up your experienc
 
   return (
     <LinearGradient
-      colors={['#22C55E', '#16A34A', '#15803D']}
+      colors={['#10B981', '#059669', '#047857']}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}

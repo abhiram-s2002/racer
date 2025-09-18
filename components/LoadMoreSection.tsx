@@ -46,19 +46,30 @@ export default function LoadMoreSection({
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    zIndex: 10,
   },
   loadMoreSection: {
     alignItems: 'center',
   },
   loadMoreButton: {
-    backgroundColor: '#22C55E',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    backgroundColor: '#10B981',
+    borderRadius: 25,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     alignItems: 'center',
-    minWidth: 120,
+    minWidth: 140,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   loadMoreText: {
     fontSize: 14,
@@ -74,7 +85,9 @@ const styles = StyleSheet.create({
   },
   loadMoreButtonDisabled: {
     backgroundColor: '#94A3B8',
-    opacity: 0.6,
+    opacity: 0.7,
+    shadowOpacity: 0.15,
+    elevation: 4,
   },
   loadMoreTextDisabled: {
     color: '#F1F5F9',

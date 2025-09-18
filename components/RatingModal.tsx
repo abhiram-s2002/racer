@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   ratingText: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#22C55E',
+    color: '#10B981',
   },
   categorySection: {
     marginBottom: 24,
@@ -369,8 +369,8 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
   },
   categoryButtonSelected: {
-    backgroundColor: '#22C55E',
-    borderColor: '#22C55E',
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
   categoryButtonText: {
     fontSize: 14,
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     flex: 1,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',

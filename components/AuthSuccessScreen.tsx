@@ -81,7 +81,7 @@ export default function AuthSuccessScreen({
 
   return (
     <LinearGradient
-      colors={['#22C55E', '#16A34A', '#15803D']}
+      colors={['#10B981', '#059669', '#047857']}
       style={styles.container}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   continueButtonText: {
-    color: '#22C55E',
+    color: '#10B981',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,

@@ -51,7 +51,7 @@ function MapContainer({
   if (loading && !visibleListings.length) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#22C55E" />
+        <ActivityIndicator size="large" color="#10B981" />
         <Text style={styles.loadingText}>Loading map data...</Text>
       </View>
     );
@@ -74,7 +74,7 @@ function MapContainer({
             latitude: userLocation.latitude,
             longitude: userLocation.longitude,
           }}
-          pinColor="#22C55E"
+          pinColor="#10B981"
           title="Your Location"
         />
       )}

@@ -17,9 +17,7 @@ import {
   getReferralCommissionStats,
   purchaseVerificationWithOmni,
   canAffordVerification,
-  processDailyCheckinWithVerification,
   isUserCurrentlyVerified,
-  getRewardAmounts,
   type UserRewards,
   type UserStreak,
   type UserReferralCode,
@@ -30,8 +28,8 @@ import {
   type UserRewardsSummary,
   type OmniVerificationPurchaseResult,
   type OmniVerificationAffordability,
-  type VerifiedCheckinResult
 } from '@/utils/rewardsSupabase';
+import { processDailyCheckin as unifiedProcessDailyCheckin } from '@/utils/unifiedCheckin';
 
 import { type ReferralCommission } from '@/utils/types';
 
@@ -124,69 +122,27 @@ export function useRewards(username: string, userId?: string) {
     if (!username) return false;
 
     try {
-      // Check if already checked in today
-      const alreadyCheckedIn = await hasCheckedInToday(username);
-      if (alreadyCheckedIn) {
-        // Already checked in - this is not an error, just return true
-        return true;
-      }
-
-      // Use new verified check-in system if userId is available
-      if (userId) {
-        const result = await processDailyCheckinWithVerification(username, userId);
-        if (result.success) {
-          // Reload data to get updated streak and balance
-          await loadRewardsData();
-          return true;
-        } else {
-          throw new Error(result.error || 'Failed to check in');
-        }
-      }
-
-      // Fallback to old system if no userId (backwards compatibility)
-      // Calculate reward based on current streak
-      let omniEarned = 10; // Base reward
-      if (userStreak?.current_streak && userStreak.current_streak >= 7) {
-        omniEarned = 200; // Weekly bonus
-      }
-      if (userStreak?.current_streak && userStreak.current_streak >= 30) {
-        omniEarned = 1000; // Monthly bonus
-      }
-
-      const today = new Date().toISOString().split('T')[0];
+      const result = await unifiedProcessDailyCheckin(username, userId);
       
-      // Create check-in record
-      const checkin = await createDailyCheckin(username, today, omniEarned);
-      if (!checkin) {
-        // If checkin is null, it might be because user already checked in today
-        // Check again to be sure
-        const alreadyCheckedIn = await hasCheckedInToday(username);
-        if (alreadyCheckedIn) {
-          // User already checked in today, this is not an error
-          return true;
+      if (result.success) {
+        // Reload data to get updated streak and balance
+        await loadRewardsData();
+        return true;
+      } else {
+        // Only log in development
+        if (__DEV__) {
+          console.error('Daily check-in failed:', result.error);
         }
-        throw new Error('Failed to create check-in');
+        return false;
       }
-
-      // Create reward transaction
-      await createRewardTransaction(
-        username,
-        'checkin',
-        omniEarned,
-        `Daily check-in reward (Day ${userStreak?.current_streak ? userStreak.current_streak + 1 : 1})`,
-        checkin.id,
-        'checkin'
-      );
-
-      // Reload data to get updated streak
-      await loadRewardsData();
-
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to check in');
+    } catch (error) {
+      // Only log in development
+      if (__DEV__) {
+        console.error('Error in performDailyCheckin:', error);
+      }
       return false;
     }
-  }, [username, userId, userStreak, loadRewardsData]);
+  }, [username, userId, loadRewardsData]);
 
   // Update achievement progress
   const updateAchievement = useCallback(async (achievementId: string, newProgress: number) => {

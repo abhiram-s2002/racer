@@ -174,7 +174,7 @@ const PhonePrivacyManager: React.FC<PhonePrivacyManagerProps> = ({ userId }) => 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#22C55E" />
+        <ActivityIndicator size="large" color="#10B981" />
         <Text style={styles.loadingText}>Loading phone access list...</Text>
       </View>
     );
@@ -184,7 +184,7 @@ const PhonePrivacyManager: React.FC<PhonePrivacyManagerProps> = ({ userId }) => 
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Shield size={20} color="#22C55E" />
+          <Shield size={20} color="#10B981" />
           <Text style={styles.title}>Phone Access Management</Text>
         </View>
         {accessList.length > 0 && (
@@ -224,7 +224,7 @@ const PhonePrivacyManager: React.FC<PhonePrivacyManagerProps> = ({ userId }) => 
             <RefreshControl
               refreshing={refreshing}
               onRefresh={handleRefresh}
-              tintColor="#22C55E"
+              tintColor="#10B981"
             />
           }
           style={styles.list}

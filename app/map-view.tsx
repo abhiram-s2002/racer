@@ -229,7 +229,7 @@ function MapViewScreen() {
         onListView={() => setShowListView(true)}
       />
 
-      {/* Load More Section - Always Visible */}
+      {/* Floating Load More Button */}
       <LoadMoreSection
         currentListings={visibleListings.length}
         totalListings={listings.length}
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,
@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   listingPrice: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
     marginBottom: 4,
   },
   listingCategory: {

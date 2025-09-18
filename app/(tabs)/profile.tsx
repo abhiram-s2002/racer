@@ -377,7 +377,7 @@ function ProfileScreen() {
       <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={{ fontSize: 16, color: '#EF4444', marginBottom: 16 }}>Error loading profile</Text>
         <TouchableOpacity 
-          style={{ backgroundColor: '#22C55E', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}
+          style={{ backgroundColor: '#10B981', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8 }}
           onPress={refreshProfile}
         >
           <Text style={{ color: '#fff', fontWeight: 'bold' }}>Retry</Text>
@@ -471,7 +471,7 @@ function ProfileScreen() {
               />
               <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
                 <TouchableOpacity 
-                  style={{ flex: 1, backgroundColor: '#22C55E', borderRadius: 8, padding: 12, marginRight: 8 }} 
+                  style={{ flex: 1, backgroundColor: '#10B981', borderRadius: 8, padding: 12, marginRight: 8 }} 
                   onPress={() => setMapModalVisible(true)}
                 >
                   <Text style={{ color: '#fff', fontWeight: 'bold', textAlign: 'center' }}>Select on Map</Text>
@@ -606,7 +606,7 @@ function ProfileScreen() {
                   onPress={uploadProfileImage}
                   disabled={uploadingImage}
                 >
-                  <Camera size={16} color="#22C55E" />
+                  <Camera size={16} color="#10B981" />
                   <Text style={styles.uploadButtonText}>
                     {uploadingImage ? 'Uploading...' : 'Upload Image'}
                   </Text>
@@ -627,7 +627,7 @@ function ProfileScreen() {
       {/* Map picker modal with header and instructions */}
       <Modal visible={mapModalVisible} animationType="slide">
         <View style={{ flex: 1 }}>
-          <View style={{ backgroundColor: '#22C55E', paddingTop: 48, paddingBottom: 16, alignItems: 'center' }}>
+          <View style={{ backgroundColor: '#10B981', paddingTop: 48, paddingBottom: 16, alignItems: 'center' }}>
             <Text style={{ color: '#fff', fontSize: 20, fontWeight: 'bold' }}>Select Your Location</Text>
             <Text style={{ color: '#fff', fontSize: 14, marginTop: 4 }}>Tap anywhere on the map to choose a spot</Text>
           </View>
@@ -650,7 +650,7 @@ function ProfileScreen() {
               position: 'absolute',
               bottom: 100,
               right: 20,
-              backgroundColor: '#22C55E',
+              backgroundColor: '#10B981',
               borderRadius: 24,
               padding: 14,
               zIndex: 20,
@@ -698,7 +698,7 @@ function ProfileScreen() {
               onPress={() => setMapModalVisible(false)}
             />
             <TouchableOpacity
-              style={{ backgroundColor: '#22C55E', borderRadius: 8, paddingVertical: 14, paddingHorizontal: 32 }}
+              style={{ backgroundColor: '#10B981', borderRadius: 8, paddingVertical: 14, paddingHorizontal: 32 }}
               onPress={async () => {
                 if (selectedCoords) {
                   await setLocationFromCoords(selectedCoords);
@@ -755,7 +755,7 @@ function ProfileScreen() {
               <View style={styles.availabilityRow}>
                 <View style={[styles.availabilityBadge, profileData.isAvailable ? styles.available : styles.unavailable]}>
                   {profileData.isAvailable ? (
-                    <CheckCircle size={16} color="#22C55E" />
+                    <CheckCircle size={16} color="#10B981" />
                   ) : (
                     <XCircle size={16} color="#EF4444" />
                   )}
@@ -768,7 +768,7 @@ function ProfileScreen() {
           </View>
 
           <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-            <Edit3 size={16} color="#22C55E" />
+            <Edit3 size={16} color="#10B981" />
             <Text style={styles.editButtonText}>Edit Profile</Text>
           </TouchableOpacity>
         </View>
@@ -857,7 +857,7 @@ function ProfileScreen() {
         >
           <View style={styles.phonePrivacyContent}>
             <View style={styles.phonePrivacyLeft}>
-              <Phone size={20} color="#22C55E" />
+              <Phone size={20} color="#10B981" />
               <View style={styles.phonePrivacyTextContainer}>
                 <Text style={styles.phonePrivacyTitle}>Phone Privacy</Text>
                 <Text style={styles.phonePrivacyDescription}>
@@ -877,7 +877,7 @@ function ProfileScreen() {
         >
           <View style={styles.verificationContent}>
             <View style={styles.verificationLeft}>
-              <Shield size={20} color="#22C55E" />
+              <Shield size={20} color="#10B981" />
               <View style={styles.verificationTextContainer}>
                 <Text style={styles.verificationTitle}>Verification</Text>
                 <Text style={styles.verificationDescription}>
@@ -902,7 +902,7 @@ function ProfileScreen() {
             <Switch
               value={profileData.isAvailable}
               onValueChange={toggleAvailability}
-              trackColor={{ false: '#E2E8F0', true: '#22C55E' }}
+              trackColor={{ false: '#E2E8F0', true: '#10B981' }}
               thumbColor={profileData.isAvailable ? '#FFFFFF' : '#FFFFFF'}
             />
           </View>
@@ -917,7 +917,7 @@ function ProfileScreen() {
         >
           <View style={styles.listingsContent}>
             <View style={styles.listingsLeft}>
-              <Package size={20} color="#22C55E" />
+              <Package size={20} color="#10B981" />
               <View style={styles.listingsTextContainer}>
                 <Text style={styles.listingsTitle}>Manage Listings</Text>
                 <Text style={styles.listingsDescription}>
@@ -937,7 +937,7 @@ function ProfileScreen() {
         >
           <View style={styles.listingsContent}>
             <View style={styles.listingsLeft}>
-              <Heart size={20} color="#22C55E" />
+              <Heart size={20} color="#10B981" />
               <View style={styles.listingsTextContainer}>
                 <Text style={styles.listingsTitle}>Saved Listings</Text>
                 <Text style={styles.listingsDescription}>
@@ -957,7 +957,7 @@ function ProfileScreen() {
         >
           <View style={styles.listingsContent}>
             <View style={styles.listingsLeft}>
-              <Settings size={20} color="#22C55E" />
+              <Settings size={20} color="#10B981" />
               <View style={styles.listingsTextContainer}>
                 <Text style={styles.listingsTitle}>Settings</Text>
                 <Text style={styles.listingsDescription}>
@@ -1014,7 +1014,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     borderRadius: 16,
     width: 32,
     height: 32,
@@ -1079,7 +1079,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
   },
   availableText: {
-    color: '#16A34A',
+    color: '#10B981',
   },
   unavailableText: {
     color: '#DC2626',
@@ -1092,13 +1092,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
     gap: 8,
   },
   editButtonText: {
     fontSize: 14,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
   },
 
   bioSection: {
@@ -1279,7 +1279,7 @@ const styles = StyleSheet.create({
   savingIndicator: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
   },
   notificationItem: {
     flexDirection: 'row',
@@ -1382,7 +1382,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 8,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
   },
   saveButtonText: {
     color: '#FFF',
@@ -1426,7 +1426,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -1436,7 +1436,7 @@ const styles = StyleSheet.create({
     borderColor: '#D1D5DB',
   },
   uploadButtonText: {
-    color: '#22C55E',
+    color: '#10B981',
     fontSize: 14,
     fontFamily: 'Inter-Medium',
   },
@@ -1467,7 +1467,7 @@ const styles = StyleSheet.create({
   socialLinkText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
   },
 });
 

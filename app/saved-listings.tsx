@@ -193,7 +193,7 @@ function SavedListingsScreen() {
     
     return (
       <View style={styles.loadingMoreContainer}>
-        <ActivityIndicator size="small" color="#22C55E" />
+        <ActivityIndicator size="small" color="#10B981" />
         <Text style={styles.loadingMoreText}>Loading more...</Text>
       </View>
     );
@@ -250,7 +250,7 @@ function SavedListingsScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={handleRefresh}
-            colors={['#22C55E']}
+            colors={['#10B981']}
           />
         }
         onEndReached={handleLoadMore}
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   listingPrice: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: '#22C55E',
+    color: '#10B981',
     marginBottom: 4,
   },
   listingCategory: {
@@ -442,7 +442,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,

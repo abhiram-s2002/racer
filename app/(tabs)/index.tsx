@@ -366,7 +366,7 @@ function HomeScreen() {
         <View style={[styles.categoryIcon, isSelected && styles.selectedCategoryIcon]}>
           <IconComponent 
             size={20} 
-            color={isSelected ? '#FFFFFF' : '#22C55E'} 
+            color={isSelected ? '#FFFFFF' : '#10B981'} 
           />
         </View>
         <Text style={[styles.categoryText, isSelected && styles.selectedCategoryText]}>
@@ -662,7 +662,7 @@ function HomeScreen() {
   }, [hasMore, loading, loadMoreItems]);
 
   const refreshControlComponent = useMemo(() => 
-    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#22C55E" />
+    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#10B981" />
   , [refreshing, onRefresh]);
 
   const footerComponent = useMemo(() => 
@@ -718,7 +718,7 @@ function HomeScreen() {
           ]}
           onPress={handleToggleSortByDistance}
         >
-          <Filter size={20} color={(sortByDistanceState || maxDistance !== null) ? '#22C55E' : '#64748B'} />
+          <Filter size={20} color={(sortByDistanceState || maxDistance !== null) ? '#10B981' : '#64748B'} />
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.mapButton}
@@ -922,8 +922,8 @@ const styles = StyleSheet.create({
     minWidth: 60,
   },
   selectedType: {
-    backgroundColor: '#22C55E',
-    borderColor: '#22C55E',
+    backgroundColor: '#10B981',
+    borderColor: '#10B981',
   },
   typeIcon: {
     fontSize: 16,
@@ -948,7 +948,7 @@ const styles = StyleSheet.create({
     minWidth: 50,
   },
   selectedCategory: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
   },
   categoryIcon: {
     width: 26,
@@ -1045,7 +1045,7 @@ const styles = StyleSheet.create({
   expandIndicator: {
     fontSize: 10,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
     marginTop: 2,
     textDecorationLine: 'underline',
   },
@@ -1154,12 +1154,12 @@ const styles = StyleSheet.create({
   trustText: {
     fontSize: 8,
     fontFamily: 'Inter-Medium',
-    color: '#16A34A',
+    color: '#10B981',
   },
   listingPrice: {
     fontSize: 16,
     fontFamily: 'Inter-Bold',
-    color: '#22C55E',
+    color: '#10B981',
     marginBottom: 3,
   },
   priceContainer: {
@@ -1171,7 +1171,7 @@ const styles = StyleSheet.create({
   priceUnit: {
     fontSize: 10,
     fontFamily: 'Inter-Medium',
-    color: '#16A34A',
+    color: '#10B981',
     marginLeft: 12,
     backgroundColor: 'transparent',
     borderWidth: 1,
@@ -1273,7 +1273,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   activeText: {
-    color: '#16A34A',
+    color: '#10B981',
   },
   loadingContainer: {
     flex: 1,
@@ -1293,7 +1293,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -1320,7 +1320,7 @@ const styles = StyleSheet.create({
   sortingText: {
     fontSize: 12,
     fontFamily: 'Inter-Medium',
-    color: '#16A34A',
+    color: '#10B981',
   },
   emptyContainer: {
     flex: 1,

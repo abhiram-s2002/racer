@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
   listingPrice: {
     fontSize: 18,
     fontFamily: 'Inter-Bold',
-    color: '#22C55E',
+    color: '#10B981',
     marginBottom: 8,
   },
   listingActions: {

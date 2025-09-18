@@ -746,7 +746,7 @@ const styles = StyleSheet.create({
   brandName: {
     fontSize: 28,
     fontWeight: '600',
-    color: '#22C55E',
+    color: '#10B981',
     letterSpacing: 1,
   },
   title: {
@@ -778,14 +778,14 @@ const styles = StyleSheet.create({
   },
   button: {
     width: '100%',
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingVertical: 8,
     borderRadius: 3,
     alignItems: 'center',
     marginTop: 8,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#1E7E34',
+    borderColor: '#0D7A3A',
   },
   buttonDisabled: {
     backgroundColor: '#A7F3D0',
@@ -801,7 +801,7 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   switchButtonText: {
-    color: '#22C55E',
+    color: '#10B981',
     fontSize: 13,
     fontWeight: '400',
   },
@@ -815,7 +815,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   passwordMatchSuccess: {
-    color: '#22C55E',
+    color: '#10B981',
   },
   passwordMatchError: {
     color: '#EF4444',
@@ -829,14 +829,14 @@ const styles = StyleSheet.create({
     color: '#EF4444',
   },
   passwordLengthSuccess: {
-    color: '#22C55E',
+    color: '#10B981',
   },
   inputError: {
     borderColor: '#EF4444',
     borderWidth: 1,
   },
   inputSuccess: {
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
     borderWidth: 1,
   },
   forgotPasswordButton: {
@@ -845,7 +845,7 @@ const styles = StyleSheet.create({
     padding: 6,
   },
   forgotPasswordText: {
-    color: '#22C55E',
+    color: '#10B981',
     fontSize: 13,
     fontWeight: '400',
   },
@@ -862,7 +862,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   validateButton: {
-    backgroundColor: '#22C55E',
+    backgroundColor: '#10B981',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 3,
@@ -877,20 +877,20 @@ const styles = StyleSheet.create({
   },
   referralCodeText: {
     fontSize: 12,
-    color: '#22C55E',
+    color: '#10B981',
     marginTop: 6,
     paddingHorizontal: 2,
     textAlign: 'center',
   },
   validCodeText: {
-    color: '#22C55E',
+    color: '#10B981',
   },
   invalidCodeText: {
     color: '#EF4444',
   },
   emailText: {
     fontWeight: '600',
-    color: '#22C55E',
+    color: '#10B981',
   },
   verificationInstructions: {
     fontSize: 13,
@@ -930,7 +930,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   resendButtonText: {
-    color: '#22C55E',
+    color: '#10B981',
     fontSize: 13,
     fontWeight: '400',
   },

@@ -128,7 +128,7 @@ const ListingHeroImage: React.FC<ListingHeroImageProps> = React.memo(({
         {/* Loading Indicator */}
         {imageLoading && (
           <View style={styles.loadingOverlay}>
-            <ActivityIndicator size="large" color="#22C55E" />
+            <ActivityIndicator size="large" color="#10B981" />
           </View>
         )}
       </View>

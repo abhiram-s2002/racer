@@ -1,12 +1,12 @@
 import { Tabs } from 'expo-router';
 import { useColorScheme } from 'react-native';
-import { Home, User, Activity, Gift, Plus, ClipboardList } from 'lucide-react-native';
+import { Home, User, Activity, Gift, Plus } from 'lucide-react-native';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Temporary Colors object until proper import is fixed
 const Colors = {
-  light: { tint: '#22C55E' },
-  dark: { tint: '#22C55E' }
+  light: { tint: '#10B981' },
+  dark: { tint: '#10B981' }
 };
 
 export default function TabLayout() {
@@ -46,15 +46,6 @@ export default function TabLayout() {
             title: 'Activity',
             tabBarIcon: ({ size, color }) => (
               <Activity size={size} color={color} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="requests"
-          options={{
-            title: 'Requests',
-            tabBarIcon: ({ size, color }) => (
-              <ClipboardList size={size} color={color} />
             ),
           }}
         />

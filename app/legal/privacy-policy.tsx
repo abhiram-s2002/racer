@@ -42,7 +42,7 @@ function PrivacyScreen() {
         {/* Introduction */}
         <View style={styles.section}>
           <View style={styles.iconContainer}>
-            <Shield size={24} color="#22C55E" />
+            <Shield size={24} color="#10B981" />
           </View>
           <Text style={styles.sectionTitle}>Your Privacy Matters</Text>
           <Text style={styles.paragraph}>
@@ -122,7 +122,7 @@ function PrivacyScreen() {
         {/* Data Security */}
         <View style={styles.section}>
           <View style={styles.iconContainer}>
-            <Lock size={24} color="#22C55E" />
+            <Lock size={24} color="#10B981" />
           </View>
           <Text style={styles.sectionTitle}>4. Data Security</Text>
           <Text style={styles.paragraph}>
@@ -159,7 +159,7 @@ function PrivacyScreen() {
         {/* Your Rights */}
         <View style={styles.section}>
           <View style={styles.iconContainer}>
-            <Eye size={24} color="#22C55E" />
+            <Eye size={24} color="#10B981" />
           </View>
           <Text style={styles.sectionTitle}>6. Your Rights</Text>
           <Text style={styles.paragraph}>
@@ -272,7 +272,7 @@ function PrivacyScreen() {
         {/* Contact Information */}
         <View style={styles.section}>
           <View style={styles.iconContainer}>
-            <Users size={24} color="#22C55E" />
+            <Users size={24} color="#10B981" />
           </View>
           <Text style={styles.sectionTitle}>Contact Us</Text>
           <Text style={styles.paragraph}>
@@ -280,12 +280,12 @@ function PrivacyScreen() {
           </Text>
           
           <TouchableOpacity style={styles.contactItem} onPress={handleContact}>
-            <Mail size={16} color="#22C55E" />
+            <Mail size={16} color="#10B981" />
             <Text style={styles.contactText}>risingsoup76@gmail.com</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.contactItem} onPress={handleCall}>
-            <Phone size={16} color="#22C55E" />
+            <Phone size={16} color="#10B981" />
             <Text style={styles.contactText}>+91 7306 51 9350</Text>
           </TouchableOpacity>
           

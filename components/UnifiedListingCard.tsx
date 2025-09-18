@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 28,
     fontFamily: 'Inter-Bold',
-    color: '#059669',
+    color: '#10B981',
   },
   priceUnit: {
     fontSize: 14,
@@ -496,12 +496,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: '#22C55E',
+    borderColor: '#10B981',
   },
   deliveryBadgeText: {
     fontSize: 10,
     fontFamily: 'Inter-Medium',
-    color: '#22C55E',
+    color: '#10B981',
   },
 
   // Seller Section
