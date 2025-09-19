@@ -63,6 +63,7 @@ const SellerListingsCarousel: React.FC<SellerListingsCarouselProps> = React.memo
               style={[
                 styles.typeBadge,
                 item.item_type === 'request' ? styles.requestBadge : styles.listingBadge,
+                item.item_type === 'request' ? styles.requestBadgeText : styles.listingBadgeText,
               ]}
             >
               {item.item_type === 'request' ? 'REQUEST' : 'LISTING'}
@@ -194,12 +195,24 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   listingBadge: {
-    backgroundColor: '#DBEAFE',
-    color: '#2563EB',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#2563EB',
   },
   requestBadge: {
-    backgroundColor: '#F3E8FF',
-    color: '#7C3AED',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#8B5CF6',
+  },
+  listingBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    color: '#2563EB',
+  },
+  requestBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    color: '#8B5CF6',
   },
   listingTitle: {
     fontSize: 13,

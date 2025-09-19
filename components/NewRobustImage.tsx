@@ -221,7 +221,7 @@ export const NewRobustImage: React.FC<NewRobustImageProps> = ({
           ) : (
             <View style={[styles.iconFallbackContainer, style]}> 
               <View style={[styles.iconBadge, itemType === 'request' ? styles.requestBadge : styles.listingBadge]}>
-                <Package size={24} color="#FFFFFF" />
+                <Package size={24} color={itemType === 'request' ? '#8B5CF6' : '#2563EB'} />
               </View>
               {!!category && (
                 <Text style={styles.categoryLabel} numberOfLines={1}>
@@ -276,10 +276,14 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   listingBadge: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#2563EB',
   },
   requestBadge: {
-    backgroundColor: '#7C3AED',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#8B5CF6',
   },
   categoryLabel: {
     fontSize: 11,

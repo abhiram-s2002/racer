@@ -512,7 +512,9 @@ function HomeScreen() {
               styles.typeBadge,
               item.item_type === 'request' ? styles.requestBadge : styles.listingBadge
             ]}>
-              <Text style={styles.typeBadgeText}>
+              <Text style={[
+                item.item_type === 'request' ? styles.requestBadgeText : styles.typeBadgeText
+              ]}>
                 {item.item_type === 'request' ? 'REQUEST' : 'FOR SALE'}
               </Text>
             </View>
@@ -1375,15 +1377,24 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   listingBadge: {
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#2563EB',
   },
   requestBadge: {
-    backgroundColor: '#9333EA',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#8B5CF6',
   },
   typeBadgeText: {
     fontSize: 8,
     fontFamily: 'Inter-Bold',
-    color: '#FFFFFF',
+    color: '#2563EB',
+  },
+  requestBadgeText: {
+    fontSize: 8,
+    fontFamily: 'Inter-Bold',
+    color: '#8B5CF6',
   },
   locationRow: {
     flexDirection: 'row',

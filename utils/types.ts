@@ -117,7 +117,7 @@ export interface Ping {
   response_message?: string;
   ping_count?: number;
   last_ping_at?: string;
-  created_at: string;
+  updated_at: string;
 }
 
 /**
