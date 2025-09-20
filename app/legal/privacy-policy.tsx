@@ -8,7 +8,7 @@ import {
   Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Mail, Phone, Shield, Eye, Lock, Users } from 'lucide-react-native';
+import { ArrowLeft, Mail, Phone, Shield, Eye, Lock, Users, MapPin, PhoneCall, CheckCircle2 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 
@@ -24,9 +24,12 @@ function PrivacyScreen() {
     Linking.openURL('tel:+917306519350');
   };
 
+  const openWebPolicy = () => {
+    Linking.openURL('https://abhiram-s2002.github.io/geomart-privacy/privacy-policy.html');
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -39,7 +42,6 @@ function PrivacyScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Introduction */}
         <View style={styles.section}>
           <View style={styles.iconContainer}>
             <Shield size={24} color="#10B981" />
@@ -48,267 +50,172 @@ function PrivacyScreen() {
           <Text style={styles.paragraph}>
             At GeoMart, we are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, and safeguard your data.
           </Text>
-          <Text style={styles.paragraph}>
-            Last updated: September 18, 2025
-          </Text>
+          <Text style={styles.paragraph}>Last updated: September 18, 2025</Text>
+
+          <TouchableOpacity style={styles.linkButton} onPress={openWebPolicy}>
+            <Text style={styles.linkButtonText}>View Full Policy on the Web</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Information We Collect */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>1. Information We Collect</Text>
-          
           <Text style={styles.subsectionTitle}>Personal Information</Text>
-          <Text style={styles.paragraph}>
-            We collect information you provide directly to us:
-          </Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• Name and contact information</Text>
-            <Text style={styles.bullet}>• Phone number and email address</Text>
-            <Text style={styles.bullet}>• Profile pictures and avatars</Text>
-            <Text style={styles.bullet}>• Location information (with your consent)</Text>
-            <Text style={styles.bullet}>• Verification data and documents</Text>
-            <Text style={styles.bullet}>• App settings and preferences</Text>
+            <Text style={styles.bullet}>• Name, username, display name</Text>
+            <Text style={styles.bullet}>• Email address and phone number</Text>
+            <Text style={styles.bullet}>• Profile photos, avatars, bios</Text>
+            <Text style={styles.bullet}>• Verification data (phone verification, identity signals)</Text>
+            <Text style={styles.bullet}>• Privacy preferences (phone sharing, location visibility)</Text>
           </View>
 
-          <Text style={styles.subsectionTitle}>Usage Information</Text>
-          <Text style={styles.paragraph}>
-            We automatically collect certain information when you use our app:
-          </Text>
+          <Text style={styles.subsectionTitle}>Marketplace & Requests</Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• Device information and app usage</Text>
-            <Text style={styles.bullet}>• Search queries and browsing history</Text>
-            <Text style={styles.bullet}>• Communication data (messages, pings)</Text>
-            <Text style={styles.bullet}>• Transaction history and preferences</Text>
-            <Text style={styles.bullet}>• Request posts and related interactions</Text>
-            <Text style={styles.bullet}>• Ratings, reviews, and leaderboard participation</Text>
-            <Text style={styles.bullet}>• Security events and login attempts</Text>
+            <Text style={styles.bullet}>• Listings and requests content, images, categories</Text>
+            <Text style={styles.bullet}>• Pings and messages between users</Text>
+            <Text style={styles.bullet}>• Ratings, reviews, and reports</Text>
+            <Text style={styles.bullet}>• Favorites, hidden items, blocked users</Text>
+          </View>
+
+          <Text style={styles.subsectionTitle}>Usage & Device</Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bullet}>• Device and app info (model, OS, version)</Text>
+            <Text style={styles.bullet}>• Logs, errors, and performance metrics</Text>
+            <Text style={styles.bullet}>• Analytics on features used and engagement</Text>
+          </View>
+
+          <Text style={styles.subsectionTitle}>Location</Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bullet}>• Approximate or precise location (with permission)</Text>
+            <Text style={styles.bullet}>• Derived distances to listings/requests</Text>
           </View>
         </View>
 
-        {/* How We Use Information */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>2. How We Use Your Information</Text>
-          <Text style={styles.paragraph}>
-            We use the information we collect to:
-          </Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• Provide and improve our marketplace services</Text>
-            <Text style={styles.bullet}>• Connect buyers and sellers in your area</Text>
-            <Text style={styles.bullet}>• Process transactions and manage accounts</Text>
-            <Text style={styles.bullet}>• Send notifications and updates</Text>
-            <Text style={styles.bullet}>• Prevent fraud and ensure security</Text>
-            <Text style={styles.bullet}>• Analyze usage patterns and trends</Text>
-            <Text style={styles.bullet}>• Implement verification systems</Text>
-            <Text style={styles.bullet}>• Manage gamification rewards (OMNI tokens) and leaderboard systems</Text>
-            <Text style={styles.bullet}>• Provide customer support</Text>
-            <Text style={styles.bullet}>• Enforce our Terms via moderation of listings, requests, and usernames</Text>
+            <Text style={styles.bullet}>• Provide and improve marketplace and request features</Text>
+            <Text style={styles.bullet}>• Facilitate messaging, pings, and notifications</Text>
+            <Text style={styles.bullet}>• Show nearby items using your location</Text>
+            <Text style={styles.bullet}>• Implement verification and trust indicators</Text>
+            <Text style={styles.bullet}>• Enforce policies by moderating usernames, listings, and requests</Text>
+            <Text style={styles.bullet}>• Detect fraud, abuse, and security incidents</Text>
+            <Text style={styles.bullet}>• Measure performance and improve UX</Text>
+            <Text style={styles.bullet}>• Manage OMNI rewards, achievements, leaderboards (no monetary value)</Text>
           </View>
         </View>
 
-        {/* Information Sharing */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>3. Information Sharing</Text>
+          <Text style={styles.sectionTitle}>3. Phone Sharing & Visibility</Text>
+          <View style={styles.inlineIcon}><PhoneCall size={18} color="#10B981" /><Text style={styles.inlineIconText}>Granular user control</Text></View>
           <Text style={styles.paragraph}>
-            We do not sell, trade, or rent your personal information to third parties. We may share your information only in these limited circumstances:
+            You control whether your phone number is visible to others. Phone sharing settings can be changed any time. When enabled, your phone number may be shown to buyers/sellers in relevant interactions; when disabled, it remains hidden.
           </Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• With other users (as part of marketplace functionality)</Text>
-            <Text style={styles.bullet}>• With service providers who help us operate the app</Text>
-            <Text style={styles.bullet}>• When required by law or to protect our rights</Text>
-            <Text style={styles.bullet}>• With your explicit consent</Text>
-            <Text style={styles.bullet}>• With identity verification services</Text>
-            <Text style={styles.bullet}>• With security and fraud detection services</Text>
-            <Text style={styles.bullet}>• With map/location providers to display listings and requests</Text>
+            <Text style={styles.bullet}>• Toggle in Settings → Privacy → Phone Sharing</Text>
+            <Text style={styles.bullet}>• We store your preference and last-updated time</Text>
+            <Text style={styles.bullet}>• We never sell your phone number</Text>
           </View>
         </View>
 
-        {/* Data Security */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>4. Location Sharing & Visibility</Text>
+          <View style={styles.inlineIcon}><MapPin size={18} color="#10B981" /><Text style={styles.inlineIconText}>Opt-in location features</Text></View>
+          <Text style={styles.paragraph}>
+            Location access is optional and used to power nearby search and relevance. You can disable precise location in device settings; the app will fall back to approximate location or manual selection.
+          </Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bullet}>• Used to sort listings/requests by distance</Text>
+            <Text style={styles.bullet}>• Never shared with third parties for advertising</Text>
+            <Text style={styles.bullet}>• Can be disabled at any time in system settings</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>5. Verification & Trust</Text>
+          <View style={styles.inlineIcon}><CheckCircle2 size={18} color="#10B981" /><Text style={styles.inlineIconText}>Strengthening platform safety</Text></View>
+          <Text style={styles.paragraph}>
+            We process verification data (e.g., phone verification and identity signals) to show badges and improve trust. Your verification status may be visible on your profile and content.
+          </Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bullet}>• Limited retention of verification records</Text>
+            <Text style={styles.bullet}>• Used only for safety and Trust & Safety reviews</Text>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>6. Information Sharing</Text>
+          <Text style={styles.paragraph}>We do not sell personal data. We may share limited data:</Text>
+          <View style={styles.bulletList}>
+            <Text style={styles.bullet}>• With other users as part of marketplace functionality</Text>
+            <Text style={styles.bullet}>• With service providers (Supabase, Sentry, Analytics, Maps)</Text>
+            <Text style={styles.bullet}>• When required by law or to enforce policies</Text>
+          </View>
+        </View>
+
         <View style={styles.section}>
           <View style={styles.iconContainer}>
             <Lock size={24} color="#10B981" />
           </View>
-          <Text style={styles.sectionTitle}>4. Data Security</Text>
-          <Text style={styles.paragraph}>
-            We implement industry-standard security measures to protect your information:
-          </Text>
+          <Text style={styles.sectionTitle}>7. Security</Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• Encryption of data in transit and at rest</Text>
-            <Text style={styles.bullet}>• Secure authentication and access controls</Text>
-            <Text style={styles.bullet}>• Regular security audits and updates</Text>
-            <Text style={styles.bullet}>• Limited access to personal information</Text>
-            <Text style={styles.bullet}>• Multi-factor authentication where appropriate</Text>
-            <Text style={styles.bullet}>• Intrusion detection and prevention systems</Text>
-            <Text style={styles.bullet}>• Data backup and disaster recovery procedures</Text>
+            <Text style={styles.bullet}>• Encryption in transit and at rest</Text>
+            <Text style={styles.bullet}>• RLS policies to isolate user data</Text>
+            <Text style={styles.bullet}>• Access controls and audit logging</Text>
+            <Text style={styles.bullet}>• Regular reviews and updates</Text>
           </View>
         </View>
 
-        {/* Data Retention */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>5. Data Retention</Text>
-          <Text style={styles.paragraph}>
-            We retain your information for as long as necessary to provide our services and comply with legal obligations:
-          </Text>
+          <Text style={styles.sectionTitle}>8. Retention</Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• Account information: Until account deletion</Text>
-            <Text style={styles.bullet}>• Transaction data: 7 years for tax purposes</Text>
-            <Text style={styles.bullet}>• Communication data: Until account deletion</Text>
-            <Text style={styles.bullet}>• Usage analytics: 2 years (anonymized)</Text>
-            <Text style={styles.bullet}>• Location data: 1 year after last use</Text>
-            <Text style={styles.bullet}>• Verification data: 3 years after verification</Text>
-            <Text style={styles.bullet}>• Support data: 2 years after resolution</Text>
+            <Text style={styles.bullet}>• Account data: until deletion</Text>
+            <Text style={styles.bullet}>• Communications: while account is active</Text>
+            <Text style={styles.bullet}>• Verification: typically up to 3 years</Text>
+            <Text style={styles.bullet}>• Analytics logs: time-limited and aggregated</Text>
           </View>
         </View>
 
-        {/* Your Rights */}
         <View style={styles.section}>
           <View style={styles.iconContainer}>
             <Eye size={24} color="#10B981" />
           </View>
-          <Text style={styles.sectionTitle}>6. Your Rights</Text>
-          <Text style={styles.paragraph}>
-            You have the following rights regarding your personal information:
-          </Text>
+          <Text style={styles.sectionTitle}>9. Your Rights</Text>
           <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• Access your personal data</Text>
-            <Text style={styles.bullet}>• Correct inaccurate information</Text>
+            <Text style={styles.bullet}>• Access, rectify, delete, export your data</Text>
+            <Text style={styles.bullet}>• Withdraw consent and manage preferences</Text>
             <Text style={styles.bullet}>• Request updates to non-compliant identifiers (including usernames)</Text>
-            <Text style={styles.bullet}>• Delete your account and data</Text>
-            <Text style={styles.bullet}>• Export your data</Text>
-            <Text style={styles.bullet}>• Opt out of marketing communications</Text>
-            <Text style={styles.bullet}>• Restrict data processing</Text>
-            <Text style={styles.bullet}>• Object to processing</Text>
-            <Text style={styles.bullet}>• Withdraw consent at any time</Text>
-            <Text style={styles.bullet}>• Lodge complaints with supervisory authorities</Text>
           </View>
         </View>
 
-        {/* Cookies and Tracking */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>7. Cookies and Tracking</Text>
-          <Text style={styles.paragraph}>
-            We use cookies and similar technologies to:
-          </Text>
-          <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• Remember your preferences and settings</Text>
-            <Text style={styles.bullet}>• Analyze app usage and performance</Text>
-            <Text style={styles.bullet}>• Provide personalized content</Text>
-            <Text style={styles.bullet}>• Ensure security and prevent fraud</Text>
-            <Text style={styles.bullet}>• Enable essential app functionality</Text>
-            <Text style={styles.bullet}>• Monitor app performance</Text>
-          </View>
-          <Text style={styles.paragraph}>
-            You can control cookie settings through your device settings. We provide cookie preferences in our app settings.
-          </Text>
+          <Text style={styles.sectionTitle}>10. Children’s Privacy</Text>
+          <Text style={styles.paragraph}>Not for children under 13. If collected inadvertently, we will delete.</Text>
         </View>
 
-        {/* Third-Party Services */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>8. Third-Party Services</Text>
-          <Text style={styles.paragraph}>
-            Our app may integrate with third-party services:
-          </Text>
-          <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• Payment processors (for future features)</Text>
-            <Text style={styles.bullet}>• Analytics services (Google Analytics)</Text>
-            <Text style={styles.bullet}>• Cloud storage providers</Text>
-            <Text style={styles.bullet}>• Communication services</Text>
-            <Text style={styles.bullet}>• Identity verification services</Text>
-            <Text style={styles.bullet}>• Location services and map providers</Text>
-            <Text style={styles.bullet}>• Security and fraud detection services</Text>
-          </View>
-          <Text style={styles.paragraph}>
-            These services have their own privacy policies, which we encourage you to review.
-          </Text>
+          <Text style={styles.sectionTitle}>11. Changes to This Policy</Text>
+          <Text style={styles.paragraph}>We will notify you of material changes in-app or by email. Continued use means acceptance.</Text>
         </View>
 
-        {/* Virtual Currency and Gamification */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>9. Virtual Currency and Gamification</Text>
-          <Text style={styles.paragraph}>
-            GeoMart uses OMNI tokens as virtual currency for gamification and user engagement purposes only. These tokens:
-          </Text>
-          <View style={styles.bulletList}>
-            <Text style={styles.bullet}>• Have no monetary value and cannot be converted to real currency</Text>
-            <Text style={styles.bullet}>• Are earned through app engagement (check-ins, achievements, referrals)</Text>
-            <Text style={styles.bullet}>• Are used for gamification features like leaderboards and streaks</Text>
-            <Text style={styles.bullet}>• May be used for future in-app features (currently no spending functionality)</Text>
-            <Text style={styles.bullet}>• Are not securities, investments, or financial instruments</Text>
-            <Text style={styles.bullet}>• Cannot be transferred between users or sold</Text>
-          </View>
-          <Text style={styles.paragraph}>
-            We collect and process data related to OMNI token transactions solely for gamification purposes and to enhance user engagement within the app.
-          </Text>
-        </View>
-
-        {/* Children's Privacy */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>10. Children&apos;s Privacy</Text>
-          <Text style={styles.paragraph}>
-            GeoMart is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are between 13 and 18 years old, you must have parental consent to use our services.
-          </Text>
-          <Text style={styles.paragraph}>
-            If you believe we have collected information from a child under 13, please contact us immediately. We will take steps to delete such information and prevent further collection.
-          </Text>
-        </View>
-
-        {/* International Transfers */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>11. International Data Transfers</Text>
-          <Text style={styles.paragraph}>
-            Your information may be transferred to and processed in countries other than your own. We ensure appropriate safeguards are in place to protect your data in accordance with this Privacy Policy and applicable laws.
-          </Text>
-          <Text style={styles.paragraph}>
-            We use Standard Contractual Clauses for EU to non-EU transfers and maintain data processing agreements with all third-party service providers.
-          </Text>
-        </View>
-
-        {/* Changes to Privacy Policy */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>12. Changes to This Policy</Text>
-          <Text style={styles.paragraph}>
-            We may update this Privacy Policy from time to time. We will notify you of significant changes through the app or email. Your continued use of the service constitutes acceptance of the updated policy.
-          </Text>
-          <Text style={styles.paragraph}>
-            For material changes, we will provide at least 30 days&apos; notice before the changes take effect. We may take reasonable administrative actions to maintain safety and compliance, including editing non-compliant usernames, avatars, bios, listings, and requests.
-          </Text>
-        </View>
-
-        {/* Contact Information */}
         <View style={styles.section}>
           <View style={styles.iconContainer}>
             <Users size={24} color="#10B981" />
           </View>
           <Text style={styles.sectionTitle}>Contact Us</Text>
-          <Text style={styles.paragraph}>
-            If you have questions about this Privacy Policy or want to exercise your rights, please contact us:
-          </Text>
-          
+          <Text style={styles.paragraph}>Questions or privacy requests:</Text>
           <TouchableOpacity style={styles.contactItem} onPress={handleContact}>
             <Mail size={16} color="#10B981" />
             <Text style={styles.contactText}>risingsoup76@gmail.com</Text>
           </TouchableOpacity>
-          
           <TouchableOpacity style={styles.contactItem} onPress={handleCall}>
             <Phone size={16} color="#10B981" />
             <Text style={styles.contactText}>+91 7306 51 9350</Text>
           </TouchableOpacity>
-          
-          <Text style={styles.paragraph}>
-            Business Hours: Monday to Friday, 9:00 AM to 6:00 PM IST
-          </Text>
-          <Text style={styles.paragraph}>
-            Response Time: We aim to respond to privacy inquiries within 48 hours
-          </Text>
-          <Text style={styles.paragraph}>
-            Data Protection Officer: risingsoup76@gmail.com
-          </Text>
+          <Text style={styles.paragraph}>Address: Kozhikode, Kerala, India</Text>
         </View>
 
-        {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            © {new Date().getFullYear()} GeoMart. All rights reserved.
-          </Text>
+          <Text style={styles.footerText}>© {new Date().getFullYear()} GeoMart. All rights reserved.</Text>
         </View>
       </ScrollView>
     </View>
@@ -401,6 +308,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Regular',
     color: '#475569',
+  },
+  inlineIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
+  },
+  inlineIconText: {
+    fontSize: 13,
+    color: '#0F766E',
+  },
+  linkButton: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    backgroundColor: '#ECFDF5',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  linkButtonText: {
+    color: '#059669',
+    fontFamily: 'Inter-Medium',
   },
   footer: {
     alignItems: 'center',

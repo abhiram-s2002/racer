@@ -4,166 +4,88 @@
 
 ## 1. Introduction
 
-Welcome to GeoMart ("we," "our," or "us"). We are committed to protecting your privacy and ensuring you understand how we collect, use, and safeguard your information when you use our mobile application and services.
+Welcome to GeoMart ("we," "our," or "us"). This Privacy Policy explains what information we collect, how we use it, how it may be shared, and the choices you have. It also describes measures we take to safeguard your information and how you can contact us about our privacy practices.
 
-This Privacy Policy explains:
-- What personal information we collect
-- How we use and share your information
-- Your rights regarding your personal data
-- How we protect your information
-- How to contact us about privacy concerns
-- Our compliance with applicable privacy laws including GDPR, CCPA, and Indian data protection regulations
+We comply with applicable privacy regulations, including GDPR and CCPA. By using GeoMart, you agree to the practices described in this policy.
 
 ## 2. Information We Collect
 
-### 2.1 Information You Provide
-- **Account Information**: Name, email address, phone number, username, password, verification status
-- **Profile Information**: Profile pictures, location preferences, bio, avatar, verification badges
-- **Marketplace Activity**: Listings, requests, messages, transactions, reviews, pings, ratings, leaderboard participation
-- **Communications**: Messages with other users, support requests, feedback, notifications preferences
-- **Location Data**: Your precise location when you enable location services, location history
-- **Payment Information**: If applicable, payment method details (processed securely by third-party providers)
-- **Verification Data**: Identity verification documents, phone verification, email verification
-- **Preferences**: App settings, notification preferences, privacy settings
+### 2.1 Personal Information You Provide
+- **Account & Profile**: Name, username, display name, email, phone number, profile photos/avatars, bios
+- **Verification**: Phone verification status and timestamps, identity signals (if applicable)
+- **Preferences**: Privacy preferences including phone sharing and location visibility settings
 
-### 2.2 Information We Collect Automatically
-- **Device Information**: Device type, operating system, unique device identifiers, IP address, device model, screen resolution
-- **Usage Information**: How you interact with our app, features used, time spent, pages viewed, search queries
-- **Log Data**: Browser type, access times, error logs, performance data, API calls, server logs
-- **Location Data**: General location based on IP address (when precise location is disabled), approximate location
-- **Analytics Data**: App performance, crash reports, user behavior patterns, feature usage statistics
-- **Technical Data**: App version, session duration, network information, battery usage
-- **Security Data**: Login attempts, security events, suspicious activity detection
+### 2.2 Marketplace & Requests
+- Listings and requests content, images, categories, prices, and metadata
+- Pings and messages exchanged between users
+- Ratings, reviews, reports, favorites, hidden items, blocked users
 
-### 2.3 Information from Third Parties
-- **Social Media**: If you connect your social media accounts (profile information, friends list)
-- **Payment Processors**: Transaction information (if applicable), payment verification
-- **Analytics Providers**: Usage statistics and performance metrics, user behavior analysis
-- **Error Monitoring**: Crash reports and error logs, performance monitoring
-- **Identity Verification Services**: Verification status, identity confirmation
-- **Location Services**: Enhanced location data from third-party providers
-- **Communication Services**: SMS delivery status, email delivery confirmation
+### 2.3 Device, Usage & Analytics
+- Device details (model, OS), app version, performance and error logs
+- Usage metrics (features used, session data) for product improvement
 
-## 3. How We Use Your Information
+### 2.4 Location
+- Approximate or precise location (if you grant permission) to enable nearby search and distance calculations
 
-### 3.1 Primary Uses
-- Provide and maintain our marketplace services
-- Process transactions and facilitate communication between users
-- Send you important updates and notifications
-- Improve our app and user experience
-- Ensure security and prevent fraud
-- Comply with legal obligations
-- Provide customer support and resolve issues
-- Maintain and improve our platform infrastructure
-- Conduct research and analytics to enhance our services
-- Implement and maintain verification systems
+## 3. How We Use Information
 
-### 3.2 Specific Purposes
-- **Authentication**: Verify your identity and maintain account security
-- **Communication**: Enable messaging between buyers and sellers
-- **Location Services**: Show nearby listings and provide location-based features
-- **Analytics**: Understand app usage and improve functionality
-- **Support**: Respond to your questions and provide customer service
-- **Legal Compliance**: Meet regulatory requirements and respond to legal requests
-- **Verification**: Implement identity verification and trust systems
-- **Rewards**: Manage rewards, achievements, and leaderboard systems
-- **Safety**: Monitor for suspicious activity and ensure platform safety
-- **Personalization**: Customize your experience based on preferences and behavior
- - **Moderation and Enforcement**: Enforce our Terms and community guidelines, including reviewing, removing, or editing content such as listings, requests, and usernames that violate policies or laws
+- Provide and improve marketplace and request features
+- Enable messaging, pings, notifications, and support
+- Show nearby content using your location settings
+- Implement verification and trust indicators on profiles and listings
+- Moderate and enforce policies (including usernames, listings, and requests)
+- Detect and prevent fraud, abuse, and security incidents
+- Measure performance and enhance user experience
+- Manage OMNI rewards, achievements, and leaderboards (no monetary value)
 
-## 4. Legal Basis for Processing (GDPR)
+## 4. Phone Sharing & Visibility
 
-We process your personal data based on the following legal grounds:
-- **Consent**: When you explicitly agree to data processing
-- **Contract Performance**: To provide our services under our Terms of Service
-- **Legitimate Interest**: To improve our services and ensure security
-- **Legal Obligation**: To comply with applicable laws and regulations
-- **Vital Interests**: To protect your safety and the safety of others
-- **Public Task**: When required for public interest or official authority
+You control whether your phone number is visible to others. Your preference can be changed at any time in the app settings. When enabled, your phone number may be shown to the other party in relevant interactions; when disabled, it remains hidden.
 
-## 5. Information Sharing
+- We store your preference and the time it was last updated
+- We do not sell your phone number or share it for advertising
 
-### 5.1 With Other Users
-- Your profile information (username, avatar, location, verification status) is visible to other users
-- Messages you send are shared with recipients
-- Listing and request information is publicly visible within the app
-- Your activity status may be visible to other users
-- Your ratings and reviews are visible to other users
-- Your leaderboard position and achievements may be visible to other users
-- Your location (if enabled) may be visible to nearby users
+## 5. Location Sharing & Visibility
 
-### 5.2 With Service Providers
-- **Cloud Hosting**: Supabase (database and authentication)
-- **Analytics**: Google Analytics (usage statistics)
-- **Error Monitoring**: Sentry (crash reporting)
-- **Payment Processing**: Third-party payment processors (if applicable)
-- **Communication**: Email and SMS service providers
-- **Identity Verification**: Third-party verification services
-- **Location Services**: Map and location data providers
-- **Content Delivery**: CDN providers for faster content delivery
-- **Security Services**: Fraud detection and security monitoring services
+Location access is optional and used to power nearby search and relevance. You can disable precise location in your device settings. When disabled, the app may use approximate location or allow manual selection.
 
-### 5.3 Legal Requirements
-We may disclose your information if:
-- Required by law or legal process
-- To protect our rights, property, or safety
-- To investigate fraud or security issues
-- To comply with government requests
-- To respond to court orders or subpoenas
-- To protect the rights and safety of our users
-- To prevent or investigate illegal activities
-- To comply with regulatory requirements
+- Used to sort listings/requests by distance and relevance
+- Not shared with third parties for advertising purposes
+- Can be turned off at any time in system settings
 
-### 5.4 Business Transfers
-In the event of a merger, acquisition, or sale of assets, your information may be transferred as part of the business transaction. We will ensure that any such transfer is subject to appropriate privacy protections and that you are notified of any material changes to this Privacy Policy.
+## 6. Verification & Trust
 
-## 6. Data Security
+We process verification data (e.g., phone verification and identity signals) to enhance trust and safety. Your verification status may be visible on your profile and content.
 
-We implement appropriate technical and organizational security measures:
+- Verification records are retained for a limited period (typically up to 3 years)
+- Used only for safety reviews and Trust & Safety measures
 
-### 6.1 Technical Measures
-- Encryption of data in transit (TLS/SSL) and at rest
-- Secure authentication and access controls
-- Regular security audits and vulnerability assessments
-- Secure data storage practices
-- Network security and firewalls
-- Multi-factor authentication where appropriate
-- Regular security updates and patches
-- Intrusion detection and prevention systems
-- Data backup and disaster recovery procedures
+## 7. Information Sharing
 
-### 6.2 Organizational Measures
-- Employee training on data protection
-- Access controls and authentication
-- Regular security reviews
-- Incident response procedures
-- Data protection impact assessments
-- Privacy by design principles
-- Regular staff background checks
-- Confidentiality agreements with all staff
-- Data minimization practices
+We do not sell personal data. We may share limited data in these cases:
 
-## 7. Your Rights (GDPR & CCPA Compliance)
+- With other users as part of marketplace functionality (e.g., profile details, verification status, listing/request content)
+- With service providers strictly to operate the app: Supabase (hosting & auth), Google Analytics (usage), Sentry (error reports), Google Maps (location & maps)
+- To comply with laws or enforce our policies
 
-### 7.1 GDPR Rights (EU Users)
-If you are in the European Union, you have the following rights:
-- **Right of Access**: Request a copy of your personal data
-- **Right of Rectification**: Correct inaccurate or incomplete data
-- **Right of Erasure**: Request deletion of your personal data ("right to be forgotten")
-- **Right of Portability**: Receive your data in a structured, machine-readable format
-- **Right to Object**: Object to processing of your data
-- **Right to Restriction**: Request limitation of data processing
-- **Right to Withdraw Consent**: Withdraw consent at any time
-- **Right to Lodge a Complaint**: File a complaint with your local data protection authority
+## 8. Security
 
-### 7.2 CCPA Rights (California Users)
-If you are a California resident, you have the following rights:
-- **Right to Know**: Request information about personal data collected
-- **Right to Delete**: Request deletion of personal data
-- **Right to Opt-Out**: Opt-out of sale of personal data (we do not sell personal data)
-- **Right to Non-Discrimination**: Not be discriminated against for exercising your rights
+- Encryption in transit and at rest where applicable
+- Row Level Security (RLS) and access controls to isolate user data
+- Audit logging, periodic reviews, and security updates
 
-### 7.3 How to Exercise Your Rights
+## 9. Retention
+
+- Account data: retained until account deletion
+- Communications: retained while account remains active
+- Verification: retained typically up to 3 years after verification
+- Analytics logs: time-limited and aggregated where possible
+
+## 10. Your Rights
+
+Subject to applicable law (e.g., GDPR/CCPA), you may access, rectify, delete, export your data, withdraw consent, and manage privacy preferences. You may also request updates to non‑compliant identifiers (including usernames) that violate policies.
+
+### 10.1 How to Exercise Your Rights
 To exercise any of these rights, contact us at:
 - **Email**: risingsoup76@gmail.com
 - **Phone**: +91 7306 51 9350
@@ -171,118 +93,53 @@ To exercise any of these rights, contact us at:
 
 We will respond to your request within 30 days (GDPR) or 45 days (CCPA). We may require verification of your identity before processing your request.
 
-If you request correction of profile data, we may, at our discretion, update or restrict certain identifiers (including usernames) that conflict with our policies (e.g., impersonation, profanity, trademark infringement, hate speech, safety risks) to protect the community.
-
-## 8. Data Retention
-
-### 8.1 Retention Periods
-We retain your information for as long as necessary to:
-- Provide our services
-- Comply with legal obligations
-- Resolve disputes
-- Enforce our agreements
-
-### 8.2 Specific Retention Periods
-- **Account Data**: Retained while your account is active, deleted 30 days after account deletion
-- **Transaction Data**: Retained for 7 years for tax and legal compliance
-- **Communication Data**: Retained for 2 years after last activity
-- **Analytics Data**: Retained for 26 months
-- **Log Data**: Retained for 90 days
-- **Location Data**: Retained for 1 year after last use
-- **Verification Data**: Retained for 3 years after verification
-- **Support Data**: Retained for 2 years after resolution
-- **Marketing Data**: Retained until consent is withdrawn
-
-## 9. International Data Transfers
-
-### 9.1 Data Transfer Information
-Your information may be transferred to and processed in countries other than your own, including the United States. We ensure appropriate safeguards are in place:
-
-- **Standard Contractual Clauses**: For EU to non-EU transfers
-- **Adequacy Decisions**: Where applicable
-- **Other Safeguards**: As required by applicable law
-- **Data Processing Agreements**: With all third-party service providers
-- **Privacy Shield**: Where applicable (for US transfers)
-- **Binding Corporate Rules**: For intra-group transfers
-
-### 9.2 Transfer Locations
-- **Primary Processing**: United States
-- **Backup Storage**: Multiple locations for redundancy
-- **Analytics**: United States and other locations as specified by service providers
-- **Customer Support**: India and other locations as needed
-- **Development**: India and other locations as needed
-
-## 10. Cookies and Tracking Technologies
-
-### 10.1 Types of Cookies We Use
-- **Essential Cookies**: Required for app functionality
-- **Analytics Cookies**: Help us understand app usage
-- **Performance Cookies**: Monitor app performance
-- **Security Cookies**: Enhance security features
-- **Preference Cookies**: Remember your settings and preferences
-- **Marketing Cookies**: For targeted advertising (with consent)
-
-### 10.2 Cookie Management
-You can control cookies through your device settings. However, disabling certain cookies may affect app functionality. We provide cookie preferences in our app settings where you can manage your cookie choices.
-
 ## 11. Children's Privacy
 
-### 11.1 Age Restrictions
-Our app is not intended for children under 13 years of age. We do not knowingly collect personal information from children under 13. If you are between 13 and 18 years old, you must have parental consent to use our services.
+GeoMart is not intended for children under 13. If we learn that we have collected personal information from a child under 13, we will delete it and take appropriate steps to prevent further collection.
 
-### 11.2 Parental Rights
-If you are a parent and believe your child has provided us with personal information, please contact us immediately. We will take steps to delete such information and prevent further collection.
+## 12. International Transfers
 
-## 12. Changes to This Policy
+Your information may be processed in countries outside your own. Where required, we implement appropriate safeguards such as Standard Contractual Clauses and data processing agreements.
 
-### 12.1 Policy Updates
-We may update this privacy policy from time to time. We will notify you of any material changes by:
-- Posting the new policy in the app
-- Sending you an email notification
-- Displaying an in-app notification
-- Updating the "Last Updated" date at the top of this policy
-- Providing notice through our official communication channels
+## 13. Virtual Currency and Gamification
 
-### 12.2 Continued Use
-Your continued use of the app after changes become effective constitutes acceptance of the updated policy. For material changes, we will provide at least 30 days' notice before the changes take effect.
+GeoMart uses OMNI tokens as virtual currency for gamification and user engagement purposes only. These tokens:
+- Have no monetary value and cannot be converted to real currency
+- Are earned through app engagement (check-ins, achievements, referrals)
+- Are used for gamification features like leaderboards and streaks
+- May be used for future in-app features (currently no spending functionality)
+- Are not securities, investments, or financial instruments
+- Cannot be transferred between users or sold
 
-### 12.3 Account Administration Notice
-We reserve the authority to administer accounts to maintain safety and compliance. This includes reviewing, limiting, or editing profile elements (including usernames, avatars, bios) that violate our Terms, this Policy, or applicable law.
+We collect and process data related to OMNI token transactions solely for gamification purposes and to enhance user engagement within the app.
 
-## 13. Contact Information
+## 14. Changes to This Policy
 
-### 13.1 General Privacy Inquiries
+We may update this policy. We'll notify you of material changes in‑app or by email. Continued use of GeoMart after changes become effective constitutes acceptance.
+
+For material changes, we will provide at least 30 days' notice before the changes take effect. We may take reasonable administrative actions to maintain safety and compliance, including editing non-compliant usernames, avatars, bios, listings, and requests.
+
+## 15. Contact Information
+
+### 15.1 General Privacy Inquiries
 For questions about this privacy policy or our data practices:
+- **Email**: risingsoup76@gmail.com
+- **Phone**: +91 7306 51 9350
+- **Address**: Kozhikode, Kerala, India
+- **Business Hours**: Monday to Friday, 9:00 AM to 6:00 PM IST
+- **Response Time**: We aim to respond to privacy inquiries within 48 hours
 
-**Email**: risingsoup76@gmail.com
-**Phone**: +91 7306 51 9350
-**Address**: Kozhikode, Kerala, India
-
-**Business Hours**: Monday to Friday, 9:00 AM to 6:00 PM IST
-**Response Time**: We aim to respond to privacy inquiries within 48 hours
-
-### 13.2 Data Protection Officer (GDPR)
+### 15.2 Data Protection Officer (GDPR)
 For EU users, you can contact our Data Protection Officer at:
-**Email**: risingsoup76@gmail.com
+- **Email**: risingsoup76@gmail.com
 
-### 13.3 California Privacy Rights (CCPA)
+### 15.3 California Privacy Rights (CCPA)
 For California residents exercising CCPA rights:
-**Email**: risingsoup76@gmail.com
-
-## 14. Additional Information
-
-### 14.1 Third-Party Services
-Our app may contain links to third-party services. We are not responsible for the privacy practices of these services. We encourage you to review the privacy policies of any third-party services you use.
-
-### 14.2 Data Breach Notification
-In the event of a data breach affecting your personal information, we will notify you and relevant authorities as required by law. We will provide notice within 72 hours of becoming aware of the breach, where feasible.
-
-### 14.3 Do Not Track
-Our app does not respond to "Do Not Track" signals as we do not track users across third-party websites. However, we respect your privacy choices and provide controls within our app to manage your data preferences.
+- **Email**: risingsoup76@gmail.com
 
 ---
 
 *This privacy policy is effective as of September 18, 2025. For previous versions, please contact us at risingsoup76@gmail.com.*
 
-Changelog:
-- 2025-09-18: Clarified processing for requests/listings, added moderation authority including username edits, updated visibility disclosures, updated effective date.
+**Changelog:**
+- 2025-09-18: Updated to include verification, requests, phone sharing, and location sharing features; clarified data collection and usage practices; enhanced user rights and contact information

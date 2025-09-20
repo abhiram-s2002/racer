@@ -965,6 +965,8 @@ function ListingDetailScreen() {
             longitude={item.longitude}
             title={item.title}
             sellerName={itemType === 'request' ? requesterInfo?.name || 'Requester' : sellerInfo?.name || 'Seller'}
+            category={item.category}
+            itemType={itemType}
           />
         )}
 

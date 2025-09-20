@@ -10,12 +10,15 @@ import {
 } from 'react-native';
 import { MapPin, Navigation } from 'lucide-react-native';
 import MapView, { Marker } from 'react-native-maps';
+import { getCategoryIcon } from '@/utils/categoryIcons';
 
 interface CompactLocationCardProps {
   latitude: number;
   longitude: number;
   title: string;
   sellerName: string;
+  category?: string;
+  itemType?: 'listing' | 'request';
 }
 
 const CompactLocationCard: React.FC<CompactLocationCardProps> = React.memo(({
@@ -23,6 +26,8 @@ const CompactLocationCard: React.FC<CompactLocationCardProps> = React.memo(({
   longitude,
   title,
   sellerName,
+  category,
+  itemType = 'listing',
 }) => {
   const mapRegion = useMemo(() => ({
     latitude,
@@ -94,8 +99,24 @@ const CompactLocationCard: React.FC<CompactLocationCardProps> = React.memo(({
             coordinate={markerCoordinate}
             title={title}
             description={`${sellerName}'s listing`}
-            pinColor="#3B82F6"
-          />
+          >
+            {category ? (
+              <View style={[styles.customMarker, { 
+                backgroundColor: itemType === 'request' ? '#9333EA' : '#3B82F6' 
+              }]}>
+                {React.createElement(getCategoryIcon(category), {
+                  size: 16,
+                  color: '#FFFFFF'
+                })}
+              </View>
+            ) : (
+              <View style={[styles.customMarker, { 
+                backgroundColor: itemType === 'request' ? '#9333EA' : '#3B82F6' 
+              }]}>
+                <MapPin size={16} color="#FFFFFF" />
+              </View>
+            )}
+          </Marker>
         </MapView>
       </View>
     </View>
@@ -150,6 +171,23 @@ const styles = StyleSheet.create({
   map: {
     width: '100%',
     height: 140,
+  },
+  customMarker: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 2,
+    elevation: 3,
   },
 });
 

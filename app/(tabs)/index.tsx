@@ -15,7 +15,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, MapPin, Filter, ShoppingCart, Apple, UtensilsCrossed, Wrench, Shirt, Chrome as HomeIcon, Zap, Home, Star, Car, MoreHorizontal, Map, List, User } from 'lucide-react-native';
+import { Search, MapPin, Filter, Shirt, Chrome as HomeIcon, Zap, Star, Map, List, User } from 'lucide-react-native';
 import { Plus } from 'lucide-react-native';
 // Categories moved to inline definition for better performance
 const categories = [
@@ -35,6 +35,7 @@ import { useRouter } from 'expo-router';
 import DistanceFilterModal from '@/components/DistanceFilterModal';
 import { useMarketplaceItems } from '@/hooks/useMarketplaceItems';
 import { supabase } from '@/utils/supabaseClient';
+import { getCategoryIcon } from '@/utils/categoryIcons';
 import MapContainer from '@/components/MapContainer';
 import MapPinPopup from '@/components/MapPinPopup';
 
@@ -253,18 +254,7 @@ function HomeScreen() {
 
 
 
-  const categoryIcons = {
-    groceries: ShoppingCart,
-    fruits: Apple,
-    food: UtensilsCrossed,
-    services: Wrench,
-    fashion: Shirt,
-    home: HomeIcon,
-    electronics: Zap,
-    rental: Home,
-    vehicles: Car,
-    others: MoreHorizontal,
-  };
+  // Category icons now imported from shared utility
 
   // Filtered marketplace items with proper types
   const filteredItems = useMemo(() => {
@@ -426,7 +416,7 @@ function HomeScreen() {
   };
 
   const renderCategory = useCallback(({ item }: { item: any }) => {
-    const IconComponent = categoryIcons[item.id as keyof typeof categoryIcons] || ShoppingCart;
+    const IconComponent = getCategoryIcon(item.id);
     const isSelected = selectedCategory === item.id;
     
     return (
@@ -466,7 +456,7 @@ function HomeScreen() {
               placeholder={(
                 <View style={{ justifyContent: 'center', alignItems: 'center', width: '100%', height: '100%' }}>
                   {(() => {
-                    const IconComponent = categoryIcons[(item.category as keyof typeof categoryIcons)] || MoreHorizontal;
+                    const IconComponent = getCategoryIcon(item.category);
                     return <IconComponent size={28} color="#94A3B8" />;
                   })()}
                 </View>
@@ -1373,28 +1363,28 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     paddingHorizontal: 6,
     paddingVertical: 2,
-    borderRadius: 4,
+    borderRadius: 10,
     marginBottom: 4,
   },
   listingBadge: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#EFF6FF',
     borderWidth: 1,
-    borderColor: '#2563EB',
+    borderColor: '#3B82F6',
   },
   requestBadge: {
-    backgroundColor: '#F8FAFC',
+    backgroundColor: '#F3E8FF',
     borderWidth: 1,
-    borderColor: '#8B5CF6',
+    borderColor: '#9333EA',
   },
   typeBadgeText: {
     fontSize: 8,
     fontFamily: 'Inter-Bold',
-    color: '#2563EB',
+    color: '#1D4ED8',
   },
   requestBadgeText: {
     fontSize: 8,
     fontFamily: 'Inter-Bold',
-    color: '#8B5CF6',
+    color: '#7C3AED',
   },
   locationRow: {
     flexDirection: 'row',

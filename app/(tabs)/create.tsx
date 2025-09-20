@@ -23,14 +23,6 @@ import {
   Camera, 
   Image as ImageIcon,
   Upload,
-  ShoppingCart,
-  Apple,
-  UtensilsCrossed,
-  Wrench,
-  Palette,
-  Home,
-  Car,
-  MoreHorizontal,
   Navigation
 } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -40,6 +32,7 @@ import { useLocation } from '@/hooks/useLocation';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/utils/supabaseClient';
 import { Category, ItemType, PriceUnit } from '@/utils/types';
+import { getCategoryIcon } from '@/utils/categoryIcons';
 import MapView, { Marker } from 'react-native-maps';
 
 // Categories (same as listings)
@@ -54,17 +47,7 @@ const categories = [
   { id: 'others', name: 'Others' },
 ];
 
-// Category icons mapping
-const categoryIcons = {
-  groceries: ShoppingCart,
-  fruits: Apple,
-  food: UtensilsCrossed,
-  services: Wrench,
-  art: Palette,
-  rental: Home,
-  vehicles: Car,
-  others: MoreHorizontal,
-};
+// Category icons mapping - now imported from shared utility
 
 // Duration options
 const listingDurations = [
@@ -558,7 +541,7 @@ export default function CreateScreen() {
       
       <View style={styles.categoriesGrid}>
         {categories.map((category) => {
-          const IconComponent = categoryIcons[category.id as keyof typeof categoryIcons] || ShoppingCart;
+          const IconComponent = getCategoryIcon(category.id);
           const isSelected = formData.category === category.id;
           
           return (

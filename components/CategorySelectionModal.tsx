@@ -8,7 +8,8 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import { X, ShoppingCart, Apple, UtensilsCrossed, Wrench, Palette, Home, Car, MoreHorizontal } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
+import { getCategoryIcon } from '@/utils/categoryIcons';
 // Categories moved to inline definition for better performance
 // const categories = [
 //   { id: 'all', name: 'All Categories' },
@@ -39,16 +40,7 @@ function CategorySelectionModal({
   onSelectCategory 
 }: CategorySelectionModalProps) {
   
-  const categoryIcons = {
-    groceries: ShoppingCart,
-    fruits: Apple,
-    food: UtensilsCrossed,
-    services: Wrench,
-    art: Palette,
-    rental: Home,
-    vehicles: Car,
-    others: MoreHorizontal,
-  };
+  // Category icons now imported from shared utility
 
   // Extended categories including vehicles and others
   const extendedCategories = [
@@ -87,7 +79,7 @@ function CategorySelectionModal({
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.categoriesGrid}>
             {extendedCategories.map((category) => {
-              const IconComponent = categoryIcons[category.id as keyof typeof categoryIcons];
+              const IconComponent = getCategoryIcon(category.id);
               
               return (
                 <TouchableOpacity

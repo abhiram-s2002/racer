@@ -3,6 +3,7 @@ import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
 import MapView, { Marker, PROVIDER_DEFAULT, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
+import { getCategoryIcon } from '@/utils/categoryIcons';
 
 interface MapContainerProps {
   loading: boolean;
@@ -84,8 +85,9 @@ function MapContainer({
       {visibleListings
         .filter(listing => listing.latitude && listing.longitude)
         .map((listing) => {
-          // Use different colors based on item type
-          const pinColor = listing.item_type === 'request' ? '#9333EA' : '#3B82F6';
+          const IconComponent = getCategoryIcon(listing.category);
+          const isRequest = listing.item_type === 'request';
+          const backgroundColor = isRequest ? '#9333EA' : '#3B82F6';
           
           return (
             <Marker
@@ -94,11 +96,17 @@ function MapContainer({
                 latitude: listing.latitude,
                 longitude: listing.longitude,
               }}
-              pinColor={pinColor}
               title={listing.title}
-              description={`₹${listing.price} · ${listing.category} · ${listing.item_type === 'request' ? 'REQUEST' : 'FOR SALE'}`}
+              description={`₹${listing.price} · ${listing.category} · ${isRequest ? 'REQUEST' : 'FOR SALE'}`}
               onPress={() => onMarkerPress(listing)}
-            />
+            >
+              <View style={[styles.customMarker, { backgroundColor }]}>
+                <IconComponent 
+                  size={20} 
+                  color="#FFFFFF" 
+                />
+              </View>
+            </Marker>
           );
         })}
     </MapView>
@@ -120,6 +128,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-Medium',
     color: '#64748B',
+  },
+  customMarker: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
 });
 
