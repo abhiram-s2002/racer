@@ -1,7 +1,7 @@
-# 🚀 OmniMarketplace Pre-Launch Checklist
+# 🚀 GeoMart Pre-Launch Checklist
 
 ## 📋 Overview
-This checklist covers all critical areas that need to be addressed before going public with the OmniMarketplace app.
+This checklist covers all critical areas that need to be addressed before going public with the GeoMart app.
 
 ---
 

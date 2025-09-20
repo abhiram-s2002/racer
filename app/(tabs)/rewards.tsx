@@ -109,7 +109,7 @@ function RewardsScreen() {
     if (userReferralCode?.referral_code) {
       try {
         await Share.share({
-          message: `Join me on OmniMarketplace! Use my referral code: ${userReferralCode.referral_code} and get 100 OMNI bonus!`,
+          message: `Join me on GeoMart! Use my referral code: ${userReferralCode.referral_code} and get 100 OMNI bonus!`,
         });
           } catch (error) {
       // Silent error handling

@@ -487,7 +487,7 @@ function AuthScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.content}>
           <View style={styles.header}>
-            <Text style={styles.brandName}>OmniMarketplace</Text>
+            <Text style={styles.brandName}>GeoMart</Text>
             <Text style={styles.title}>Reset Password</Text>
             <Text style={styles.subtitle}>
               Enter your email to receive password reset instructions
@@ -537,7 +537,7 @@ function AuthScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.brandName}>OmniMarketplace</Text>
+          <Text style={styles.brandName}>GeoMart</Text>
           <Text style={styles.title}>{mode === 'login' ? 'Welcome Back' : 'Create Account'}</Text>
           <Text style={styles.subtitle}>
             {mode === 'login' 

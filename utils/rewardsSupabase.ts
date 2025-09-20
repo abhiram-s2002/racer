@@ -1216,7 +1216,7 @@ export async function awardReferralBonus(username: string) {
       username,
       'referral',
       100,
-      'Referral code bonus - Welcome to OmniMarketplace!',
+      'Referral code bonus - Welcome to GeoMart!',
       undefined,
       'referral_bonus'
     );

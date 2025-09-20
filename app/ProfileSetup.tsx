@@ -242,7 +242,7 @@ function ProfileSetup() {
         }
         
         // Profile setup completed successfully
-        Alert.alert('Success', 'Profile setup completed! Welcome to OmniMarketplace!');
+        Alert.alert('Success', 'Profile setup completed! Welcome to GeoMart!');
         setTimeout(() => {
           router.replace('/');
         }, 500);
