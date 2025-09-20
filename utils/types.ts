@@ -533,10 +533,8 @@ export type PartialUser = Partial<User>;
  */
 export type PartialListing = Partial<Listing>;
 
-/**
- * Partial message type for updates
- */
-export type PartialMessage = Partial<Message>;
+// Messages removed - using WhatsApp instead
+// export type PartialMessage = Partial<Message>;
 
 /**
  * Partial ping type for updates

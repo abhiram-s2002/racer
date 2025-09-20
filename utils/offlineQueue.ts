@@ -6,7 +6,7 @@ import { errorHandler } from './errorHandler';
 // Types for offline actions
 export interface OfflineAction {
   id: string;
-  type: 'ping' | 'upload' | 'profile_update' | 'listing_create' | 'listing_update';
+  type: 'ping' | 'message' | 'upload' | 'profile_update' | 'listing_create' | 'listing_update';
   data: any;
   timestamp: number;
   retryCount: number;
@@ -246,7 +246,8 @@ class OfflineQueueManager {
       switch (action.type) {
         case 'ping':
           return await this.executePingAction(action);
-        // Message actions removed - using WhatsApp instead
+        case 'message':
+          return await this.executeMessageAction(action);
         case 'upload':
           return await this.executeUploadAction(action);
         case 'profile_update':
@@ -277,7 +278,17 @@ class OfflineQueueManager {
     }
   }
 
-  // Message execution removed - using WhatsApp instead
+  private async executeMessageAction(action: OfflineAction): Promise<boolean> {
+    try {
+      // Since messages are now handled via WhatsApp, this action is essentially a no-op
+      // but we still process it to maintain queue consistency
+      console.log('Message action processed (handled via WhatsApp):', action.data);
+      return true;
+    } catch (error) {
+      console.error('Message action failed:', error);
+      return false;
+    }
+  }
 
   private async executeUploadAction(action: OfflineAction): Promise<boolean> {
     try {
