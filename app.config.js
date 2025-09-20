@@ -2,7 +2,7 @@ module.exports = {
   expo: {
     name: "GeoMart",
     slug: "geomart",
-    version: "1.0.0",
+    version: "1.0.1",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "geomart",
@@ -23,7 +23,7 @@ module.exports = {
     },
     android: {
       package: "com.geomart.app",
-      versionCode: 1,
+      versionCode: 2,
       config: {
         googleMaps: {
           apiKey: "AIzaSyBXZ3iGVmhKZZx0VmGjoLKTrArmFMwZ2qY"

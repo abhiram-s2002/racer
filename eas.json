@@ -45,7 +45,10 @@
       "android": {
         "resourceClass": "medium",
         "buildType": "app-bundle",
-        "gradleCommand": ":app:bundlePlayRelease"
+        "gradleCommand": ":app:bundlePlayRelease",
+        "env": {
+          "EXPO_USE_HERMES": "true"
+        }
       }
     }
   },

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert } from 'react-native';
+import { View, TextInput, TouchableOpacity, Text, StyleSheet, Alert, SafeAreaView } from 'react-native';
 import { signUp, signIn } from '@/utils/auth';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
@@ -7,6 +7,7 @@ import { ErrorHandler } from '@/utils/errorHandler';
 import { networkMonitor } from '@/utils/networkMonitor';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 import { getReferralByCode, createReferral, awardReferralBonus } from '@/utils/rewardsSupabase';
+import { validateEmail, validatePassword, validateUsername } from '@/utils/validation';
 
 // Process referral code function (moved outside component for export)
 export const processReferralCode = async (code: string) => {
@@ -125,12 +126,27 @@ function AuthScreen() {
       }
     
     if (mode === 'signup') {
-      // Check password length
-      if (password.length < 6) {
+      // Validate email using standard validation
+      const emailValidation = validateEmail(email);
+      if (!emailValidation.isValid) {
         await errorHandler.handleError(
-          new Error('Password must be at least 6 characters long'),
+          new Error(emailValidation.error || 'Please enter a valid email'),
           {
-            operation: 'password_length_validation',
+            operation: 'email_validation',
+            component: 'AuthScreen',
+          }
+        );
+        setLoading(false);
+        return;
+      }
+
+      // Validate password using standard validation
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        await errorHandler.handleError(
+          new Error(passwordValidation.error || 'Please enter a valid password'),
+          {
+            operation: 'password_validation',
             component: 'AuthScreen',
           }
         );
@@ -157,18 +173,6 @@ function AuthScreen() {
           new Error('Please confirm your password'),
           {
             operation: 'password_confirmation_required',
-            component: 'AuthScreen',
-          }
-        );
-        setLoading(false);
-        return;
-      }
-
-      if (!email.trim()) {
-        await errorHandler.handleError(
-          new Error('Email is required'),
-          {
-            operation: 'email_signup_validation',
             component: 'AuthScreen',
           }
         );
@@ -207,11 +211,13 @@ function AuthScreen() {
       }
     } else {
       // Login
-      if (!email.trim()) {
+      // Validate email using standard validation
+      const emailValidation = validateEmail(email);
+      if (!emailValidation.isValid) {
         await errorHandler.handleError(
-          new Error('Email is required'),
+          new Error(emailValidation.error || 'Please enter a valid email'),
           {
-            operation: 'email_login_validation',
+            operation: 'email_validation',
             component: 'AuthScreen',
           }
         );
@@ -477,134 +483,153 @@ function AuthScreen() {
 
   // If in forgot password mode, show password reset UI
   if (forgotPasswordMode) {
-      return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.brandContainer}>
-          <Text style={styles.brandName}>FreshMart</Text>
-        </View>
-        <Text style={styles.title}>Reset Password</Text>
-        <Text style={styles.subtitle}>
-          Enter your email to receive password reset instructions
-        </Text>
-          
-          <TextInput
-            placeholder="Email Address"
-            value={resetEmail}
-            onChangeText={setResetEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            style={styles.input}
-            placeholderTextColor="#767676"
-          />
-
-          <TouchableOpacity
-            style={[styles.button, resetLoading && styles.buttonDisabled]}
-            onPress={handleForgotPassword}
-            disabled={resetLoading}
-          >
-            <Text style={styles.buttonText}>
-              {resetLoading ? 'Sending...' : 'Send Reset Instructions'}
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <Text style={styles.brandName}>OmniMarketplace</Text>
+            <Text style={styles.title}>Reset Password</Text>
+            <Text style={styles.subtitle}>
+              Enter your email to receive password reset instructions
             </Text>
-          </TouchableOpacity>
+          </View>
+            
+          <View style={styles.formContainer}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Email Address</Text>
+              <TextInput
+                placeholder="Enter your email"
+                value={resetEmail}
+                onChangeText={setResetEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                style={styles.input}
+                placeholderTextColor="#9CA3AF"
+              />
+            </View>
 
-          <TouchableOpacity
-            style={styles.switchButton}
-            onPress={exitForgotPasswordMode}
-            disabled={resetLoading}
-          >
-            <Text style={styles.switchButtonText}>Back to Login</Text>
-          </TouchableOpacity>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={[styles.primaryButton, resetLoading && styles.buttonDisabled]}
+                onPress={handleForgotPassword}
+                disabled={resetLoading}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {resetLoading ? 'Sending...' : 'Send Reset Instructions'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.switchButton}
+                onPress={exitForgotPasswordMode}
+                disabled={resetLoading}
+              >
+                <Text style={styles.switchButtonText}>Back to Sign In</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.brandContainer}>
-          <Text style={styles.brandName}>FreshMart</Text>
-        </View>
-        <Text style={styles.title}>{mode === 'login' ? 'Sign in' : 'Create account'}</Text>
-        
-        {/* Input Fields */}
-        <TextInput
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          style={styles.input}
-          placeholderTextColor="#767676"
-        />
-        
-        <TextInput
-          placeholder="Password (min 6 characters)"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          style={[
-            styles.input,
-            mode === 'signup' && password.length > 0 && password.length < 6 && styles.inputError,
-            mode === 'signup' && password.length >= 6 && styles.inputSuccess
-          ]}
-          placeholderTextColor="#767676"
-        />
-        {password.length > 0 && mode === 'signup' && (
-          <Text style={[
-            styles.passwordLengthText,
-            password.length < 6 ? styles.passwordLengthError : styles.passwordLengthSuccess
-          ]}>
-            {password.length < 6 
-              ? `✗ Password must be at least 6 characters (${password.length}/6)`
-              : `✓ Password length is good (${password.length} characters)`
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <View style={styles.header}>
+          <Text style={styles.brandName}>OmniMarketplace</Text>
+          <Text style={styles.title}>{mode === 'login' ? 'Welcome Back' : 'Create Account'}</Text>
+          <Text style={styles.subtitle}>
+            {mode === 'login' 
+              ? 'Sign in to continue to your account' 
+              : 'Join our community and start trading'
             }
           </Text>
-        )}
-        {password.length > 0 && mode === 'login' && (
-          <Text style={styles.passwordLengthText}>
-            Password length: {password.length} characters
-          </Text>
-        )}
-
-        {/* Confirmation Password Field - Only show in signup mode */}
-        {mode === 'signup' && (
-          <View style={styles.confirmPasswordContainer}>
+        </View>
+        
+        {/* Input Fields */}
+        <View style={styles.formContainer}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Email Address</Text>
             <TextInput
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
+              placeholder="Enter your email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
               style={[
                 styles.input,
-                confirmPassword && password !== confirmPassword && styles.inputError,
-                confirmPassword && password === confirmPassword && styles.inputSuccess
+                email && !validateEmail(email).isValid && styles.inputError
               ]}
-              placeholderTextColor="#767676"
+              placeholderTextColor="#9CA3AF"
             />
-            {confirmPassword && (
-              <Text style={[
-                styles.passwordMatchText,
-                password === confirmPassword ? styles.passwordMatchSuccess : styles.passwordMatchError
-              ]}>
-                {password === confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+            {email && !validateEmail(email).isValid && (
+              <Text style={styles.errorText}>
+                {validateEmail(email).error}
               </Text>
             )}
           </View>
-        )}
+          
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Password</Text>
+            <TextInput
+              placeholder="Enter your password"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              style={[
+                styles.input,
+                password && !validatePassword(password).isValid && styles.inputError
+              ]}
+              placeholderTextColor="#9CA3AF"
+            />
+            {password && !validatePassword(password).isValid && (
+              <Text style={styles.errorText}>
+                {validatePassword(password).error}
+              </Text>
+            )}
+          </View>
+
+          {/* Confirmation Password Field - Only show in signup mode */}
+          {mode === 'signup' && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Confirm Password</Text>
+              <TextInput
+                placeholder="Confirm your password"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+                style={[
+                  styles.input,
+                  confirmPassword && password !== confirmPassword && styles.inputError,
+                  confirmPassword && password === confirmPassword && styles.inputSuccess
+                ]}
+                placeholderTextColor="#9CA3AF"
+              />
+              {confirmPassword && (
+                <Text style={[
+                  styles.validationText,
+                  password === confirmPassword ? styles.validationSuccess : styles.validationError
+                ]}>
+                  {password === confirmPassword ? '✓ Passwords match' : '✗ Passwords do not match'}
+                </Text>
+              )}
+            </View>
+          )}
+        </View>
 
         {/* Referral Code Field - Only show in signup mode */}
         {mode === 'signup' && (
-          <View style={styles.referralCodeContainer}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.inputLabel}>Referral Code (Optional)</Text>
             <View style={styles.referralCodeRow}>
               <TextInput
-                placeholder="Referral Code (Optional)"
+                placeholder="Enter referral code"
                 value={referralCode}
                 onChangeText={setReferralCode}
                 autoCapitalize="characters"
                 style={[styles.input, styles.referralCodeInput]}
-                placeholderTextColor="#767676"
+                placeholderTextColor="#9CA3AF"
               />
               {referralCode.trim() && (
                 <TouchableOpacity 
@@ -620,9 +645,9 @@ function AuthScreen() {
             </View>
             {referralCode.trim() && (
               <Text style={[
-                styles.referralCodeText,
-                referralCodeValid === true && styles.validCodeText,
-                referralCodeValid === false && styles.invalidCodeText
+                styles.validationText,
+                referralCodeValid === true && styles.validationSuccess,
+                referralCodeValid === false && styles.validationError
               ]}>
                 {referralCodeValid === true 
                   ? '✓ Valid referral code! You\'ll earn 100 OMNI bonus!'
@@ -646,24 +671,24 @@ function AuthScreen() {
               keyboardType="numeric"
               maxLength={6}
               style={styles.otpInput}
-              placeholderTextColor="#767676"
+              placeholderTextColor="#9CA3AF"
               autoFocus
             />
             <TouchableOpacity
-              style={[styles.button, otpLoading && styles.buttonDisabled]}
+              style={[styles.primaryButton, otpLoading && styles.buttonDisabled]}
               onPress={handleOtpVerification}
               disabled={otpLoading || otp.length !== 6}
             >
-              <Text style={styles.buttonText}>
+              <Text style={styles.primaryButtonText}>
                 {otpLoading ? 'Verifying...' : 'Complete Sign Up'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.resendButton, (!canResend || resendLoading) && styles.resendButtonDisabled]}
+              style={[styles.secondaryButton, (!canResend || resendLoading) && styles.buttonDisabled]}
               onPress={handleResendOtp}
               disabled={!canResend || resendLoading}
             >
-              <Text style={[styles.resendButtonText, (!canResend || resendLoading) && styles.resendButtonTextDisabled]}>
+              <Text style={[styles.secondaryButtonText, (!canResend || resendLoading) && styles.buttonTextDisabled]}>
                 {resendLoading 
                   ? 'Sending...' 
                   : canResend 
@@ -676,26 +701,28 @@ function AuthScreen() {
         )}
         
         {!otpSent && (
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={handleAuth}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {mode === 'login' ? 'Login' : 'Verify Email'}
-            </Text>
-          </TouchableOpacity>
-        )}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.primaryButton, loading && styles.buttonDisabled]}
+              onPress={handleAuth}
+              disabled={loading}
+            >
+              <Text style={styles.primaryButtonText}>
+                {mode === 'login' ? 'Sign In' : 'Create Account'}
+              </Text>
+            </TouchableOpacity>
 
-        {/* Forgot Password Link - Only show in login mode */}
-        {mode === 'login' && (
-          <TouchableOpacity
-            style={styles.forgotPasswordButton}
-            onPress={() => setForgotPasswordMode(true)}
-            disabled={loading}
-          >
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
+            {/* Forgot Password Link - Only show in login mode */}
+            {mode === 'login' && (
+              <TouchableOpacity
+                style={styles.forgotPasswordButton}
+                onPress={() => setForgotPasswordMode(true)}
+                disabled={loading}
+              >
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
         
         <TouchableOpacity
@@ -707,11 +734,11 @@ function AuthScreen() {
           disabled={loading}
         >
           <Text style={styles.switchButtonText}>
-            {mode === 'login' ? "Don't have an account? Sign Up" : 'Already have an account? Login'}
+            {mode === 'login' ? "Don't have an account? Sign Up" : 'Already have an account? Sign In'}
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -720,224 +747,206 @@ export default withErrorBoundary(AuthScreen, 'AuthScreen');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F7F7',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+  },
+  content: {
+    flex: 1,
     paddingHorizontal: 20,
+    paddingVertical: 24,
+    justifyContent: 'center',
   },
-  card: {
-    width: '100%',
-    maxWidth: 400,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 4,
-    padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: '#DDDDDD',
-  },
-  brandContainer: {
+  header: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 32,
   },
   brandName: {
-    fontSize: 28,
-    fontWeight: '600',
+    fontSize: 32,
+    fontFamily: 'Inter-Bold',
     color: '#10B981',
-    letterSpacing: 1,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '400',
-    color: '#0F1111',
+    fontSize: 28,
+    fontFamily: 'Inter-Bold',
+    color: '#1E293B',
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 13,
-    color: '#555555',
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
     textAlign: 'center',
+    lineHeight: 24,
+  },
+  formContainer: {
+    marginBottom: 24,
+  },
+  inputGroup: {
     marginBottom: 20,
-    lineHeight: 18,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#374151',
+    marginBottom: 8,
   },
   input: {
     width: '100%',
-    fontSize: 13,
-    color: '#0F1111',
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: '#1F2937',
     backgroundColor: '#FFFFFF',
-    borderRadius: 3,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    marginBottom: 14,
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#A6A6A6',
-    height: 31,
-  },
-  button: {
-    width: '100%',
-    backgroundColor: '#10B981',
-    paddingVertical: 8,
-    borderRadius: 3,
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#0D7A3A',
-  },
-  buttonDisabled: {
-    backgroundColor: '#A7F3D0',
-    borderColor: '#86EFAC',
-  },
-  buttonText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '400',
-  },
-  switchButton: {
-    marginTop: 2,
-    padding: 6,
-  },
-  switchButtonText: {
-    color: '#10B981',
-    fontSize: 13,
-    fontWeight: '400',
-  },
-  confirmPasswordContainer: {
-    width: '100%',
-    marginBottom: 14,
-  },
-  passwordMatchText: {
-    fontSize: 12,
-    marginTop: 4,
-    paddingHorizontal: 2,
-  },
-  passwordMatchSuccess: {
-    color: '#10B981',
-  },
-  passwordMatchError: {
-    color: '#EF4444',
-  },
-  passwordLengthText: {
-    fontSize: 12,
-    marginTop: 4,
-    paddingHorizontal: 2,
-  },
-  passwordLengthError: {
-    color: '#EF4444',
-  },
-  passwordLengthSuccess: {
-    color: '#10B981',
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   inputError: {
     borderColor: '#EF4444',
-    borderWidth: 1,
+    borderWidth: 2,
   },
   inputSuccess: {
     borderColor: '#10B981',
-    borderWidth: 1,
+    borderWidth: 2,
   },
-  forgotPasswordButton: {
-    marginTop: 8,
-    marginBottom: 16,
-    padding: 6,
+  errorText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#EF4444',
+    marginTop: 4,
   },
-  forgotPasswordText: {
+  validationText: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    marginTop: 4,
+  },
+  validationSuccess: {
     color: '#10B981',
-    fontSize: 13,
-    fontWeight: '400',
   },
-  referralCodeContainer: {
-    width: '100%',
-    marginBottom: 14,
+  validationError: {
+    color: '#EF4444',
   },
   referralCodeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   referralCodeInput: {
     flex: 1,
   },
   validateButton: {
     backgroundColor: '#10B981',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 3,
-    minWidth: 40,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    minWidth: 50,
     alignItems: 'center',
     justifyContent: 'center',
   },
   validateButtonText: {
     color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '400',
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
   },
-  referralCodeText: {
-    fontSize: 12,
+  buttonContainer: {
+    marginTop: 8,
+  },
+  primaryButton: {
+    width: '100%',
+    backgroundColor: '#10B981',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  primaryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+  },
+  secondaryButton: {
+    width: '100%',
+    backgroundColor: '#F1F5F9',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  secondaryButtonText: {
+    color: '#64748B',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+  },
+  buttonDisabled: {
+    backgroundColor: '#D1D5DB',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  buttonTextDisabled: {
+    color: '#9CA3AF',
+  },
+  switchButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  switchButtonText: {
     color: '#10B981',
-    marginTop: 6,
-    paddingHorizontal: 2,
-    textAlign: 'center',
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
   },
-  validCodeText: {
+  forgotPasswordButton: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    marginTop: 8,
+  },
+  forgotPasswordText: {
     color: '#10B981',
-  },
-  invalidCodeText: {
-    color: '#EF4444',
-  },
-  emailText: {
-    fontWeight: '600',
-    color: '#10B981',
-  },
-  verificationInstructions: {
-    fontSize: 13,
-    color: '#555555',
-    textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 18,
-    paddingHorizontal: 10,
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
   },
   otpContainer: {
-    width: '100%',
-    marginTop: 10,
+    marginTop: 20,
+    alignItems: 'center',
   },
   otpLabel: {
-    fontSize: 13,
-    color: '#555555',
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: '#64748B',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 20,
+    lineHeight: 24,
   },
   otpInput: {
     width: '100%',
-    fontSize: 18,
-    color: '#0F1111',
+    fontSize: 24,
+    fontFamily: 'Inter-Bold',
+    color: '#1F2937',
     backgroundColor: '#FFFFFF',
-    borderRadius: 3,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#A6A6A6',
+    borderRadius: 12,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
     textAlign: 'center',
-    letterSpacing: 2,
-  },
-  resendButton: {
-    marginTop: 10,
-    padding: 8,
-    alignItems: 'center',
-  },
-  resendButtonText: {
-    color: '#10B981',
-    fontSize: 13,
-    fontWeight: '400',
-  },
-  resendButtonDisabled: {
-    opacity: 0.5,
-  },
-  resendButtonTextDisabled: {
-    color: '#999999',
+    letterSpacing: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
 }); 
