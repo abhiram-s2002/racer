@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { 
   X, 
   ShoppingBag, 
@@ -173,6 +174,28 @@ export default function CreateScreen() {
       delivery_available: false,
     });
   }, []);
+
+  // Reset form when page comes into focus (e.g., when navigating back from other tabs)
+  useFocusEffect(
+    useCallback(() => {
+      setCurrentStep('type');
+      setFormData({
+        itemType: null,
+        title: '',
+        category: '',
+        priceType: 'fixed',
+        price: '',
+        priceMax: '',
+        priceUnit: 'per_item',
+        duration: 1,
+        description: '',
+        images: [],
+        location: null,
+        pickup_available: false,
+        delivery_available: false,
+      });
+    }, [])
+  );
 
   const handleTypeSelect = (type: ItemType) => {
     setFormData(prev => ({ ...prev, itemType: type }));
