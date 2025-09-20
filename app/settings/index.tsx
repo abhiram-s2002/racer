@@ -34,12 +34,14 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/utils/supabaseClient';
 import { signOut } from '@/utils/auth';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { useOnboarding } from '@/hooks/useOnboarding';
 import { withErrorBoundary } from '@/components/ErrorBoundary';
 
 function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { settings, loading, saving, updateSetting, resetSettings, refreshSettings } = useAppSettings();
+  const { resetOnboarding } = useOnboarding();
   const [userProfile, setUserProfile] = useState<any>(null);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
@@ -163,6 +165,28 @@ function SettingsScreen() {
             } catch (error) {
               // Error clearing cache
               Alert.alert('Error', 'Failed to clear cache');
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const resetOnboardingFlow = async () => {
+    Alert.alert(
+      'Reset Onboarding',
+      'This will show the onboarding screens again on next app launch. Useful for testing or if you want to see the introduction again.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Reset', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await resetOnboarding();
+              Alert.alert('Success', 'Onboarding will be shown again on next app launch');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to reset onboarding');
             }
           }
         }
@@ -358,6 +382,13 @@ function SettingsScreen() {
             subtitle="Free up storage space"
             onPress={clearCache}
           />
+          
+          <SettingItem
+            icon={<SettingsIcon size={20} color="#64748B" />}
+            title="Reset Onboarding"
+            subtitle="Show welcome screens again"
+            onPress={resetOnboardingFlow}
+          />
         </View>
 
         {/* Support & Legal */}
@@ -389,7 +420,7 @@ function SettingsScreen() {
             icon={<Info size={20} color="#64748B" />}
             title="About"
             subtitle="App version and information"
-            onPress={() => Alert.alert('About', 'GeoMart v1.0.0\n\nA comprehensive local marketplace platform for buying and selling items and services in your community.\n\nContact: risingsoup76@gmail.com\nPhone: +91 7306 51 9350\nLocation: Kozhikode, Kerala, India')}
+            onPress={() => Alert.alert('About', 'FreshMart v1.0.0\n\nYour local marketplace for fresh groceries and services. Buy fresh vegetables, fruits, and daily essentials from local farmers. List and find services like home repairs, cleaning, tutoring, and more in your community.\n\nContact: risingsoup76@gmail.com\nPhone: +91 7306 51 9350\nLocation: Kozhikode, Kerala, India')}
           />
         </View>
 

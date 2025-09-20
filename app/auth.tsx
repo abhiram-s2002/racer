@@ -481,7 +481,7 @@ function AuthScreen() {
     <View style={styles.container}>
       <View style={styles.card}>
         <View style={styles.brandContainer}>
-          <Text style={styles.brandName}>GeoMart</Text>
+          <Text style={styles.brandName}>FreshMart</Text>
         </View>
         <Text style={styles.title}>Reset Password</Text>
         <Text style={styles.subtitle}>
@@ -524,7 +524,7 @@ function AuthScreen() {
     <View style={styles.container}>
       <View style={styles.card}>
         <View style={styles.brandContainer}>
-          <Text style={styles.brandName}>GeoMart</Text>
+          <Text style={styles.brandName}>FreshMart</Text>
         </View>
         <Text style={styles.title}>{mode === 'login' ? 'Sign in' : 'Create account'}</Text>
         

@@ -30,6 +30,8 @@ import LocationCheckPopup from '@/components/LocationCheckPopup';
 import AuthLoadingScreen from '@/components/AuthLoadingScreen';
 import { useNotificationsRealtime } from '@/hooks/useNotificationsRealtime';
 import { setupFCMHandlers, processUndeliveredNotifications } from '@/utils/fcmClient';
+import { useOnboarding } from '@/hooks/useOnboarding';
+import OnboardingScreen from './onboarding';
 
 
 function validateUserProfileFields({ id, username, email, name }: { id: string; username: string; email: string; name: string }) {
@@ -204,6 +206,7 @@ export default function AuthGate() {
   const { showPopup, isChecking, locationStatus, checkLocationStatus, hidePopup, retryCheck } = useLocationCheck();
   const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined);
   const { register } = usePushNotifications({ userId: currentUserId });
+  const { isFirstTime, onboardingCompleted, loading: onboardingLoading } = useOnboarding();
   useNotificationsRealtime(currentUserId, (n) => {
     // Optionally display an in-app banner/toast here
     // For now, just log to console
@@ -379,25 +382,30 @@ export default function AuthGate() {
     })();
   }, []);
 
-  if (loading) {
+  if (loading || onboardingLoading) {
     const getLoadingMessage = () => {
       switch (loadingStage) {
         case 'initializing':
-          return 'Initializing GeoMart...';
+          return 'Initializing FreshMart...';
         case 'authenticating':
           return 'Checking your account...';
         case 'validating_profile':
           return 'Validating your profile...';
         case 'setting_up_profile':
-          return 'Setting up your GeoMart experience...';
+          return 'Setting up your local marketplace experience...';
         case 'finalizing':
           return 'Almost ready...';
         default:
-          return 'Setting up your GeoMart experience...';
+          return 'Setting up your local marketplace experience...';
       }
     };
 
     return <AuthLoadingScreen message={getLoadingMessage()} />;
+  }
+
+  // Show onboarding for first-time users
+  if (isFirstTime && !onboardingCompleted) {
+    return <OnboardingScreen />;
   }
 
   if (!authenticated) {
